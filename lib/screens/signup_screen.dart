@@ -155,15 +155,17 @@ class SignUpScreenState extends State<SignUpScreen> {
                   ),
                   errorStyle: const TextStyle(color: Colors.yellow),
                 ),
-                value: 'User',
+                value: 'Student',
                 items: const [
                   DropdownMenuItem(
-                    value: 'User',
-                    child: Text('User', style: TextStyle(color: Colors.white)),
+                    value: 'Student',
+                    child:
+                        Text('Student', style: TextStyle(color: Colors.white)),
                   ),
                   DropdownMenuItem(
-                    value: 'Admin',
-                    child: Text('Admin', style: TextStyle(color: Colors.white)),
+                    value: 'Lecturer',
+                    child:
+                        Text('Lecturer', style: TextStyle(color: Colors.white)),
                   ),
                 ],
                 onChanged: (String? newValue) {
