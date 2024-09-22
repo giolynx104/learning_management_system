@@ -16,7 +16,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.red[900]!),
         useMaterial3: true,
       ),
-      initialRoute: AppRoutes.signup,
+      initialRoute: AppRoutes.classRegistration,
       onGenerateRoute: AppRoutes.generateRoute,
     );
   }
