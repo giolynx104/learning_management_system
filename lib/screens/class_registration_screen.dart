@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:developer';
 
+//TODO: Make the table first column fixed position when scrolling
+
 class ClassRegistrationScreen extends StatefulWidget {
   const ClassRegistrationScreen({super.key});
 
@@ -13,6 +15,7 @@ class ClassRegistrationScreenState extends State<ClassRegistrationScreen> {
   final FocusNode _classCodeFocusNode = FocusNode();
   final List<String> _enteredClassCodes = [];
   final Set<int> _selectedRowIndices = {};
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
@@ -26,6 +29,7 @@ class ClassRegistrationScreenState extends State<ClassRegistrationScreen> {
   void dispose() {
     _classCodeController.dispose();
     _classCodeFocusNode.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -124,70 +128,113 @@ class ClassRegistrationScreenState extends State<ClassRegistrationScreen> {
                   )
                 : LayoutBuilder(
                     builder: (context, constraints) {
-                      return Container(
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                            color: Colors.red[900]!,
-                            width: 2,
-                          ),
-                        ),
-                        child: Theme(
-                          data: Theme.of(context).copyWith(
-                            dataTableTheme: DataTableThemeData(
-                              headingRowColor: WidgetStateProperty.all(
-                                Colors.red[900],
-                              ),
-                              headingTextStyle: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: Colors.red[900]!,
+                              width: 2,
                             ),
                           ),
-                          child: SingleChildScrollView(
-                            child: DataTable(
-                              columnSpacing: 16,
-                              horizontalMargin: 16,
-                              columns: const [
-                                DataColumn(label: Text('Class Code')),
-                                DataColumn(label: Text('Associated Code')),
-                                DataColumn(label: Text('Class Name')),
+                          child: Theme(
+                            data: Theme.of(context).copyWith(
+                              dataTableTheme: DataTableThemeData(
+                                headingRowColor: WidgetStateProperty.all(
+                                  Colors.red[900],
+                                ),
+                                headingTextStyle: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            child: Column(
+                              children: [
+                                Expanded(
+                                  child: SingleChildScrollView(
+                                    controller: _scrollController,
+                                    child: DataTable(
+                                      columnSpacing: 16,
+                                      horizontalMargin: 16,
+                                      columns: const [
+                                        DataColumn(
+                                          label: Text(
+                                            'Class Code',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                        DataColumn(
+                                          label: Text(
+                                            'Associated Code',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                        DataColumn(
+                                          label: Text(
+                                            'Class Name',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                      rows: _enteredClassCodes
+                                          .asMap()
+                                          .entries
+                                          .map((entry) => DataRow(
+                                                selected: _selectedRowIndices
+                                                    .contains(entry.key),
+                                                onSelectChanged: (isSelected) {
+                                                  setState(() {
+                                                    if (isSelected!) {
+                                                      _selectedRowIndices
+                                                          .add(entry.key);
+                                                    } else {
+                                                      _selectedRowIndices
+                                                          .remove(entry.key);
+                                                    }
+                                                  });
+                                                },
+                                                cells: [
+                                                  DataCell(
+                                                    Text(
+                                                      entry.value,
+                                                      style: TextStyle(
+                                                          color:
+                                                              Colors.red[900]),
+                                                    ),
+                                                  ),
+                                                  DataCell(
+                                                    Text(
+                                                      'TBD',
+                                                      style: TextStyle(
+                                                          color:
+                                                              Colors.red[900]),
+                                                    ),
+                                                  ),
+                                                  DataCell(
+                                                    Text(
+                                                      'TBD',
+                                                      style: TextStyle(
+                                                          color:
+                                                              Colors.red[900]),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ))
+                                          .toList(),
+                                    ),
+                                  ),
+                                ),
                               ],
-                              rows: _enteredClassCodes
-                                  .asMap()
-                                  .entries
-                                  .map((entry) => DataRow(
-                                        selected: _selectedRowIndices
-                                            .contains(entry.key),
-                                        onSelectChanged: (isSelected) {
-                                          setState(() {
-                                            if (isSelected!) {
-                                              _selectedRowIndices
-                                                  .add(entry.key);
-                                            } else {
-                                              _selectedRowIndices
-                                                  .remove(entry.key);
-                                            }
-                                          });
-                                        },
-                                        cells: [
-                                          DataCell(Text(
-                                            entry.value,
-                                            style: TextStyle(
-                                                color: Colors.red[900]),
-                                          )),
-                                          DataCell(Text(
-                                            'TBD',
-                                            style: TextStyle(
-                                                color: Colors.red[900]),
-                                          )),
-                                          DataCell(Text(
-                                            'TBD',
-                                            style: TextStyle(
-                                                color: Colors.red[900]),
-                                          )),
-                                        ],
-                                      ))
-                                  .toList(),
                             ),
                           ),
                         ),
