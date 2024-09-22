@@ -16,6 +16,7 @@ class ClassRegistrationScreenState extends State<ClassRegistrationScreen> {
   final List<String> _enteredClassCodes = [];
   final Set<int> _selectedRowIndices = {};
   final ScrollController _scrollController = ScrollController();
+  bool _isRegisterButtonEnabled = false;
 
   @override
   void initState() {
@@ -23,19 +24,27 @@ class ClassRegistrationScreenState extends State<ClassRegistrationScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _classCodeFocusNode.requestFocus();
     });
+    _classCodeController.addListener(_updateRegisterButtonState);
   }
 
   @override
   void dispose() {
+    _classCodeController.removeListener(_updateRegisterButtonState);
     _classCodeController.dispose();
     _classCodeFocusNode.dispose();
     _scrollController.dispose();
     super.dispose();
   }
 
+  void _updateRegisterButtonState() {
+    setState(() {
+      _isRegisterButtonEnabled = _classCodeController.text.trim().length == 6;
+    });
+  }
+
   void _registerClass() {
     final classCode = _classCodeController.text.trim();
-    if (classCode.isNotEmpty && !_enteredClassCodes.contains(classCode)) {
+    if (classCode.length == 6 && !_enteredClassCodes.contains(classCode)) {
       setState(() {
         _enteredClassCodes.add(classCode);
         _classCodeController.clear();
@@ -81,6 +90,7 @@ class ClassRegistrationScreenState extends State<ClassRegistrationScreen> {
                           controller: _classCodeController,
                           focusNode: _classCodeFocusNode,
                           keyboardType: TextInputType.number,
+                          maxLength: 6,
                           decoration: InputDecoration(
                             labelText: 'Class Code',
                             labelStyle: TextStyle(color: Colors.red[900]!),
@@ -99,18 +109,20 @@ class ClassRegistrationScreenState extends State<ClassRegistrationScreen> {
                                 color: Colors.red[900]!,
                               ),
                             ),
+                            counterText: '',
                           ),
                         ),
                       ),
                       const SizedBox(width: 10),
                       ElevatedButton(
-                        onPressed: _registerClass,
+                        onPressed: _isRegisterButtonEnabled ? _registerClass : null,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.red[900],
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(4),
                           ),
+                          disabledBackgroundColor: Colors.grey,
                         ),
                         child: const Text('Register'),
                       ),
