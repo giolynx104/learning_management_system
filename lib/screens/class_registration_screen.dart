@@ -76,224 +76,284 @@ class ClassRegistrationScreenState extends State<ClassRegistrationScreen> {
       ),
       body: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          _ClassRegistrationForm(
+            classCodeController: _classCodeController,
+            classCodeFocusNode: _classCodeFocusNode,
+            isRegisterButtonEnabled: _isRegisterButtonEnabled,
+            onRegister: _registerClass,
+          ),
+          Expanded(
+            child: _ClassRegistrationTable(
+              enteredClassCodes: _enteredClassCodes,
+              selectedRowIndices: _selectedRowIndices,
+              scrollController: _scrollController,
+              onSelectChanged: (int index, bool? isSelected) {
+                setState(() {
+                  if (isSelected!) {
+                    _selectedRowIndices.add(index);
+                  } else {
+                    _selectedRowIndices.remove(index);
+                  }
+                });
+              },
+            ),
+          ),
+          if (_enteredClassCodes.isNotEmpty)
+            _RegistrationActions(
+              onSubmit: () {
+                // TODO: Implement submit registration functionality
+              },
+              onRemoveSelected: _removeSelectedClasses,
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ClassRegistrationForm extends StatelessWidget {
+  final TextEditingController classCodeController;
+  final FocusNode classCodeFocusNode;
+  final bool isRegisterButtonEnabled;
+  final VoidCallback onRegister;
+
+  const _ClassRegistrationForm({
+    required this.classCodeController,
+    required this.classCodeFocusNode,
+    required this.isRegisterButtonEnabled,
+    required this.onRegister,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                IntrinsicHeight(
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _classCodeController,
-                          focusNode: _classCodeFocusNode,
-                          keyboardType: TextInputType.number,
-                          maxLength: 6,
-                          decoration: InputDecoration(
-                            labelText: 'Class Code',
-                            labelStyle: TextStyle(color: Colors.red[900]!),
-                            border: OutlineInputBorder(
-                              borderSide: BorderSide(
-                                color: Colors.red[900]!,
-                              ),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderSide: BorderSide(
-                                color: Colors.red[900]!,
-                              ),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderSide: BorderSide(
-                                color: Colors.red[900]!,
-                              ),
-                            ),
-                            counterText: '',
-                          ),
+                Expanded(
+                  child: TextField(
+                    controller: classCodeController,
+                    focusNode: classCodeFocusNode,
+                    keyboardType: TextInputType.number,
+                    maxLength: 6,
+                    decoration: InputDecoration(
+                      labelText: 'Class Code',
+                      labelStyle: TextStyle(color: Colors.red[900]!),
+                      border: OutlineInputBorder(
+                        borderSide: BorderSide(
+                          color: Colors.red[900]!,
                         ),
                       ),
-                      const SizedBox(width: 10),
-                      ElevatedButton(
-                        onPressed: _isRegisterButtonEnabled ? _registerClass : null,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red[900],
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          disabledBackgroundColor: Colors.grey,
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: BorderSide(
+                          color: Colors.red[900]!,
                         ),
-                        child: const Text('Register'),
                       ),
-                    ],
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: BorderSide(
+                          color: Colors.red[900]!,
+                        ),
+                      ),
+                      counterText: '',
+                      suffixIcon: classCodeController.text.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear),
+                              onPressed: () {
+                                classCodeController.clear();
+                              },
+                            )
+                          : null,
+                    ),
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(width: 10),
+                ElevatedButton(
+                  onPressed: isRegisterButtonEnabled ? onRegister : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red[900],
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    disabledBackgroundColor: Colors.grey,
+                  ),
+                  child: const Text('Register'),
+                ),
               ],
             ),
           ),
-          Expanded(
-            child: _enteredClassCodes.isEmpty
-                ? const Center(
-                    child: Text('No classes registered yet'),
-                  )
-                : LayoutBuilder(
-                    builder: (context, constraints) {
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            border: Border.all(
-                              color: Colors.red[900]!,
-                              width: 2,
-                            ),
-                          ),
-                          child: Theme(
-                            data: Theme.of(context).copyWith(
-                              dataTableTheme: DataTableThemeData(
-                                headingRowColor: WidgetStateProperty.all(
-                                  Colors.red[900],
-                                ),
-                                headingTextStyle: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                ),
+          const SizedBox(height: 20),
+        ],
+      ),
+    );
+  }
+}
+
+class _ClassRegistrationTable extends StatelessWidget {
+  final List<String> enteredClassCodes;
+  final Set<int> selectedRowIndices;
+  final ScrollController scrollController;
+  final Function(int, bool?) onSelectChanged;
+
+  const _ClassRegistrationTable({
+    required this.enteredClassCodes,
+    required this.selectedRowIndices,
+    required this.scrollController,
+    required this.onSelectChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return enteredClassCodes.isEmpty
+        ? const Center(
+            child: Text('No classes registered yet'),
+          )
+        : LayoutBuilder(
+            builder: (context, constraints) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: Colors.red[900]!,
+                      width: 2,
+                    ),
+                  ),
+                  child: Theme(
+                    data: Theme.of(context).copyWith(
+                      dataTableTheme: DataTableThemeData(
+                        headingRowColor: MaterialStateProperty.all(
+                          Colors.red[900],
+                        ),
+                        headingTextStyle: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    child: SingleChildScrollView(
+                      controller: scrollController,
+                      child: DataTable(
+                        columnSpacing: 16,
+                        horizontalMargin: 16,
+                        columns: const [
+                          DataColumn(
+                            label: Text(
+                              'Class Code',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
-                            child: Column(
-                              children: [
-                                Expanded(
-                                  child: SingleChildScrollView(
-                                    controller: _scrollController,
-                                    child: DataTable(
-                                      columnSpacing: 16,
-                                      horizontalMargin: 16,
-                                      columns: const [
-                                        DataColumn(
-                                          label: Text(
-                                            'Class Code',
-                                            style: TextStyle(
-                                              color: Colors.white,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ),
-                                        DataColumn(
-                                          label: Text(
-                                            'Associated Code',
-                                            style: TextStyle(
-                                              color: Colors.white,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ),
-                                        DataColumn(
-                                          label: Text(
-                                            'Class Name',
-                                            style: TextStyle(
-                                              color: Colors.white,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                      rows: _enteredClassCodes
-                                          .asMap()
-                                          .entries
-                                          .map((entry) => DataRow(
-                                                selected: _selectedRowIndices
-                                                    .contains(entry.key),
-                                                onSelectChanged: (isSelected) {
-                                                  setState(() {
-                                                    if (isSelected!) {
-                                                      _selectedRowIndices
-                                                          .add(entry.key);
-                                                    } else {
-                                                      _selectedRowIndices
-                                                          .remove(entry.key);
-                                                    }
-                                                  });
-                                                },
-                                                cells: [
-                                                  DataCell(
-                                                    Text(
-                                                      entry.value,
-                                                      style: TextStyle(
-                                                          color:
-                                                              Colors.red[900]),
-                                                    ),
-                                                  ),
-                                                  DataCell(
-                                                    Text(
-                                                      'TBD',
-                                                      style: TextStyle(
-                                                          color:
-                                                              Colors.red[900]),
-                                                    ),
-                                                  ),
-                                                  DataCell(
-                                                    Text(
-                                                      'TBD',
-                                                      style: TextStyle(
-                                                          color:
-                                                              Colors.red[900]),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ))
-                                          .toList(),
-                                    ),
-                                  ),
-                                ),
-                              ],
+                          ),
+                          DataColumn(
+                            label: Text(
+                              'Associated Code',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
-                        ),
-                      );
-                    },
+                          DataColumn(
+                            label: Text(
+                              'Class Name',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                        rows: enteredClassCodes
+                            .asMap()
+                            .entries
+                            .map((entry) => DataRow(
+                                  selected: selectedRowIndices.contains(entry.key),
+                                  onSelectChanged: (isSelected) =>
+                                      onSelectChanged(entry.key, isSelected),
+                                  cells: [
+                                    DataCell(
+                                      Text(
+                                        entry.value,
+                                        style: TextStyle(color: Colors.red[900]),
+                                      ),
+                                    ),
+                                    DataCell(
+                                      Text(
+                                        'TBD',
+                                        style: TextStyle(color: Colors.red[900]),
+                                      ),
+                                    ),
+                                    DataCell(
+                                      Text(
+                                        'TBD',
+                                        style: TextStyle(color: Colors.red[900]),
+                                      ),
+                                    ),
+                                  ],
+                                ))
+                            .toList(),
+                      ),
+                    ),
                   ),
+                ),
+              );
+            },
+          );
+  }
+}
+
+class _RegistrationActions extends StatelessWidget {
+  final VoidCallback onSubmit;
+  final VoidCallback onRemoveSelected;
+
+  const _RegistrationActions({
+    required this.onSubmit,
+    required this.onRemoveSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Row(
+        children: [
+          Expanded(
+            child: ElevatedButton(
+              onPressed: onSubmit,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red[900],
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+              child: const Text('Submit Registration'),
+            ),
           ),
-          if (_enteredClassCodes.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        // TODO: Implement submit registration functionality
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red[900],
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                      ),
-                      child: const Text('Submit Registration'),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: _removeSelectedClasses,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red[900],
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                      ),
-                      child: const Text(
-                        'Remove Selected Classes',
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ),
-                ],
+          const SizedBox(width: 10),
+          Expanded(
+            child: ElevatedButton(
+              onPressed: onRemoveSelected,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red[900],
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+              child: const Text(
+                'Remove Selected Classes',
+                textAlign: TextAlign.center,
               ),
             ),
+          ),
         ],
       ),
     );
