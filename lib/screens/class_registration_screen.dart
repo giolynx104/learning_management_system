@@ -136,53 +136,15 @@ class _ClassRegistrationForm extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Expanded(
-                  child: TextField(
+                  child: _ClassCodeTextField(
                     controller: classCodeController,
                     focusNode: classCodeFocusNode,
-                    keyboardType: TextInputType.number,
-                    maxLength: 6,
-                    decoration: InputDecoration(
-                      labelText: 'Class Code',
-                      labelStyle: TextStyle(color: Colors.red[900]!),
-                      border: OutlineInputBorder(
-                        borderSide: BorderSide(
-                          color: Colors.red[900]!,
-                        ),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(
-                          color: Colors.red[900]!,
-                        ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(
-                          color: Colors.red[900]!,
-                        ),
-                      ),
-                      counterText: '',
-                      suffixIcon: classCodeController.text.isNotEmpty
-                          ? IconButton(
-                              icon: const Icon(Icons.clear),
-                              onPressed: () {
-                                classCodeController.clear();
-                              },
-                            )
-                          : null,
-                    ),
                   ),
                 ),
                 const SizedBox(width: 10),
-                ElevatedButton(
-                  onPressed: isRegisterButtonEnabled ? onRegister : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red[900],
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    disabledBackgroundColor: Colors.grey,
-                  ),
-                  child: const Text('Register'),
+                _RegisterButton(
+                  isEnabled: isRegisterButtonEnabled,
+                  onPressed: onRegister,
                 ),
               ],
             ),
@@ -190,6 +152,72 @@ class _ClassRegistrationForm extends StatelessWidget {
           const SizedBox(height: 20),
         ],
       ),
+    );
+  }
+}
+
+class _ClassCodeTextField extends StatelessWidget {
+  final TextEditingController controller;
+  final FocusNode focusNode;
+
+  const _ClassCodeTextField({
+    required this.controller,
+    required this.focusNode,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: controller,
+      focusNode: focusNode,
+      keyboardType: TextInputType.number,
+      maxLength: 6,
+      decoration: InputDecoration(
+        labelText: 'Class Code',
+        labelStyle: TextStyle(color: Colors.red[900]!),
+        border: OutlineInputBorder(
+          borderSide: BorderSide(color: Colors.red[900]!),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: Colors.red[900]!),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: Colors.red[900]!),
+        ),
+        counterText: '',
+        suffixIcon: controller.text.isNotEmpty
+            ? IconButton(
+                icon: const Icon(Icons.clear),
+                onPressed: controller.clear,
+              )
+            : null,
+      ),
+    );
+  }
+}
+
+class _RegisterButton extends StatelessWidget {
+  final bool isEnabled;
+  final VoidCallback onPressed;
+
+  const _RegisterButton({
+    required this.isEnabled,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ElevatedButton(
+      onPressed: isEnabled ? onPressed : null,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.red[900],
+        foregroundColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(4),
+        ),
+        disabledBackgroundColor: Colors.grey,
+      ),
+      child: const Text('Register'),
     );
   }
 }
@@ -227,7 +255,7 @@ class _ClassRegistrationTable extends StatelessWidget {
                   child: Theme(
                     data: Theme.of(context).copyWith(
                       dataTableTheme: DataTableThemeData(
-                        headingRowColor: MaterialStateProperty.all(
+                        headingRowColor: WidgetStateProperty.all(
                           Colors.red[900],
                         ),
                         headingTextStyle: const TextStyle(
