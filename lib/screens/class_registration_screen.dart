@@ -16,6 +16,7 @@ class ClassRegistrationScreenState extends State<ClassRegistrationScreen> {
   final List<String> _enteredClassCodes = [];
   final Set<int> _selectedRowIndices = {};
   final ScrollController _scrollController = ScrollController();
+  final ScrollController _horizontalScrollController = ScrollController();
   bool _isRegisterButtonEnabled = false;
 
   @override
@@ -33,6 +34,7 @@ class ClassRegistrationScreenState extends State<ClassRegistrationScreen> {
     _classCodeController.dispose();
     _classCodeFocusNode.dispose();
     _scrollController.dispose();
+    _horizontalScrollController.dispose();
     super.dispose();
   }
 
@@ -88,6 +90,7 @@ class ClassRegistrationScreenState extends State<ClassRegistrationScreen> {
               enteredClassCodes: _enteredClassCodes,
               selectedRowIndices: _selectedRowIndices,
               scrollController: _scrollController,
+              horizontalScrollController: _horizontalScrollController,
               onSelectChanged: (int index, bool? isSelected) {
                 setState(() {
                   if (isSelected!) {
@@ -229,12 +232,14 @@ class _ClassRegistrationTable extends StatelessWidget {
   final List<String> enteredClassCodes;
   final Set<int> selectedRowIndices;
   final ScrollController scrollController;
+  final ScrollController horizontalScrollController;
   final Function(int, bool?) onSelectChanged;
 
   const _ClassRegistrationTable({
     required this.enteredClassCodes,
     required this.selectedRowIndices,
     required this.scrollController,
+    required this.horizontalScrollController,
     required this.onSelectChanged,
   });
 
@@ -270,67 +275,86 @@ class _ClassRegistrationTable extends StatelessWidget {
                     ),
                     child: SingleChildScrollView(
                       controller: scrollController,
-                      child: DataTable(
-                        columnSpacing: 16,
-                        horizontalMargin: 16,
-                        columns: [
-                          DataColumn(
-                            label: Text(
-                              'Class Code',
-                              style: TextStyle(
-                                color: theme.colorScheme.onPrimary,
-                                fontWeight: FontWeight.bold,
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        controller: horizontalScrollController,
+                        child: DataTable(
+                          columnSpacing: 16,
+                          horizontalMargin: 16,
+                          columns: [
+                            DataColumn(
+                              label: Text(
+                                'Class Code',
+                                style: TextStyle(
+                                  color: theme.colorScheme.onPrimary,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
-                          ),
-                          DataColumn(
-                            label: Text(
-                              'Associated Code',
-                              style: TextStyle(
-                                color: theme.colorScheme.onPrimary,
-                                fontWeight: FontWeight.bold,
+                            DataColumn(
+                              label: Text(
+                                'Associated Code',
+                                style: TextStyle(
+                                  color: theme.colorScheme.onPrimary,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
-                          ),
-                          DataColumn(
-                            label: Text(
-                              'Class Name',
-                              style: TextStyle(
-                                color: theme.colorScheme.onPrimary,
-                                fontWeight: FontWeight.bold,
+                            DataColumn(
+                              label: Text(
+                                'Class Name',
+                                style: TextStyle(
+                                  color: theme.colorScheme.onPrimary,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
-                          ),
-                        ],
-                        rows: enteredClassCodes
-                            .asMap()
-                            .entries
-                            .map((entry) => DataRow(
-                                  selected: selectedRowIndices.contains(entry.key),
-                                  onSelectChanged: (isSelected) =>
-                                      onSelectChanged(entry.key, isSelected),
-                                  cells: [
-                                    DataCell(
-                                      Text(
-                                        entry.value,
-                                        style: TextStyle(color: theme.colorScheme.primary),
+                            DataColumn(
+                              label: Text(
+                                'Registration Status',
+                                style: TextStyle(
+                                  color: theme.colorScheme.onPrimary,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                          rows: enteredClassCodes
+                              .asMap()
+                              .entries
+                              .map((entry) => DataRow(
+                                    selected: selectedRowIndices.contains(entry.key),
+                                    onSelectChanged: (isSelected) =>
+                                        onSelectChanged(entry.key, isSelected),
+                                    cells: [
+                                      DataCell(
+                                        Text(
+                                          entry.value,
+                                          style: TextStyle(color: theme.colorScheme.primary),
+                                        ),
                                       ),
-                                    ),
-                                    DataCell(
-                                      Text(
-                                        'TBD',
-                                        style: TextStyle(color: theme.colorScheme.primary),
+                                      DataCell(
+                                        Text(
+                                          'TBD',
+                                          style: TextStyle(color: theme.colorScheme.primary),
+                                        ),
                                       ),
-                                    ),
-                                    DataCell(
-                                      Text(
-                                        'TBD',
-                                        style: TextStyle(color: theme.colorScheme.primary),
+                                      DataCell(
+                                        Text(
+                                          'TBD',
+                                          style: TextStyle(color: theme.colorScheme.primary),
+                                        ),
                                       ),
-                                    ),
-                                  ],
-                                ))
-                            .toList(),
+                                      DataCell(
+                                        Text(
+                                          'TBD',
+                                          style: TextStyle(color: theme.colorScheme.primary),
+                                        ),
+                                      ),
+                                    ],
+                                  ))
+                              .toList(),
+                        ),
                       ),
                     ),
                   ),
