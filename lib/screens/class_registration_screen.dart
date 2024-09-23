@@ -109,6 +109,9 @@ class ClassRegistrationScreenState extends State<ClassRegistrationScreen> {
               },
               onRemoveSelected: _removeSelectedClasses,
             ),
+          const SizedBox(height: 16),
+          const _AvailableClassesLink(),
+          const SizedBox(height: 16),
         ],
       ),
     );
@@ -412,6 +415,28 @@ class _RegistrationActions extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _AvailableClassesLink extends StatelessWidget {
+  const _AvailableClassesLink();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return GestureDetector(
+      onTap: () {
+        // TODO: Implement navigation to available classes list
+      },
+      child: Text(
+        'List of currently available classes',
+        style: TextStyle(
+          color: theme.colorScheme.primary,
+          decoration: TextDecoration.underline,
+          decorationColor: theme.colorScheme.primary,
+        ),
       ),
     );
   }
