@@ -70,6 +70,7 @@ class ClassRegistrationScreenState extends State<ClassRegistrationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
     return Scaffold(
       appBar: AppBar(
         title: const Text('Class Registration'),
@@ -167,6 +168,7 @@ class _ClassCodeTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return TextField(
       controller: controller,
       focusNode: focusNode,
@@ -174,15 +176,15 @@ class _ClassCodeTextField extends StatelessWidget {
       maxLength: 6,
       decoration: InputDecoration(
         labelText: 'Class Code',
-        labelStyle: TextStyle(color: Colors.red[900]!),
+        labelStyle: TextStyle(color: theme.colorScheme.primary),
         border: OutlineInputBorder(
-          borderSide: BorderSide(color: Colors.red[900]!),
+          borderSide: BorderSide(color: theme.colorScheme.primary),
         ),
         enabledBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: Colors.red[900]!),
+          borderSide: BorderSide(color: theme.colorScheme.primary),
         ),
         focusedBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: Colors.red[900]!),
+          borderSide: BorderSide(color: theme.colorScheme.primary),
         ),
         counterText: '',
         suffixIcon: controller.text.isNotEmpty
@@ -207,11 +209,12 @@ class _RegisterButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return ElevatedButton(
       onPressed: isEnabled ? onPressed : null,
       style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.red[900],
-        foregroundColor: Colors.white,
+        backgroundColor: theme.colorScheme.primary,
+        foregroundColor: theme.colorScheme.onPrimary,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(4),
         ),
@@ -237,6 +240,7 @@ class _ClassRegistrationTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return enteredClassCodes.isEmpty
         ? const Center(
             child: Text('No classes registered yet'),
@@ -248,7 +252,7 @@ class _ClassRegistrationTable extends StatelessWidget {
                 child: Container(
                   decoration: BoxDecoration(
                     border: Border.all(
-                      color: Colors.red[900]!,
+                      color: theme.colorScheme.primary,
                       width: 2,
                     ),
                   ),
@@ -256,10 +260,10 @@ class _ClassRegistrationTable extends StatelessWidget {
                     data: Theme.of(context).copyWith(
                       dataTableTheme: DataTableThemeData(
                         headingRowColor: WidgetStateProperty.all(
-                          Colors.red[900],
+                          theme.colorScheme.primary,
                         ),
-                        headingTextStyle: const TextStyle(
-                          color: Colors.white,
+                        headingTextStyle: TextStyle(
+                          color: theme.colorScheme.onPrimary,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -269,12 +273,12 @@ class _ClassRegistrationTable extends StatelessWidget {
                       child: DataTable(
                         columnSpacing: 16,
                         horizontalMargin: 16,
-                        columns: const [
+                        columns: [
                           DataColumn(
                             label: Text(
                               'Class Code',
                               style: TextStyle(
-                                color: Colors.white,
+                                color: theme.colorScheme.onPrimary,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -283,7 +287,7 @@ class _ClassRegistrationTable extends StatelessWidget {
                             label: Text(
                               'Associated Code',
                               style: TextStyle(
-                                color: Colors.white,
+                                color: theme.colorScheme.onPrimary,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -292,7 +296,7 @@ class _ClassRegistrationTable extends StatelessWidget {
                             label: Text(
                               'Class Name',
                               style: TextStyle(
-                                color: Colors.white,
+                                color: theme.colorScheme.onPrimary,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -309,19 +313,19 @@ class _ClassRegistrationTable extends StatelessWidget {
                                     DataCell(
                                       Text(
                                         entry.value,
-                                        style: TextStyle(color: Colors.red[900]),
+                                        style: TextStyle(color: theme.colorScheme.primary),
                                       ),
                                     ),
                                     DataCell(
                                       Text(
                                         'TBD',
-                                        style: TextStyle(color: Colors.red[900]),
+                                        style: TextStyle(color: theme.colorScheme.primary),
                                       ),
                                     ),
                                     DataCell(
                                       Text(
                                         'TBD',
-                                        style: TextStyle(color: Colors.red[900]),
+                                        style: TextStyle(color: theme.colorScheme.primary),
                                       ),
                                     ),
                                   ],
@@ -348,6 +352,7 @@ class _RegistrationActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Row(
@@ -356,8 +361,8 @@ class _RegistrationActions extends StatelessWidget {
             child: ElevatedButton(
               onPressed: onSubmit,
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red[900],
-                foregroundColor: Colors.white,
+                backgroundColor: theme.colorScheme.primary,
+                foregroundColor: theme.colorScheme.onPrimary,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(4),
                 ),
@@ -370,8 +375,8 @@ class _RegistrationActions extends StatelessWidget {
             child: ElevatedButton(
               onPressed: onRemoveSelected,
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red[900],
-                foregroundColor: Colors.white,
+                backgroundColor: theme.colorScheme.primary,
+                foregroundColor: theme.colorScheme.onPrimary,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(4),
                 ),
