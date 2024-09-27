@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:developer';
-import 'package:learning_management_system/screens/create_class_screen.dart';
+import 'package:learning_management_system/routes/app_routes.dart';
 
 class ClassManagementScreen extends StatefulWidget {
   const ClassManagementScreen({super.key});
@@ -102,13 +102,10 @@ class ClassManagementScreenState extends State<ClassManagementScreen> {
           ),
           _ManagementActions(
             onCreateClass: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const CreateClassScreen()),
-              );
+              Navigator.pushNamed(context, AppRoutes.createClass);
             },
             onModifyClass: () {
-              // TODO: Navigate to modify class screen
+              Navigator.pushNamed(context, AppRoutes.modifyClass);
             },
           ),
           const SizedBox(height: 16),
