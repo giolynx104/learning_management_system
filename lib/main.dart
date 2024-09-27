@@ -20,7 +20,7 @@ class MyApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      initialRoute: AppRoutes.classRegistration,
+      initialRoute: AppRoutes.classManagement,
       onGenerateRoute: AppRoutes.generateRoute,
     );
   }
