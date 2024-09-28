@@ -291,8 +291,8 @@ class ModifyClassScreen extends HookConsumerWidget {
               },
             ),
             TextButton(
-              child: const Text('Confirm'),
               onPressed: onConfirm,
+              child: const Text('Confirm'),
             ),
           ],
         );
