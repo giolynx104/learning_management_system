@@ -1,4 +1,4 @@
-# learning_management_system
+# Learning Management System
 
 A new Flutter project.
 
