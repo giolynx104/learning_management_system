@@ -210,6 +210,8 @@ class SignUpScreenState extends State<SignUpScreen> {
                 onChanged: (String? newValue) {
                   // Handle role selection logic here
                 },
+                icon: Icon(Icons.arrow_drop_down, color: theme.colorScheme.onPrimary),
+                style: TextStyle(color: theme.colorScheme.onPrimary),
               ),
               const SizedBox(height: 32.0),
               ElevatedButton(
