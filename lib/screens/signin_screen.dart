@@ -28,13 +28,14 @@ class SignInScreenState extends State<SignInScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: Colors.red[900],
+      backgroundColor: theme.colorScheme.primary,
       appBar: AppBar(
-        backgroundColor: Colors.red[900],
-        title: const Text('Sign In', style: TextStyle(color: Colors.white)),
+        backgroundColor: theme.colorScheme.primary,
+        title: Text('Sign In', style: TextStyle(color: theme.colorScheme.onPrimary)),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: Icon(Icons.arrow_back, color: theme.colorScheme.onPrimary),
           onPressed: () {
             Navigator.pushNamed(context, AppRoutes.signup);
           },
@@ -44,51 +45,52 @@ class SignInScreenState extends State<SignInScreen> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            const Text(
+            Image.asset('assets/images/HUST_icon.png'),
+            Text(
               'Welcome Back to AllHust',
               style: TextStyle(
                 fontSize: 24.0,
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: theme.colorScheme.onPrimary,
               ),
             ),
             const SizedBox(height: 16.0),
             TextField(
               focusNode: emailFocusNode,
-              style: const TextStyle(color: Colors.white),
-              decoration: const InputDecoration(
+              style: TextStyle(color: theme.colorScheme.onPrimary),
+              decoration: InputDecoration(
                 labelText: 'Email',
-                labelStyle: TextStyle(color: Colors.white70),
+                labelStyle: TextStyle(color: theme.colorScheme.onPrimary.withOpacity(0.7)),
                 enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.all(Radius.circular(8.0)),
-                  borderSide: BorderSide(color: Colors.white),
+                  borderRadius: const BorderRadius.all(Radius.circular(20.0)),
+                  borderSide: BorderSide(color: theme.colorScheme.onPrimary),
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.all(Radius.circular(8.0)),
-                  borderSide: BorderSide(color: Colors.white),
+                  borderRadius: const BorderRadius.all(Radius.circular(20.0)),
+                  borderSide: BorderSide(color: theme.colorScheme.onPrimary),
                 ),
               ),
             ),
             const SizedBox(height: 16.0),
             TextField(
               obscureText: _obscureText,
-              style: const TextStyle(color: Colors.white),
+              style: TextStyle(color: theme.colorScheme.onPrimary),
               decoration: InputDecoration(
                 labelText: 'Password',
-                labelStyle: const TextStyle(color: Colors.white70),
-                enabledBorder: const OutlineInputBorder(
-                  borderRadius: BorderRadius.all(Radius.circular(8.0)),
-                  borderSide: BorderSide(color: Colors.white),
+                labelStyle: TextStyle(color: theme.colorScheme.onPrimary.withOpacity(0.7)),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: const BorderRadius.all(Radius.circular(20.0)),
+                  borderSide: BorderSide(color: theme.colorScheme.onPrimary),
                 ),
-                focusedBorder: const OutlineInputBorder(
-                  borderRadius: BorderRadius.all(Radius.circular(8.0)),
-                  borderSide: BorderSide(color: Colors.white),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: const BorderRadius.all(Radius.circular(20.0)),
+                  borderSide: BorderSide(color: theme.colorScheme.onPrimary),
                 ),
-                prefixIcon: const Icon(Icons.lock, color: Colors.white),
+                prefixIcon: Icon(Icons.lock, color: theme.colorScheme.onPrimary),
                 suffixIcon: IconButton(
                   icon: Icon(
                     _obscureText ? Icons.visibility : Icons.visibility_off,
-                    color: Colors.white,
+                    color: theme.colorScheme.onPrimary,
                   ),
                   onPressed: _togglePasswordVisibility,
                 ),
@@ -100,9 +102,11 @@ class SignInScreenState extends State<SignInScreen> {
                 // Handle sign in logic here
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor:
-                    Colors.red[900], 
+                backgroundColor: theme.colorScheme.onPrimary,
+                foregroundColor: theme.colorScheme.primary,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20.0),
+                ),
               ),
               child: const Text(
                 'SIGN IN',
@@ -116,29 +120,26 @@ class SignInScreenState extends State<SignInScreen> {
                   context: context,
                   builder: (BuildContext context) {
                     return AlertDialog(
-                      backgroundColor:
-                          Colors.white, 
-                      title: const Center(
+                      backgroundColor: theme.colorScheme.onPrimary,
+                      title: Center(
                         child: Text(
                           'To retrieve a new password, please enter either your school-provided email address or your student ID (if you are a student).',
-                          style: TextStyle(fontSize: 14.0, color: Colors.black),
+                          style: TextStyle(fontSize: 14.0, color: theme.colorScheme.primary),
                           textAlign: TextAlign.center,
                         ),
                       ),
-                      content: const TextField(
-                        style: TextStyle(color: Colors.black),
+                      content: TextField(
+                        style: TextStyle(color: theme.colorScheme.primary),
                         decoration: InputDecoration(
                           labelText: 'Enter your email',
-                          labelStyle: TextStyle(color: Colors.black),
+                          labelStyle: TextStyle(color: theme.colorScheme.primary),
                           enabledBorder: OutlineInputBorder(
-                            borderRadius:
-                                BorderRadius.all(Radius.circular(8.0)),
-                            borderSide: BorderSide(color: Colors.black),
+                            borderRadius: const BorderRadius.all(Radius.circular(20.0)),
+                            borderSide: BorderSide(color: theme.colorScheme.primary),
                           ),
                           focusedBorder: OutlineInputBorder(
-                            borderRadius:
-                                BorderRadius.all(Radius.circular(8.0)),
-                            borderSide: BorderSide(color: Colors.black),
+                            borderRadius: const BorderRadius.all(Radius.circular(20.0)),
+                            borderSide: BorderSide(color: theme.colorScheme.primary),
                           ),
                         ),
                       ),
@@ -147,23 +148,23 @@ class SignInScreenState extends State<SignInScreen> {
                           onPressed: () {
                             Navigator.of(context).pop();
                           },
-                          child: const Text('Cancel',
-                              style: TextStyle(color: Colors.red)),
+                          child: Text('Cancel',
+                              style: TextStyle(color: theme.colorScheme.primary)),
                         ),
                         TextButton(
                           onPressed: () {
                             // Handle forgot password logic here
                           },
-                          child: const Text('Submit',
-                              style: TextStyle(color: Colors.blue)),
+                          child: Text('Submit',
+                              style: TextStyle(color: theme.colorScheme.primary)),
                         ),
                       ],
                     );
                   },
                 );
               },
-              child: const Text('Forgot Password?',
-                  style: TextStyle(color: Colors.white)),
+              child: Text('Forgot Password?',
+                  style: TextStyle(color: theme.colorScheme.onPrimary)),
             ),
           ],
         ),

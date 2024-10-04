@@ -57,6 +57,7 @@ class SignUpScreenState extends State<SignUpScreen> {
           key: _formKey,
           child: Column(
             children: [
+              Image.asset('assets/images/HUST_icon.png'),
               Text(
                 'Welcome to AllHust',
                 style: TextStyle(
@@ -266,8 +267,14 @@ class SignUpScreenState extends State<SignUpScreen> {
                 onPressed: () {
                   Navigator.pushNamed(context, AppRoutes.signin);
                 },
-                child: Text('Sign in with username/password',
-                    style: TextStyle(color: theme.colorScheme.onPrimary)),
+                child: Text(
+                  'Sign in with username/password',
+                  style: TextStyle(
+                    color: theme.colorScheme.onPrimary,
+                    decoration: TextDecoration.underline,
+                    decorationColor: Colors.white,
+                  ),
+                ),
               ),
             ],
           ),
