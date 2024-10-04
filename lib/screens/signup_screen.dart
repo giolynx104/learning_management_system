@@ -13,6 +13,7 @@ class SignUpScreenState extends State<SignUpScreen> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
   bool _isEmailExisting = false;
+  bool _obscureText = true;
 
   @override
   void initState() {
@@ -33,6 +34,12 @@ class SignUpScreenState extends State<SignUpScreen> {
   void _checkExistingEmail() {
     setState(() {
       _isEmailExisting = _emailController.text.trim() == 'existed@email.com';
+    });
+  }
+
+  void _togglePasswordVisibility() {
+    setState(() {
+      _obscureText = !_obscureText;
     });
   }
 
@@ -57,6 +64,7 @@ class SignUpScreenState extends State<SignUpScreen> {
           key: _formKey,
           child: Column(
             children: [
+              Image.asset('assets/images/HUST_icon.png'),
               Text(
                 'Welcome to AllHust',
                 style: TextStyle(
@@ -177,7 +185,7 @@ class SignUpScreenState extends State<SignUpScreen> {
                 ),
               const SizedBox(height: 16.0),
               TextFormField(
-                obscureText: true,
+                obscureText: _obscureText,
                 style: TextStyle(color: theme.colorScheme.onPrimary),
                 decoration: InputDecoration(
                   labelText: 'Password',
@@ -196,7 +204,14 @@ class SignUpScreenState extends State<SignUpScreen> {
                     borderRadius: const BorderRadius.all(Radius.circular(8.0)),
                     borderSide: BorderSide(color: theme.colorScheme.onPrimary),
                   ),
-                  suffixIcon: Icon(Icons.lock, color: theme.colorScheme.onPrimary),
+                  prefixIcon: Icon(Icons.lock, color: theme.colorScheme.onPrimary),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscureText ? Icons.visibility : Icons.visibility_off,
+                      color: theme.colorScheme.onPrimary,
+                    ),
+                    onPressed: _togglePasswordVisibility,
+                  ),
                   errorStyle: const TextStyle(color: Colors.yellow),
                 ),
                 validator: (value) {
@@ -266,8 +281,14 @@ class SignUpScreenState extends State<SignUpScreen> {
                 onPressed: () {
                   Navigator.pushNamed(context, AppRoutes.signin);
                 },
-                child: Text('Sign in with username/password',
-                    style: TextStyle(color: theme.colorScheme.onPrimary)),
+                child: Text(
+                  'Sign in with username/password',
+                  style: TextStyle(
+                    color: theme.colorScheme.onPrimary,
+                    decoration: TextDecoration.underline,
+                    decorationColor: Colors.white,
+                  ),
+                ),
               ),
             ],
           ),
