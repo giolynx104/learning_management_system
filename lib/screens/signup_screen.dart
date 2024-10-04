@@ -66,63 +66,73 @@ class SignUpScreenState extends State<SignUpScreen> {
                 ),
               ),
               const SizedBox(height: 16.0),
-              TextFormField(
-                focusNode: firstNameFocusNode,
-                style: TextStyle(color: theme.colorScheme.onPrimary),
-                decoration: InputDecoration(
-                  labelText: 'First Name',
-                  labelStyle: TextStyle(color: theme.colorScheme.onPrimary),
-                  filled: true,
-                  fillColor: theme.colorScheme.primary,
-                  border: OutlineInputBorder(
-                    borderRadius: const BorderRadius.all(Radius.circular(8.0)),
-                    borderSide: BorderSide(color: theme.colorScheme.onPrimary),
+              Row(
+                children: [
+                  Expanded(
+                    flex: 1,
+                    child: TextFormField(
+                      focusNode: firstNameFocusNode,
+                      style: TextStyle(color: theme.colorScheme.onPrimary),
+                      decoration: InputDecoration(
+                        labelText: 'First Name',
+                        labelStyle: TextStyle(color: theme.colorScheme.onPrimary),
+                        filled: true,
+                        fillColor: theme.colorScheme.primary,
+                        border: OutlineInputBorder(
+                          borderRadius: const BorderRadius.all(Radius.circular(8.0)),
+                          borderSide: BorderSide(color: theme.colorScheme.onPrimary),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: const BorderRadius.all(Radius.circular(8.0)),
+                          borderSide: BorderSide(color: theme.colorScheme.onPrimary),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: const BorderRadius.all(Radius.circular(8.0)),
+                          borderSide: BorderSide(color: theme.colorScheme.onPrimary),
+                        ),
+                        errorStyle: const TextStyle(color: Colors.yellow),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'First name is required';
+                        }
+                        return null;
+                      },
+                    ),
                   ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: const BorderRadius.all(Radius.circular(8.0)),
-                    borderSide: BorderSide(color: theme.colorScheme.onPrimary),
+                  const SizedBox(width: 16.0),
+                  Expanded(
+                    flex: 2,
+                    child: TextFormField(
+                      style: TextStyle(color: theme.colorScheme.onPrimary),
+                      decoration: InputDecoration(
+                        labelText: 'Last Name',
+                        labelStyle: TextStyle(color: theme.colorScheme.onPrimary),
+                        filled: true,
+                        fillColor: theme.colorScheme.primary,
+                        border: OutlineInputBorder(
+                          borderRadius: const BorderRadius.all(Radius.circular(8.0)),
+                          borderSide: BorderSide(color: theme.colorScheme.onPrimary),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: const BorderRadius.all(Radius.circular(8.0)),
+                          borderSide: BorderSide(color: theme.colorScheme.onPrimary),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: const BorderRadius.all(Radius.circular(8.0)),
+                          borderSide: BorderSide(color: theme.colorScheme.onPrimary),
+                        ),
+                        errorStyle: const TextStyle(color: Colors.yellow),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Last name is required';
+                        }
+                        return null;
+                      },
+                    ),
                   ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: const BorderRadius.all(Radius.circular(8.0)),
-                    borderSide: BorderSide(color: theme.colorScheme.onPrimary),
-                  ),
-                  errorStyle: const TextStyle(color: Colors.yellow),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'First name is required';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16.0),
-              TextFormField(
-                style: TextStyle(color: theme.colorScheme.onPrimary),
-                decoration: InputDecoration(
-                  labelText: 'Last Name',
-                  labelStyle: TextStyle(color: theme.colorScheme.onPrimary),
-                  filled: true,
-                  fillColor: theme.colorScheme.primary,
-                  border: OutlineInputBorder(
-                    borderRadius: const BorderRadius.all(Radius.circular(8.0)),
-                    borderSide: BorderSide(color: theme.colorScheme.onPrimary),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: const BorderRadius.all(Radius.circular(8.0)),
-                    borderSide: BorderSide(color: theme.colorScheme.onPrimary),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: const BorderRadius.all(Radius.circular(8.0)),
-                    borderSide: BorderSide(color: theme.colorScheme.onPrimary),
-                  ),
-                  errorStyle: const TextStyle(color: Colors.yellow),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Last name is required';
-                  }
-                  return null;
-                },
+                ],
               ),
               const SizedBox(height: 16.0),
               TextFormField(
