@@ -11,6 +11,8 @@ class SignUpScreen extends StatefulWidget {
 class SignUpScreenState extends State<SignUpScreen> {
   final FocusNode firstNameFocusNode = FocusNode();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final TextEditingController _emailController = TextEditingController();
+  bool _isEmailExisting = false;
 
   @override
   void initState() {
@@ -18,12 +20,20 @@ class SignUpScreenState extends State<SignUpScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       FocusScope.of(context).requestFocus(firstNameFocusNode);
     });
+    _emailController.addListener(_checkExistingEmail);
   }
 
   @override
   void dispose() {
     firstNameFocusNode.dispose();
+    _emailController.dispose();
     super.dispose();
+  }
+
+  void _checkExistingEmail() {
+    setState(() {
+      _isEmailExisting = _emailController.text.trim() == 'existed@email.com';
+    });
   }
 
   @override
@@ -116,6 +126,7 @@ class SignUpScreenState extends State<SignUpScreen> {
               ),
               const SizedBox(height: 16.0),
               TextFormField(
+                controller: _emailController,
                 style: TextStyle(color: theme.colorScheme.onPrimary),
                 decoration: InputDecoration(
                   labelText: 'Email',
@@ -140,9 +151,20 @@ class SignUpScreenState extends State<SignUpScreen> {
                   if (value == null || value.isEmpty) {
                     return 'Email is required';
                   }
+                  if (_isEmailExisting) {
+                    return 'This email is already registered';
+                  }
                   return null;
                 },
               ),
+              if (_isEmailExisting)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8.0),
+                  child: Text(
+                    'This email is already registered. Please use a different email.',
+                    style: TextStyle(color: Colors.yellow),
+                  ),
+                ),
               const SizedBox(height: 16.0),
               TextFormField(
                 obscureText: true,
