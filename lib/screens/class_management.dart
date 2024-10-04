@@ -61,14 +61,6 @@ class ClassManagementScreenState extends State<ClassManagementScreen> {
     }
   }
 
-  void _removeSelectedClasses() {
-    setState(() {
-      _searchedClassCodes.removeWhere((classCode) =>
-          _selectedRowIndices.contains(_searchedClassCodes.indexOf(classCode)));
-      _selectedRowIndices.clear();
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(

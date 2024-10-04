@@ -158,8 +158,8 @@ class SignUpScreenState extends State<SignUpScreen> {
                 },
               ),
               if (_isEmailExisting)
-                Padding(
-                  padding: const EdgeInsets.only(top: 8.0),
+                const Padding(
+                  padding: EdgeInsets.only(top: 8.0),
                   child: Text(
                     'This email is already registered. Please use a different email.',
                     style: TextStyle(color: Colors.yellow),
