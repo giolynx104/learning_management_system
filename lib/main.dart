@@ -13,10 +13,14 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Learning Management System',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.red[900]!),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.red[900]!,
+          primary: Colors.red[900]!,
+          onPrimary: Colors.white,
+        ),
         useMaterial3: true,
       ),
-      initialRoute: AppRoutes.signup,
+      initialRoute: AppRoutes.classRegistration,
       onGenerateRoute: AppRoutes.generateRoute,
     );
   }
