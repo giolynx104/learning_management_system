@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:learning_management_system/screens/create_survey_screen.dart';
 import 'package:learning_management_system/screens/submit_survey_screen.dart';
 import 'package:learning_management_system/screens/survey_list_screen.dart';
+import 'package:learning_management_system/screens/class_registration_screen.dart';
 import 'package:learning_management_system/screens/signup_screen.dart';
 import 'package:learning_management_system/screens/signin_screen.dart';
 
@@ -11,6 +12,7 @@ class AppRoutes {
   static const String createSurvey = '/create_survey';
   static const String submitSurvey = '/submit_survey';
   static const String surveyList = '/survey_list';
+  static const String classRegistration = '/class_registration';
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -35,8 +37,11 @@ class AppRoutes {
         );
       case surveyList:
         return MaterialPageRoute(builder: (_) => const SurveyListScreen());
+      case classRegistration:
+        return MaterialPageRoute(builder: (_) => const ClassRegistrationScreen());
       default:
-        return MaterialPageRoute(builder: (_) => const SignUpScreen());
+        return MaterialPageRoute(builder: (_) => const SignInScreen());
     }
   }
 }
+
