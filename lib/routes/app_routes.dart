@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:learning_management_system/screens/class_registration_screen.dart';
 import 'package:learning_management_system/screens/signup_screen.dart';
 import 'package:learning_management_system/screens/signin_screen.dart';
-import 'package:learning_management_system/screens/class_management.dart';
+import 'package:learning_management_system/screens/class_management_screen.dart';
 import 'package:learning_management_system/screens/create_class_screen.dart';
 import 'package:learning_management_system/screens/modify_class_screen.dart';
 import 'package:learning_management_system/screens/roll_call_management_screen.dart';
