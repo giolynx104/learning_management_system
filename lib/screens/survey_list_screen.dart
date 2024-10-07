@@ -161,58 +161,55 @@ class SurveyTabContent extends StatelessWidget {
 
           return Padding(
             padding: const EdgeInsets.fromLTRB(12.0, 10.0, 12.0, 4.0),
-            child: Container(
-              padding: const EdgeInsets.all(10.0),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                border: Border.all(color: Colors.grey),
-                borderRadius: BorderRadius.circular(5.0),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Display the end time at the top
-                  Text(
-                    endTimeFormatted,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16, // Adjust font size as needed
+            child: InkWell(  // Make the entire container clickable
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => SubmitSurveyScreen(
+                      survey: SmallSurvey(
+                        name: survey.name,
+                        description: survey.description,
+                        file: survey.file,
+                        answerDescription: survey.answerDescription,
+                        answerFile: survey.answerFile,
+                        endTime: survey.endTime,
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 8.0), // Space between end time and survey name
-                  Text(survey.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
-                  if (survey.description != null)
-                    Text(survey.description!, style: const TextStyle(color: Colors.grey)),
-                  const SizedBox(height: 8.0),
-                  // Only display the turn-in time if it's not null
-                  if (survey.turnInTime != null)
+                );
+              },
+              child: Container(
+                padding: const EdgeInsets.all(10.0),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  border: Border.all(color: Colors.grey),
+                  borderRadius: BorderRadius.circular(5.0),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Display the end time at the top
                     Text(
-                      'Đã nộp vào lúc $turnInTimeFormatted!',
+                      endTimeFormatted,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16, // Adjust font size as needed
+                      ),
                     ),
-                  Text('Lớp: ${survey.className}'),
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => SubmitSurveyScreen(
-                            survey: SmallSurvey(name: survey.name,
-                              description: survey.description,
-                              file: survey.file,
-                              answerDescription: survey.answerDescription,
-                              answerFile: survey.answerFile,
-                              endTime: survey.endTime), // Replace with your actual Survey object
-                          ),
-                        ),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red[900],
-                      foregroundColor: Colors.red[900], // Changed to a deeper, richer red color
-                    ),
-                    child: const Text('Mở bài kiểm tra', style: TextStyle(color: Colors.white)),
-                  ),
-                ],
+                    const SizedBox(height: 8.0), // Space between end time and survey name
+                    Text(survey.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
+                    if (survey.description != null)
+                      Text(survey.description!, style: const TextStyle(color: Colors.black)),
+                    const SizedBox(height: 8.0),
+                    // Only display the turn-in time if it's not null
+                    if (survey.turnInTime != null)
+                      Text(
+                        'Đã nộp vào lúc $turnInTimeFormatted',
+                      ),
+                    Text('Lớp: ${survey.className}'),
+                  ],
+                ),
               ),
             ),
           );
@@ -221,3 +218,4 @@ class SurveyTabContent extends StatelessWidget {
     );
   }
 }
+

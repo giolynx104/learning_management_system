@@ -38,6 +38,9 @@ class SubmitSurveyScreenState extends State<SubmitSurveyScreen> {
 
   // Controllers for TextFields
   final TextEditingController _descriptionController = TextEditingController();
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _surveyDescriptionController = TextEditingController();
+  final TextEditingController _answerDescriptionController = TextEditingController();
 
   String? _fileName; // Holds the name of the selected file
 
@@ -49,7 +52,25 @@ class SubmitSurveyScreenState extends State<SubmitSurveyScreen> {
     // Directly use the passed survey
     survey = widget.survey;
 
+    // Set the initial value for the read-only fields
+    _nameController.text = survey.name;
+    if (survey.description != null) {
+      _surveyDescriptionController.text = survey.description!;
+    }
+    if (survey.answerDescription != null) {
+      _answerDescriptionController.text = survey.answerDescription!;
+    }
+
     _descriptionController.addListener(_validateForm);
+  }
+
+  @override
+  void dispose() {
+    _descriptionController.dispose();
+    _nameController.dispose();
+    _surveyDescriptionController.dispose();
+    _answerDescriptionController.dispose();
+    super.dispose();
   }
 
   // Method to validate the form based on conditions
@@ -63,11 +84,6 @@ class SubmitSurveyScreenState extends State<SubmitSurveyScreen> {
     });
   }
 
-  @override
-  void dispose() {
-    _descriptionController.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -108,11 +124,12 @@ class SubmitSurveyScreenState extends State<SubmitSurveyScreen> {
           children: [
             const SizedBox(height: 16.0),
             TextField(
+              controller: _nameController, // Use controller instead of hintText
               readOnly: true,
               style: TextStyle(color: Colors.red[900]),
               decoration: InputDecoration(
-                hintText: survey.name,
-                hintStyle: TextStyle(color: Colors.red[900]),
+                labelText: 'Tên bài kiểm tra', // Label will always stay at top left
+                labelStyle: TextStyle(color: Colors.red[300]),
                 filled: true,
                 fillColor: Colors.white70,
                 enabledBorder: const OutlineInputBorder(
@@ -126,13 +143,15 @@ class SubmitSurveyScreenState extends State<SubmitSurveyScreen> {
               ),
             ),
             const SizedBox(height: 16.0),
-            if (survey.description != null)...[
+
+            if (survey.description != null) ...[
               TextField(
+                controller: _surveyDescriptionController, // Use controller instead of hintText
                 readOnly: true,
                 style: TextStyle(color: Colors.red[900]),
                 decoration: InputDecoration(
-                  hintText: survey.description,
-                  hintStyle: TextStyle(color: Colors.red[900]),
+                  labelText: 'Mô tả', // Label will stay at top left
+                  labelStyle: TextStyle(color: Colors.red[300]),
                   filled: true,
                   fillColor: Colors.white70,
                   alignLabelWithHint: true,
@@ -176,7 +195,7 @@ class SubmitSurveyScreenState extends State<SubmitSurveyScreen> {
               },
               style: TextStyle(color: Colors.red[900]),
               decoration: InputDecoration(
-                labelText: 'Mô tả',
+                labelText: 'Mô tả nộp bài',
                 labelStyle: TextStyle(color: Colors.red[300]),
                 filled: true,
                 fillColor: Colors.white70,
@@ -273,30 +292,50 @@ class SubmitSurveyScreenState extends State<SubmitSurveyScreen> {
                     ),
                   ),
             const SizedBox(height: 16.0),
-            if (survey.endTime.isAfter(DateTime.now()))...[
-              ElevatedButton(
-                onPressed: _isSubmitEnabled
-                    ? () {
-                  // Handle submit logic here
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Nộp bài kiểm tra thành công")),
-                  );
-                }
-                    : null, // Disable the button if the form is not valid
-                style: ElevatedButton.styleFrom(
-                  backgroundColor:
-                  _isSubmitEnabled ? Colors.red[900] : Colors.grey,
-                  foregroundColor: Colors.white,
-                ),
-                child: const Text(
-                  'Submit',
-                  style: TextStyle(
-                      fontSize: 16.0,
-                      fontStyle: FontStyle.italic,
-                      fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ],
+            // Inside the build method:
+            survey.endTime.isAfter(DateTime.now())
+                ? ElevatedButton(
+              onPressed: _isSubmitEnabled
+                  ? () {
+                // Handle submit logic here
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Nộp bài kiểm tra thành công")),
+                );
+              }
+                  : null, // Disable the button if the form is not valid
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _isSubmitEnabled ? Colors.red[900] : Colors.grey,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text(
+                'Submit',  // Display "Submit" if the deadline has not passed
+                style: TextStyle(
+                    fontSize: 16.0,
+                    fontStyle: FontStyle.italic,
+                    fontWeight: FontWeight.bold),
+              ),
+            )
+                : ElevatedButton(
+              onPressed: _isSubmitEnabled
+                  ? () {
+                // Handle submit logic for late turn-in here
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Turned in late")),
+                );
+              }
+                  : null, // Disable the button if the form is not valid
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _isSubmitEnabled ? Colors.red[900] : Colors.grey,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text(
+                'Turn in late', // Display "Turn in late" if the deadline has passed
+                style: TextStyle(
+                    fontSize: 16.0,
+                    fontStyle: FontStyle.italic,
+                    fontWeight: FontWeight.bold),
+              ),
+            ),
           ],
         ),
       ),
