@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:learning_management_system/routes/app_routes.dart';
 import 'package:file_picker/file_picker.dart';
 
 class SubmitSurveyScreen extends StatefulWidget {
   // Required parameter for Survey
   final SmallSurvey survey;
 
-  SubmitSurveyScreen({
+  const SubmitSurveyScreen({
     super.key,
     required this.survey, // Make survey a required parameter
   });
