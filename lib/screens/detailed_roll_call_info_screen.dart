@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class DetailedRollCallInfoScreen extends ConsumerStatefulWidget {
-  const DetailedRollCallInfoScreen({Key? key}) : super(key: key);
+  const DetailedRollCallInfoScreen({super.key});
 
   @override
   ConsumerState<DetailedRollCallInfoScreen> createState() =>
@@ -119,9 +119,9 @@ class Student {
 }
 
 final List<Student> mockStudents = [
-  Student(name: 'John Doe', id: 'S001', totalAbsences: 3),
-  Student(name: 'Jane Smith', id: 'S002', totalAbsences: 1),
-  Student(name: 'Bob Johnson', id: 'S003', totalAbsences: 2),
-  Student(name: 'Alice Brown', id: 'S004', totalAbsences: 0),
-  Student(name: 'Charlie Davis', id: 'S005', totalAbsences: 4),
+  const Student(name: 'John Doe', id: 'S001', totalAbsences: 3),
+  const Student(name: 'Jane Smith', id: 'S002', totalAbsences: 1),
+  const Student(name: 'Bob Johnson', id: 'S003', totalAbsences: 2),
+  const Student(name: 'Alice Brown', id: 'S004', totalAbsences: 0),
+  const Student(name: 'Charlie Davis', id: 'S005', totalAbsences: 4),
 ];
