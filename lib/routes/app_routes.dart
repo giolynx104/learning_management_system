@@ -7,7 +7,7 @@ class AppRoutes {
   static const String signup = '/signup';
   static const String signin = '/signin';
   static const String createAssignment ='/Assignment';
-  static const String uploadFile ='uploadFile';
+  static const String uploadFile ='/uploadFile';
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
       // case signup:
@@ -15,11 +15,11 @@ class AppRoutes {
       // case signin:
       //   return MaterialPageRoute(builder: (_) => const SignInScreen());
       case createAssignment:
-        return MaterialPageRoute(builder: (_) =>  CreateSurveyScreen());
+        // return MaterialPageRoute(builder: (_) =>  CreateSurveyScreen());
       case uploadFile:
         return MaterialPageRoute(builder: (_) =>  UploadFileScreen());
       default:
-        return MaterialPageRoute(builder: (_) =>   CreateSurveyScreen());
+        return MaterialPageRoute(builder: (_) =>   UploadFileScreen());
 
         // return MaterialPageRoute(builder: (_) => const SignUpScreen());
     }
