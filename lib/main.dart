@@ -8,18 +8,19 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Learning Management System',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.red[900]!,
+          primary: Colors.red[900]!,
+          onPrimary: Colors.white,
+        ),
         useMaterial3: true,
       ),
-      // initialRoute: AppRoutes.signup,
-      initialRoute: AppRoutes.createAssignment,
-
+      initialRoute: AppRoutes.surveyList,
       onGenerateRoute: AppRoutes.generateRoute,
     );
   }
