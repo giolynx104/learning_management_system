@@ -20,7 +20,7 @@ class MyApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      initialRoute: AppRoutes.surveyList,
+      initialRoute: AppRoutes.uploadFile,
       onGenerateRoute: AppRoutes.generateRoute,
     );
   }

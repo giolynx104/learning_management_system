@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 
 class UploadFileScreen extends StatefulWidget {
   const UploadFileScreen({super.key});
 
   @override
-  _UploadFileScreenState createState() => _UploadFileScreenState();
+  State<UploadFileScreen> createState() => _UploadFileScreenState();
 }
 
 class _UploadFileScreenState extends State<UploadFileScreen> {
@@ -25,14 +24,15 @@ class _UploadFileScreenState extends State<UploadFileScreen> {
 
   // Hàm chọn file
   Future<void> _pickFiles() async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles(allowMultiple: true);
+    FilePickerResult? result =
+        await FilePicker.platform.pickFiles(allowMultiple: true);
     if (result != null) {
       setState(() {
         selectedFiles.addAll(result.files.map((file) => {
-          'name': file.name,
-          'size': file.size,
-          'path': file.path,
-        }));
+              'name': file.name,
+              'size': file.size,
+              'path': file.path,
+            }));
       });
     }
   }
@@ -68,7 +68,8 @@ class _UploadFileScreenState extends State<UploadFileScreen> {
             TextButton(
               onPressed: () {
                 setState(() {
-                  selectedFiles[index]['name'] = controller.text; // Cập nhật tên file
+                  selectedFiles[index]['name'] =
+                      controller.text; // Cập nhật tên file
                 });
                 Navigator.of(context).pop(); // Đóng dialog sau khi cập nhật
               },
@@ -115,8 +116,13 @@ class _UploadFileScreenState extends State<UploadFileScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Upload Files - Teams Style',style: TextStyle(color: Colors.white)),
+        title: Text('Upload Files - Teams Style',
+            style: TextStyle(color: Colors.white)),
         backgroundColor: Color(0xFFCF1133),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -126,9 +132,10 @@ class _UploadFileScreenState extends State<UploadFileScreen> {
               children: [
                 ElevatedButton.icon(
                   onPressed: _pickFiles,
-                  icon: Icon(Icons.attach_file,color: Colors.white),
-                  label: Text('Chọn File' , style: TextStyle(color: Colors.white) // Màu chữ
-                  ),
+                  icon: Icon(Icons.attach_file, color: Colors.white),
+                  label: Text('Chọn File',
+                      style: TextStyle(color: Colors.white) // Màu chữ
+                      ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Color(0xFFCF1133),
                   ),
@@ -138,11 +145,12 @@ class _UploadFileScreenState extends State<UploadFileScreen> {
                   onPressed: () {
                     // Hàm gửi file (chưa triển khai)
                   },
-                  child: Text('Gửi'
-                  , style: TextStyle(color: Colors.white), // Màu chữ
-                  ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Color(0xFFCF1133),
+                  ),
+                  child: Text(
+                    'Gửi',
+                    style: TextStyle(color: Colors.white),
                   ),
                 ),
               ],

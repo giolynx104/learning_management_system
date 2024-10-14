@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 
 class AbsenceRequestScreen extends StatefulWidget {
+  const AbsenceRequestScreen({super.key});
+
   @override
-  _AbsenceRequestScreen createState() => _AbsenceRequestScreen();
+  State<AbsenceRequestScreen> createState() => _AbsenceRequestScreenState();
 }
 
-class _AbsenceRequestScreen extends State<AbsenceRequestScreen> {
+class _AbsenceRequestScreenState extends State<AbsenceRequestScreen> {
   final _formKey = GlobalKey<FormState>();
   String? _startTime;
   String? _endTime;
@@ -19,7 +21,7 @@ class _AbsenceRequestScreen extends State<AbsenceRequestScreen> {
         title: const SizedBox(
           height: 100,
           child:  Column(
-            crossAxisAlignment: CrossAxisAlignment.center, // can giua
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Padding(padding: EdgeInsets.all(20.0),
                   child: Text('HUST', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 30, color: Colors.white))
@@ -39,7 +41,7 @@ class _AbsenceRequestScreen extends State<AbsenceRequestScreen> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {
-            Navigator.of(context).pop(); // Navigate back
+            Navigator.of(context).pop();
           },
         ),
       ),
@@ -51,7 +53,6 @@ class _AbsenceRequestScreen extends State<AbsenceRequestScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // TextField for "Tên bài kiểm tra"
               TextFormField(
                 decoration: const InputDecoration(
                     labelText: 'Tên bài kiểm tra*',
@@ -67,7 +68,6 @@ class _AbsenceRequestScreen extends State<AbsenceRequestScreen> {
               ),
               const SizedBox(height: 16.0),
 
-              // TextField for "Mô tả"
               TextFormField(
                 decoration: const InputDecoration(
                   labelText: 'Mô tả',
@@ -77,13 +77,11 @@ class _AbsenceRequestScreen extends State<AbsenceRequestScreen> {
               ),
               const SizedBox(height: 16.0),
 
-              // Button for "Tải tài liệu lên"
               ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.red[900],
                 ),
                 onPressed: () {
-                  // Logic to upload file
                 },
                 icon: const Icon(Icons.upload_file, color: Colors.white),
                 label: const Text('Tải tài liệu lên',
@@ -91,7 +89,6 @@ class _AbsenceRequestScreen extends State<AbsenceRequestScreen> {
               ),
               const SizedBox(height: 16.0),
 
-              // Dropdowns for "Bắt đầu" and "Kết thúc"
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -142,17 +139,15 @@ class _AbsenceRequestScreen extends State<AbsenceRequestScreen> {
               ),
               const SizedBox(height: 32.0),
 
-              // Submit button
               Center(
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red[900], // Button color
+                    backgroundColor: Colors.red[900],
                     padding: const EdgeInsets.symmetric(
                         horizontal: 24.0, vertical: 12.0),
                   ),
                   onPressed: () {
                     if (_formKey.currentState!.validate()) {
-                      // Submit logic
                     }
                   },
                   child: const Text('Submit',
