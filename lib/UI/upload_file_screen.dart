@@ -35,7 +35,7 @@ class _UploadFileScreenState extends State<UploadFileScreen> {
         }));
       });
     }
-  }
+  }                           
 
   // Hàm xóa file khỏi danh sách
   void _removeFile(int index) {
