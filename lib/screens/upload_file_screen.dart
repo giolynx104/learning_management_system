@@ -14,7 +14,6 @@ class _UploadFileScreenState extends State<UploadFileScreen> {
   @override
   void initState() {
     super.initState();
-    // Thêm một vài file demo vào danh sách khi ứng dụng khởi động
     selectedFiles = [
       {'name': 'Document1.pdf', 'size': 1024},
       {'name': 'Image2.jpg', 'size': 2048},
@@ -22,7 +21,6 @@ class _UploadFileScreenState extends State<UploadFileScreen> {
     ];
   }
 
-  // Hàm chọn file
   Future<void> _pickFiles() async {
     FilePickerResult? result =
         await FilePicker.platform.pickFiles(allowMultiple: true);
@@ -37,14 +35,12 @@ class _UploadFileScreenState extends State<UploadFileScreen> {
     }
   }
 
-  // Hàm xóa file khỏi danh sách
   void _removeFile(int index) {
     setState(() {
       selectedFiles.removeAt(index);
     });
   }
 
-  // Hàm sửa tên file
   Future<void> _editFileName(int index) async {
     String currentName = selectedFiles[index]['name'];
     TextEditingController controller = TextEditingController(text: currentName);
@@ -61,17 +57,16 @@ class _UploadFileScreenState extends State<UploadFileScreen> {
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(); // Đóng dialog mà không làm gì
+                Navigator.of(context).pop();
               },
               child: Text('Hủy'),
             ),
             TextButton(
               onPressed: () {
                 setState(() {
-                  selectedFiles[index]['name'] =
-                      controller.text; // Cập nhật tên file
+                  selectedFiles[index]['name'] = controller.text;
                 });
-                Navigator.of(context).pop(); // Đóng dialog sau khi cập nhật
+                Navigator.of(context).pop();
               },
               child: Text('Lưu'),
             ),
@@ -81,7 +76,6 @@ class _UploadFileScreenState extends State<UploadFileScreen> {
     );
   }
 
-  // Widget hiển thị danh sách file đã chọn
   Widget _buildFileList() {
     return ListView.builder(
       itemCount: selectedFiles.length,
@@ -90,19 +84,19 @@ class _UploadFileScreenState extends State<UploadFileScreen> {
         return Card(
           margin: const EdgeInsets.symmetric(vertical: 5),
           child: ListTile(
-            leading: Icon(Icons.insert_drive_file, color: Colors.blue),
+            leading: Icon(Icons.insert_drive_file, color: Theme.of(context).colorScheme.primary),
             title: Text(file['name']),
             subtitle: Text('${(file['size'] / 1024).toStringAsFixed(2)} MB'),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 IconButton(
-                  icon: Icon(Icons.edit, color: Colors.green),
-                  onPressed: () => _editFileName(index), // Nút sửa
+                  icon: Icon(Icons.edit, color: Theme.of(context).colorScheme.primary),
+                  onPressed: () => _editFileName(index),
                 ),
                 IconButton(
-                  icon: Icon(Icons.delete, color: Colors.red),
-                  onPressed: () => _removeFile(index), // Nút xóa
+                  icon: Icon(Icons.delete, color: Theme.of(context).colorScheme.error),
+                  onPressed: () => _removeFile(index),
                 ),
               ],
             ),
@@ -116,11 +110,11 @@ class _UploadFileScreenState extends State<UploadFileScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Upload Files - Teams Style',
-            style: TextStyle(color: Colors.white)),
-        backgroundColor: Color(0xFFCF1133),
+        title: Text('Upload File',
+            style: TextStyle(color: Theme.of(context).colorScheme.onPrimary)),
+        backgroundColor: Theme.of(context).colorScheme.primary,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.white),
+          icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onPrimary),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
@@ -132,25 +126,24 @@ class _UploadFileScreenState extends State<UploadFileScreen> {
               children: [
                 ElevatedButton.icon(
                   onPressed: _pickFiles,
-                  icon: Icon(Icons.attach_file, color: Colors.white),
+                  icon: Icon(Icons.attach_file, color: Theme.of(context).colorScheme.onPrimary),
                   label: Text('Chọn File',
-                      style: TextStyle(color: Colors.white) // Màu chữ
+                      style: TextStyle(color: Theme.of(context).colorScheme.onPrimary)
                       ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Color(0xFFCF1133),
+                    backgroundColor: Theme.of(context).colorScheme.primary,
                   ),
                 ),
                 Spacer(),
                 ElevatedButton(
                   onPressed: () {
-                    // Hàm gửi file (chưa triển khai)
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Color(0xFFCF1133),
+                    backgroundColor: Theme.of(context).colorScheme.primary,
                   ),
                   child: Text(
                     'Gửi',
-                    style: TextStyle(color: Colors.white),
+                    style: TextStyle(color: Theme.of(context).colorScheme.onPrimary),
                   ),
                 ),
               ],
