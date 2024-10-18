@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:learning_management_system/screens/signup_screen.dart';
 import 'package:learning_management_system/screens/signin_screen.dart';
-import 'package:learning_management_system/UI/createAssigment.dart';
-import 'package:learning_management_system/UI/upload_file_screen.dart';
-import 'package:learning_management_system/UI/chat_screen.dart';  // Import ChatScreen
+import 'package:learning_management_system/screens/createAssigment.dart';
+import 'package:learning_management_system/screens/upload_file_screen.dart';
+import 'package:learning_management_system/screens/chat_screen.dart';  // Import ChatScreen
 class AppRoutes {
   static const String signup = '/signup';
   static const String signin = '/signin';
