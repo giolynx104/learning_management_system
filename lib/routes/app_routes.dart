@@ -11,6 +11,7 @@ import 'package:learning_management_system/screens/modify_class_screen.dart';
 import 'package:learning_management_system/screens/roll_call_management_screen.dart';
 import 'package:learning_management_system/screens/detailed_roll_call_info_screen.dart';
 import 'package:learning_management_system/screens/roll_call_action_screen.dart';
+
 import 'package:learning_management_system/screens/upload_file_screen.dart';
 
 class AppRoutes {
@@ -28,7 +29,7 @@ class AppRoutes {
   static const String rollCallAction = '/roll_call_action';
   static const String createAssignment = '/create_assignment';
   static const String uploadFile = '/upload_file';
-
+  
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
       case signup:

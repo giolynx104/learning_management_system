@@ -21,7 +21,8 @@ class MyApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      initialRoute: AppRoutes.classManagement,
+
+      initialRoute: AppRoutes.signup,
       onGenerateRoute: AppRoutes.generateRoute,
     );
   }
