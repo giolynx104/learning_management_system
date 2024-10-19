@@ -20,7 +20,11 @@ class MyApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
+<<<<<<< HEAD
+      initialRoute: AppRoutes.signup,
+=======
       initialRoute: AppRoutes.uploadFile,
+>>>>>>> origin/develop
       onGenerateRoute: AppRoutes.generateRoute,
     );
   }

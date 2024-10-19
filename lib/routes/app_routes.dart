@@ -5,6 +5,9 @@ import 'package:learning_management_system/screens/survey_list_screen.dart';
 import 'package:learning_management_system/screens/class_registration_screen.dart';
 import 'package:learning_management_system/screens/signup_screen.dart';
 import 'package:learning_management_system/screens/signin_screen.dart';
+import 'package:learning_management_system/screens/class_management.dart';
+import 'package:learning_management_system/screens/create_class_screen.dart';
+import 'package:learning_management_system/screens/modify_class_screen.dart';
 import 'package:learning_management_system/screens/upload_file_screen.dart';
 
 class AppRoutes {
@@ -16,7 +19,9 @@ class AppRoutes {
   static const String classRegistration = '/class_registration';
   static const String createAssignment = '/Assignment';
   static const String uploadFile = '/uploadFile';
-
+  static const String classManagement = '/class_management';
+  static const String createClass = '/create_class';
+  static const String modifyClass = '/modify_class';
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
       case signup:
@@ -41,10 +46,15 @@ class AppRoutes {
       case surveyList:
         return MaterialPageRoute(builder: (_) => const SurveyListScreen());
       case classRegistration:
-        return MaterialPageRoute(
-            builder: (_) => const ClassRegistrationScreen());
+        return MaterialPageRoute(builder: (_) => const ClassRegistrationScreen());
+      case classManagement:
+        return MaterialPageRoute(builder: (_) => const ClassManagementScreen());
+      case createClass:
+        return MaterialPageRoute(builder: (_) => const CreateClassScreen());
+      case modifyClass:
+        return MaterialPageRoute(builder: (_) => const ModifyClassScreen());
       case createAssignment:
-        return MaterialPageRoute(builder: (_) => CreateSurveyScreen());
+        return MaterialPageRoute(builder: (_) => const CreateAssignmentScreen());
       case uploadFile:
         return MaterialPageRoute(builder: (_) => const UploadFileScreen());
       default:
