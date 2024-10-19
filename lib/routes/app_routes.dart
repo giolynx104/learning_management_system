@@ -5,9 +5,13 @@ import 'package:learning_management_system/screens/survey_list_screen.dart';
 import 'package:learning_management_system/screens/class_registration_screen.dart';
 import 'package:learning_management_system/screens/signup_screen.dart';
 import 'package:learning_management_system/screens/signin_screen.dart';
-import 'package:learning_management_system/screens/class_management.dart';
+import 'package:learning_management_system/screens/class_management_screen.dart';
 import 'package:learning_management_system/screens/create_class_screen.dart';
 import 'package:learning_management_system/screens/modify_class_screen.dart';
+import 'package:learning_management_system/screens/roll_call_management_screen.dart';
+import 'package:learning_management_system/screens/detailed_roll_call_info_screen.dart';
+import 'package:learning_management_system/screens/roll_call_action_screen.dart';
+
 import 'package:learning_management_system/screens/upload_file_screen.dart';
 
 class AppRoutes {
@@ -17,11 +21,15 @@ class AppRoutes {
   static const String submitSurvey = '/submit_survey';
   static const String surveyList = '/survey_list';
   static const String classRegistration = '/class_registration';
-  static const String createAssignment = '/Assignment';
-  static const String uploadFile = '/uploadFile';
   static const String classManagement = '/class_management';
   static const String createClass = '/create_class';
   static const String modifyClass = '/modify_class';
+  static const String rollCall = '/roll_call';
+  static const String detailedRollCall = '/detailed_roll_call';
+  static const String rollCallAction = '/roll_call_action';
+  static const String createAssignment = '/create_assignment';
+  static const String uploadFile = '/upload_file';
+  
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
       case signup:
@@ -53,8 +61,14 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => const CreateClassScreen());
       case modifyClass:
         return MaterialPageRoute(builder: (_) => const ModifyClassScreen());
-      case createAssignment:
-        return MaterialPageRoute(builder: (_) => const CreateAssignmentScreen());
+      case rollCall:
+        return MaterialPageRoute(builder: (_) => const RollCallScreen());
+      case detailedRollCall:
+        return MaterialPageRoute(builder: (_) => const DetailedRollCallInfoScreen());
+      case rollCallAction:
+        return MaterialPageRoute(builder: (_) => const RollCallActionScreen());
+      // case createAssignment:
+      //   return MaterialPageRoute(builder: (_) => const CreateAssignmentScreen());
       case uploadFile:
         return MaterialPageRoute(builder: (_) => const UploadFileScreen());
       default:
