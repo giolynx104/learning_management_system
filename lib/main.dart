@@ -22,7 +22,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
 
-      initialRoute: AppRoutes.signup,
+      initialRoute: AppRoutes.rollCall,
       onGenerateRoute: AppRoutes.generateRoute,
     );
   }

@@ -34,17 +34,37 @@ class _RollCallActionScreenState extends ConsumerState<RollCallActionScreen> {
       barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Cancel Roll Call'),
-          content: const Text('Are you sure you want to cancel this roll call?'),
+          title: Text(
+            'Cancel Roll Call',
+            style: TextStyle(color: Theme.of(context).colorScheme.primary),
+          ),
+          content: const Text(
+            'Are you sure you want to cancel this roll call?',
+            style: TextStyle(fontSize: 18),
+          ),
           actions: <Widget>[
-            TextButton(
-              child: const Text('No'),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.surface,
+                foregroundColor: Theme.of(context).colorScheme.onSurface,
+              ),
+              child: const Text(
+                'No',
+                style: TextStyle(fontSize: 16),
+              ),
               onPressed: () {
                 Navigator.of(context).pop();
               },
             ),
-            TextButton(
-              child: const Text('Yes'),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.error,
+                foregroundColor: Theme.of(context).colorScheme.onError,
+              ),
+              child: const Text(
+                'Yes',
+                style: TextStyle(fontSize: 16),
+              ),
               onPressed: () {
                 Navigator.of(context).pop();
                 Navigator.of(context).pushReplacementNamed(AppRoutes.rollCall);
@@ -66,7 +86,7 @@ class _RollCallActionScreenState extends ConsumerState<RollCallActionScreen> {
         children: [
           Container(
             padding: const EdgeInsets.all(16),
-            color: Theme.of(context).primaryColor,
+            color: Colors.red[900],
             child: SafeArea(
               bottom: false,
               child: Row(
@@ -109,9 +129,10 @@ class _RollCallActionScreenState extends ConsumerState<RollCallActionScreen> {
                   ElevatedButton(
                     onPressed: _showCancelConfirmationDialog,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).colorScheme.secondary,
+                      backgroundColor: Colors.white,
+                      foregroundColor: Colors.red[900],
                     ),
-                    child: const Text('Cancel'),
+                    child: const Center(child: Text('Cancel')),
                   ),
                 ],
               ),
