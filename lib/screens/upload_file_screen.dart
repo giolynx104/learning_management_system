@@ -49,17 +49,17 @@ class _UploadFileScreenState extends State<UploadFileScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text('Sửa tên file'),
+          title: const Text('Sửa tên file'),
           content: TextField(
             controller: controller,
-            decoration: InputDecoration(hintText: "Nhập tên mới"),
+            decoration: const InputDecoration(hintText: "Nhập tên mới"),
           ),
           actions: [
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
               },
-              child: Text('Hủy'),
+              child: const Text('Hủy'),
             ),
             TextButton(
               onPressed: () {
@@ -68,7 +68,7 @@ class _UploadFileScreenState extends State<UploadFileScreen> {
                 });
                 Navigator.of(context).pop();
               },
-              child: Text('Lưu'),
+              child: const Text('Lưu'),
             ),
           ],
         );
@@ -134,7 +134,7 @@ class _UploadFileScreenState extends State<UploadFileScreen> {
                     backgroundColor: Theme.of(context).colorScheme.primary,
                   ),
                 ),
-                Spacer(),
+                const Spacer(),
                 ElevatedButton(
                   onPressed: () {
                   },

@@ -5,6 +5,11 @@ import 'package:learning_management_system/screens/survey_list_screen.dart';
 import 'package:learning_management_system/screens/class_registration_screen.dart';
 import 'package:learning_management_system/screens/signup_screen.dart';
 import 'package:learning_management_system/screens/signin_screen.dart';
+<<<<<<< HEAD
+import 'package:learning_management_system/pages/studentHomePage.dart';
+import 'package:learning_management_system/pages/teacherHomePage.dart';
+import 'package:learning_management_system/pages/notificationPage.dart';
+=======
 import 'package:learning_management_system/screens/class_management_screen.dart';
 import 'package:learning_management_system/screens/create_class_screen.dart';
 import 'package:learning_management_system/screens/modify_class_screen.dart';
@@ -13,6 +18,7 @@ import 'package:learning_management_system/screens/detailed_roll_call_info_scree
 import 'package:learning_management_system/screens/roll_call_action_screen.dart';
 
 import 'package:learning_management_system/screens/upload_file_screen.dart';
+>>>>>>> develop
 
 class AppRoutes {
   static const String signup = '/signup';
@@ -21,6 +27,10 @@ class AppRoutes {
   static const String submitSurvey = '/submit_survey';
   static const String surveyList = '/survey_list';
   static const String classRegistration = '/class_registration';
+  static const String studentHomePage = '/studentHomePage';
+  static const String teacherHomePage = '/teacherHomePage';
+  static const String notificationPage = '/notificationPage';
+
   static const String classManagement = '/class_management';
   static const String createClass = '/create_class';
   static const String modifyClass = '/modify_class';
@@ -55,6 +65,12 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => const SurveyListScreen());
       case classRegistration:
         return MaterialPageRoute(builder: (_) => const ClassRegistrationScreen());
+      case studentHomePage:
+        return MaterialPageRoute(builder: (_) => const StudentHomePage());
+      case teacherHomePage:
+        return MaterialPageRoute(builder: (_) => const TeacherHomePage());
+      case notificationPage:
+        return MaterialPageRoute(builder: (_) => const NotificationPage());
       case classManagement:
         return MaterialPageRoute(builder: (_) => const ClassManagementScreen());
       case createClass:
