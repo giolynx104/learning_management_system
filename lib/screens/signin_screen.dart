@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_management_system/routes/app_routes.dart';
 import 'package:learning_management_system/providers/auth_provider.dart';
 import 'dart:io';
+import 'package:learning_management_system/services/storage_service.dart';
+import 'package:learning_management_system/models/user.dart';
 
 class SignInScreen extends ConsumerStatefulWidget {
   const SignInScreen({super.key});
@@ -17,13 +19,51 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   final TextEditingController _passwordController = TextEditingController();
   bool _obscureText = true;
   bool _isLoading = false;
+  final _storageService = StorageService();
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkExistingToken();
       FocusScope.of(context).requestFocus(emailFocusNode);
     });
+  }
+
+  Future<void> _checkExistingToken() async {
+    final token = await _storageService.getToken();
+    if (token != null) {
+      // TODO: Validate the token with the server
+      // For now, we'll assume it's valid and redirect to the home page
+      // In a real app, you should verify the token with your server
+      final user = await _getUserFromToken(token);
+      if (user != null) {
+        _redirectToHome(user);
+      }
+    }
+  }
+
+  Future<User?> _getUserFromToken(String token) async {
+    // TODO: Implement a method to get user details from the token
+    // This might involve making an API call to your server
+    // For now, we'll return a dummy user
+    return User(
+      id: 1,
+      username: 'dummyuser@example.com',
+      token: token,
+      active: 'Active',
+      role: 'STUDENT', // or 'TEACHER' based on your app's logic
+      classList: ['Dummy Class'],
+    );
+  }
+
+  void _redirectToHome(User user) {
+    ref.read(userProvider.notifier).state = user;
+    if (user.role.toLowerCase() == 'teacher') {
+      Navigator.pushReplacementNamed(context, AppRoutes.teacherHome);
+    } else if (user.role.toLowerCase() == 'student') {
+      Navigator.pushReplacementNamed(context, AppRoutes.studentHome);
+    }
   }
 
   @override
@@ -41,6 +81,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   }
 
   Future<void> _handleSignIn() async {
+    if (!mounted) return;
     setState(() {
       _isLoading = true;
     });
@@ -52,22 +93,23 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     };
 
     try {
-      final result = await ref.read(loginProvider(loginData).future);
-      final role = result['role'] as String;
+      final user = await ref.read(loginProvider(loginData).future);
       
+      if (!mounted) return;
+      
+      // Store the user data
+      ref.read(userProvider.notifier).state = user;
+
+      // Save the token
+      await _storageService.saveToken(user.token);
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Login successful!')),
       );
 
-      // Redirect based on role
-      if (role.toLowerCase() == 'teacher') {
-        Navigator.pushReplacementNamed(context, AppRoutes.teacherHome);
-      } else if (role.toLowerCase() == 'student') {
-        Navigator.pushReplacementNamed(context, AppRoutes.studentHome);
-      } else {
-        throw Exception('Unknown role: $role');
-      }
+      _redirectToHome(user);
     } catch (e) {
+      if (!mounted) return;
       String errorMessage;
       if (e is SocketException) {
         errorMessage = 'No internet connection. Please check your network and try again.';
@@ -81,6 +123,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
         SnackBar(content: Text(errorMessage)),
       );
     } finally {
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
       });
@@ -88,6 +131,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   }
 
   void _showNoInternetDialog() {
+    if (!mounted) return;
     showDialog(
       context: context,
       builder: (BuildContext context) {

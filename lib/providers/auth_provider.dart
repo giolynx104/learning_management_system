@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_management_system/services/auth_service.dart';
+import 'package:learning_management_system/models/user.dart';
 
 final authServiceProvider = Provider((ref) => AuthService());
 
@@ -13,7 +14,7 @@ final signUpProvider = FutureProvider.family<Map<String, dynamic>, Map<String, d
   );
 });
 
-final loginProvider = FutureProvider.family<Map<String, dynamic>, Map<String, dynamic>>((ref, loginData) async {
+final loginProvider = FutureProvider.family<User, Map<String, dynamic>>((ref, loginData) async {
   final authService = ref.watch(authServiceProvider);
   return authService.login(
     email: loginData['email'] as String,
@@ -21,3 +22,5 @@ final loginProvider = FutureProvider.family<Map<String, dynamic>, Map<String, dy
     deviceId: loginData['deviceId'] as int,
   );
 });
+
+final userProvider = StateProvider<User?>((ref) => null);

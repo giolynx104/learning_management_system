@@ -49,11 +49,14 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
 
       try {
         final result = await ref.read(signUpProvider(signUpData).future);
+        if (!mounted) return; // Add this check
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Sign up successful!')),
         );
         // Navigate to the next screen or perform any other action
+        Navigator.pushReplacementNamed(context, AppRoutes.signin);
       } catch (e) {
+        if (!mounted) return; // Add this check
         if (e.toString().contains('User already exists')) {
           _showUserExistsDialog();
         } else {
@@ -62,14 +65,17 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
           );
         }
       } finally {
-        setState(() {
-          _isLoading = false;
-        });
+        if (mounted) { // Add this check
+          setState(() {
+            _isLoading = false;
+          });
+        }
       }
     }
   }
 
   void _showUserExistsDialog() {
+    if (!mounted) return; // Add this check
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -87,7 +93,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
               child: const Text('Sign In'),
               onPressed: () {
                 Navigator.of(context).pop();
-                Navigator.pushNamed(context, AppRoutes.signin);
+                Navigator.pushReplacementNamed(context, AppRoutes.signin);
               },
             ),
           ],

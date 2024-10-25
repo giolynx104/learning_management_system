@@ -1,5 +1,6 @@
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:learning_management_system/models/user.dart';
 
 class AuthService {
   static const String _baseUrl = 'http://160.30.168.228:8080/it4788';
@@ -42,7 +43,7 @@ class AuthService {
     }
   }
 
-  Future<Map<String, dynamic>> login({
+  Future<User> login({
     required String email,
     required String password,
     required int deviceId,
@@ -64,11 +65,7 @@ class AuthService {
       final responseBody = jsonDecode(response.body);
 
       if (response.statusCode == 200) {
-        // Assuming the response includes a 'role' field
-        if (!responseBody.containsKey('role')) {
-          throw Exception('Role information is missing from the response');
-        }
-        return responseBody;
+        return User.fromJson(responseBody);
       } else if (response.statusCode == 401) {
         throw Exception('User not found or wrong password');
       } else {
