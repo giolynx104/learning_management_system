@@ -5,7 +5,7 @@ class PinnedItem extends StatelessWidget {
   final PinnedChannelModel channel;
   final VoidCallback onUnpinPressed;
 
-  const PinnedItem({
+  const PinnedItem({super.key, 
     required this.channel,
     required this.onUnpinPressed,
   });
@@ -13,11 +13,11 @@ class PinnedItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      leading: Icon(Icons.push_pin, color: Colors.red),
+      leading: const Icon(Icons.push_pin, color: Colors.red),
       title: Text(channel.name),
       subtitle: Text(channel.subtitle),
       trailing: IconButton(
-        icon: Icon(Icons.close),
+        icon: const Icon(Icons.close),
         onPressed: onUnpinPressed,  // Call the function when unpin is pressed
       ),
     );

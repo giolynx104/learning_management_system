@@ -6,7 +6,7 @@ class TeamsExpansionItem extends StatefulWidget {
   final IconData? icon;
   final VoidCallback onMorePressed;
  
-  const TeamsExpansionItem({
+  const TeamsExpansionItem({super.key, 
     required this.name,
     required this.color,
     this.icon,
@@ -37,13 +37,13 @@ class _TeamsExpansionItemState extends State<TeamsExpansionItem> {
       ),
       title: Text(widget.name),
       trailing:IconButton(
-            icon: Icon(Icons.more_horiz),
+            icon: const Icon(Icons.more_horiz),
             onPressed: widget.onMorePressed, 
           ),
       onExpansionChanged: (bool expanded) {
             setState(() => isExpanded = expanded); 
           },
-      children: [
+      children: const [
         ListTile(
           title: Text('Chung'),
           

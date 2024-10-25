@@ -1,4 +1,3 @@
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:learning_management_system/models/notifications.dart';
 class NotificationPage extends StatefulWidget {
