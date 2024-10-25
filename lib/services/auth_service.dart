@@ -64,15 +64,17 @@ class AuthService {
       final responseBody = jsonDecode(response.body);
 
       if (response.statusCode == 200) {
+        // Assuming the response includes a 'role' field
+        if (!responseBody.containsKey('role')) {
+          throw Exception('Role information is missing from the response');
+        }
         return responseBody;
       } else if (response.statusCode == 401) {
         throw Exception('User not found or wrong password');
       } else {
-        // Handle other status codes
         throw Exception('Failed to login: ${responseBody['message']}');
       }
     } catch (e) {
-      // Rethrow the exception to be handled in the UI
       rethrow;
     }
   }
