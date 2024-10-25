@@ -12,7 +12,6 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      debugShowCheckedModeBanner: false,
       title: 'Learning Management System',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
@@ -23,7 +22,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
 
-      initialRoute: AppRoutes.rollCall,
+      initialRoute: AppRoutes.signup,
       onGenerateRoute: AppRoutes.generateRoute,
     );
   }
