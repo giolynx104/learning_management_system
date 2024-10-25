@@ -12,3 +12,12 @@ final signUpProvider = FutureProvider.family<Map<String, dynamic>, Map<String, d
     role: signUpData['role'] as String,
   );
 });
+
+final loginProvider = FutureProvider.family<Map<String, dynamic>, Map<String, dynamic>>((ref, loginData) async {
+  final authService = ref.watch(authServiceProvider);
+  return authService.login(
+    email: loginData['email'] as String,
+    password: loginData['password'] as String,
+    deviceId: loginData['deviceId'] as int,
+  );
+});
