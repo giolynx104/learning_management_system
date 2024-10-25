@@ -4,14 +4,14 @@ import 'package:learning_management_system/components/pinned_item.dart';
 import 'package:learning_management_system/components/teams_item.dart';
 import 'package:learning_management_system/models/pinnedChannel.dart';
 import 'package:learning_management_system/models/teams.dart';
-class TeacherHomePage extends StatefulWidget {
-   const TeacherHomePage({super.key});
+class StudentHomeScreen extends StatefulWidget {
+   const StudentHomeScreen({super.key});
 
   @override
-  State<TeacherHomePage> createState() => _TeacherHomePageState();
+  State<StudentHomeScreen> createState() => _StudentHomeScreenState();
 }
 
-class _TeacherHomePageState extends State<TeacherHomePage> {
+class _StudentHomeScreenState extends State<StudentHomeScreen> {
   List<TeamsModel> teams = [];
   bool isClassesExpanded = false;
   bool isPinnedChannelExpanded = false;
@@ -68,7 +68,7 @@ class _TeacherHomePageState extends State<TeacherHomePage> {
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.notifications),
-            label: 'Noti',  
+            label: 'Noti',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.chat),
@@ -124,10 +124,7 @@ Widget _pinnedChannels() {
       leading: Icon(
         isClassesExpanded ? Icons.arrow_drop_down : Icons.arrow_right,
       ),
-      trailing: IconButton(
-        icon: const Icon(Icons.add),
-        onPressed: ()=> {},
-        ),
+      trailing: const SizedBox.shrink(),
       // tilePadding: EdgeInsets.zero,
       // childrenPadding:  EdgeInsets.zero,
       onExpansionChanged: (bool expanded) {
@@ -232,14 +229,14 @@ Widget _pinnedChannels() {
               ),
               ListTile(
                 leading: const Icon(Icons.visibility),
-                title: const Text('Điểm danh'),
+                title: const Text('Xin nghỉ'),
                 onTap: () {
                   Navigator.pop(context);
                 },
               ),
                 ListTile(
                 leading: const Icon(Icons.tag),
-                title: const Text('Giao bài tập'),
+                title: const Text('Bài tập'),
                 onTap: () {
                   Navigator.pop(context);
                 },

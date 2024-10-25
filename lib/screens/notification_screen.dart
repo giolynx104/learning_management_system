@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:learning_management_system/models/notifications.dart';
-class NotificationPage extends StatefulWidget {
-    const NotificationPage({super.key});
+class NotificationScreen extends StatefulWidget {
+    const NotificationScreen({super.key});
   @override
-  State<NotificationPage> createState() => _NotificationPageState();
+  State<NotificationScreen> createState() => _NotificationScreenState();
 }
 
-class _NotificationPageState extends State<NotificationPage> {
+class _NotificationScreenState extends State<NotificationScreen> {
   List<NotificationModel> notifications =[];
   bool connections =false;
 
