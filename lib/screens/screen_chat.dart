@@ -81,7 +81,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 fillColor: Theme.of(context).colorScheme.surface,
                 filled: true,
                 border: OutlineInputBorder(),
-                contentPadding: EdgeInsets.symmetric(vertical: 10.0),
+                contentPadding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
               ),
             ),
           ),
@@ -98,7 +98,10 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Chat'),
+        title: Text(
+          'Chat',
+          style: TextStyle(color: Theme.of(context).colorScheme.onPrimary),
+        ),
         backgroundColor: Theme.of(context).colorScheme.primary,
       ),
       body: Column(
