@@ -3,10 +3,10 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 
 class ChatScreen extends StatefulWidget {
-  const ChatScreen({super.key}); // Sử dụng cú pháp ngắn gọn cho key
+  const ChatScreen({super.key});
 
   @override
-  _ChatScreenState createState() => _ChatScreenState();
+  State<ChatScreen> createState() => _ChatScreenState();
 }
 
 class _ChatScreenState extends State<ChatScreen> {
@@ -14,7 +14,6 @@ class _ChatScreenState extends State<ChatScreen> {
   final List<Widget> _messages = [];
   final ImagePicker _picker = ImagePicker();
 
-  // Function to handle sending a text message
   void _sendMessage() {
     if (_controller.text.isNotEmpty) {
       setState(() {
@@ -24,20 +23,18 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
-  // Function to build a message container
   Widget _buildMessage(String message) {
     return Container(
       padding: const EdgeInsets.all(10.0),
       margin: const EdgeInsets.symmetric(vertical: 4.0),
       decoration: BoxDecoration(
-        color: Colors.blue[100],
+        color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
         borderRadius: BorderRadius.circular(8.0),
       ),
       child: Text(message),
     );
   }
 
-  // Function to pick an image from the camera or gallery
   Future<void> _pickImage(ImageSource source) async {
     final pickedFile = await _picker.pickImage(source: source);
     if (pickedFile != null) {
@@ -47,7 +44,6 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
-  // Function to build an image message container
   Widget _buildImageMessage(File imageFile) {
     return Container(
       padding: const EdgeInsets.all(8.0),
@@ -64,26 +60,25 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  // Function to build input area with message, camera, and gallery buttons
   Widget _buildInputArea() {
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: Row(
         children: [
           IconButton(
-            icon: const Icon(Icons.camera_alt, color: Colors.red),
+            icon: Icon(Icons.camera_alt, color: Theme.of(context).colorScheme.primary),
             onPressed: () => _pickImage(ImageSource.camera),
           ),
           IconButton(
-            icon: const Icon(Icons.photo, color: Colors.red),
+            icon: Icon(Icons.photo, color: Theme.of(context).colorScheme.primary),
             onPressed: () => _pickImage(ImageSource.gallery),
           ),
           Expanded(
             child: TextField(
               controller: _controller,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 hintText: 'Enter your message',
-                fillColor: Colors.white,
+                fillColor: Theme.of(context).colorScheme.surface,
                 filled: true,
                 border: OutlineInputBorder(),
                 contentPadding: EdgeInsets.symmetric(vertical: 10.0),
@@ -91,7 +86,7 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.send, color: Colors.red),
+            icon: Icon(Icons.send, color: Theme.of(context).colorScheme.primary),
             onPressed: _sendMessage,
           ),
         ],
@@ -99,13 +94,12 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  // Main build function for the ChatScreen widget
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Chat'),
-        backgroundColor: Colors.red,
+        backgroundColor: Theme.of(context).colorScheme.primary,
       ),
       body: Column(
         children: [

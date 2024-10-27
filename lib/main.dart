@@ -23,7 +23,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
 
-      initialRoute: AppRoutes.rollCall,
+      initialRoute: AppRoutes.screenChatStudent,
       onGenerateRoute: AppRoutes.generateRoute,
     );
   }
