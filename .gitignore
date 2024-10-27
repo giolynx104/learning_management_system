@@ -42,6 +42,9 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 /.cursorrules
+/.vscode
+# Generated files
+linux/flutter/generated_plugin_registrant.cc
 /.vscodelinux/flutter/generated_plugin_registrant.cc
 linux/flutter/generated_plugins.cmake
 macos/Flutter/GeneratedPluginRegistrant.swift
