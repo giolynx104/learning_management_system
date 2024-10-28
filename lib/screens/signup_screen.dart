@@ -5,6 +5,8 @@ import 'package:learning_management_system/providers/auth_provider.dart';
 import 'package:learning_management_system/components/auth_header.dart';
 import 'package:learning_management_system/components/auth_text_field.dart';
 import 'package:learning_management_system/widgets/custom_button.dart';
+import 'package:learning_management_system/services/verification_service.dart';
+import 'package:learning_management_system/widgets/verification_dialog.dart';
 
 class SignUpScreen extends ConsumerStatefulWidget {
   const SignUpScreen({super.key});
@@ -38,39 +40,68 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
 
   Future<void> _handleSignUp() async {
     if (_formKey.currentState!.validate()) {
-      setState(() {
-        _isLoading = true;
-      });
-
-      final signUpData = {
-        'email': _emailController.text,
-        'password': _passwordController.text,
-        'uuid': 11111,
-        'role': _selectedRole.toUpperCase(),
-        'fullName': _fullNameController.text,
-      };
+      setState(() => _isLoading = true);
 
       try {
+        // 1. Sign up the user
+        final signUpData = {
+          'email': _emailController.text,
+          'password': _passwordController.text,
+          'uuid': 11111,
+          'role': _selectedRole.toUpperCase(),
+          'fullName': _fullNameController.text,
+        };
+
         await ref.read(signUpProvider(signUpData).future);
+        
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Sign up successful!')),
+
+        // 2. Get verification code
+        final verificationCode = await ref
+            .read(verificationServiceProvider)
+            .getVerificationCode(
+              email: _emailController.text,
+              password: _passwordController.text,
+            );
+
+        if (!mounted) return;
+
+        // 3. Show verification dialog
+        final userId = await showDialog<int>(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => VerificationDialog(
+            email: _emailController.text,
+            verificationCode: verificationCode,
+          ),
         );
-        Navigator.pushReplacementNamed(context, AppRoutes.signin);
+
+        if (!mounted) return;
+
+        if (userId != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Email verified successfully!')),
+          );
+          Navigator.pushReplacementNamed(context, AppRoutes.signin);
+        }
       } catch (e) {
         if (!mounted) return;
+        
         if (e.toString().contains('User already exists')) {
           _showUserExistsDialog();
+        } else if (e.toString().contains('Email already verified')) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Email is already verified')),
+          );
+          Navigator.pushReplacementNamed(context, AppRoutes.signin);
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Sign up failed. Please try again.')),
+            SnackBar(content: Text('Error: ${e.toString()}')),
           );
         }
       } finally {
         if (mounted) {
-          setState(() {
-            _isLoading = false;
-          });
+          setState(() => _isLoading = false);
         }
       }
     }
