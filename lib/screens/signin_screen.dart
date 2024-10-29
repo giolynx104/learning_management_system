@@ -38,12 +38,17 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   }
 
   Future<void> _checkExistingToken() async {
-    final token = await _storageService.getToken();
-    if (token != null) {
-      final user = await _getUserFromToken(token);
-      if (user != null) {
-        _redirectToHome(user);
+    try {
+      final token = await _storageService.getToken();
+      if (token != null) {
+        final user = await _getUserFromToken(token);
+        if (!mounted) return;
+        if (user != null) {
+          _redirectToHome(user);
+        }
       }
+    } catch (e) {
+      debugPrint('Error checking token: $e');
     }
   }
 
@@ -60,6 +65,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   }
 
   void _redirectToHome(User user) {
+    if (!mounted) return;
     ref.read(userProvider.notifier).state = user;
     if (user.role.toLowerCase() == 'teacher') {
       Navigator.pushReplacementNamed(context, AppRoutes.teacherHome);
@@ -75,6 +81,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   }
 
   Future<void> _handleSignIn() async {
+    if (!mounted) return;
     setState(() {
       _isLoading = true;
     });
@@ -82,7 +89,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     final loginData = {
       'email': _emailController.text,
       'password': _passwordController.text,
-      'deviceId': 1, // You might want to generate this dynamically
+      'deviceId': 1,
     };
 
     try {
@@ -90,8 +97,14 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
       if (!mounted) return;
       
       ref.read(userProvider.notifier).state = user;
-      await _storageService.saveToken(user.token);
+      
+      await _storageService.saveUserSession(
+        token: user.token,
+        role: user.role,
+        userId: user.id,
+      );
 
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Login successful!')),
       );

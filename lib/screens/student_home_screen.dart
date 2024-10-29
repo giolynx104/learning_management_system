@@ -27,12 +27,13 @@ class _StudentHomeScreenState extends ConsumerState<StudentHomeScreen> {
       _selectedIndex = index;
     });
   }
-  void _getPinnedChanel(){
+
+  void _getPinnedChanel() {
     setState(() {
       pinnedChannels = PinnedChannelModel.getPinnedChannels();
     });
   }
-  
+
   void _getTeams() {
     setState(() {
       teams = TeamsModel.getTeams();
@@ -60,9 +61,9 @@ class _StudentHomeScreenState extends ConsumerState<StudentHomeScreen> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _pinnedChannels(), 
+                _pinnedChannels(),
                 const SizedBox(height: 20),
-                _teams(), 
+                _teams(),
               ],
             ),
           ],
@@ -77,7 +78,7 @@ class _StudentHomeScreenState extends ConsumerState<StudentHomeScreen> {
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.chat),
-            label: 'Chat', 
+            label: 'Chat',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.group),
@@ -95,33 +96,33 @@ class _StudentHomeScreenState extends ConsumerState<StudentHomeScreen> {
     );
   }
 
-Widget _pinnedChannels() {
-  return ExpansionTile(
-    title: const Text("Pinned Channels"),
-    leading: Icon(
+  Widget _pinnedChannels() {
+    return ExpansionTile(
+      title: const Text("Pinned Channels"),
+      leading: Icon(
         isPinnedChannelExpanded ? Icons.arrow_drop_down : Icons.arrow_right,
       ),
-    trailing: const SizedBox.shrink(),
-    onExpansionChanged: (bool expanded) {
+      trailing: const SizedBox.shrink(),
+      onExpansionChanged: (bool expanded) {
         setState(() => isPinnedChannelExpanded = expanded);
       },
-    children: [
-      ListView.builder(
-        shrinkWrap: true,
-        padding: EdgeInsets.zero,
-        physics: const NeverScrollableScrollPhysics(),
-        itemCount: pinnedChannels.length,
-        itemBuilder: (context, index) {
-          var channel = pinnedChannels[index];
-          return PinnedItem(
-            channel: channel,
-            onUnpinPressed: () => _unpinChannel(channel),
-          );
-        },
-      ),
-    ],
-  );
-}
+      children: [
+        ListView.builder(
+          shrinkWrap: true,
+          padding: EdgeInsets.zero,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: pinnedChannels.length,
+          itemBuilder: (context, index) {
+            var channel = pinnedChannels[index];
+            return PinnedItem(
+              channel: channel,
+              onUnpinPressed: () => _unpinChannel(channel),
+            );
+          },
+        ),
+      ],
+    );
+  }
 
   Widget _teams() {
     return ExpansionTile(
@@ -138,7 +139,7 @@ Widget _pinnedChannels() {
       children: [
         ListView.builder(
           shrinkWrap: true,
-          padding:  EdgeInsets.zero,
+          padding: EdgeInsets.zero,
           physics: const NeverScrollableScrollPhysics(),
           itemCount: teams.length,
           itemBuilder: (context, index) {
@@ -203,7 +204,8 @@ Widget _pinnedChannels() {
       backgroundColor: Colors.red,
       elevation: 0.0,
       actions: [
-        Builder(  // Wrap the Padding with Builder
+        Builder(
+          // Wrap the Padding with Builder
           builder: (context) => Padding(
             padding: const EdgeInsets.only(right: 16.0),
             child: GestureDetector(
@@ -230,8 +232,10 @@ Widget _pinnedChannels() {
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.primary,
             ),
-            accountName: const Text('Student Name'), // Replace with actual user name
-            accountEmail: const Text('student@example.com'), // Replace with actual email
+            accountName:
+                const Text('Student Name'), // Replace with actual user name
+            accountEmail:
+                const Text('student@example.com'), // Replace with actual email
             currentAccountPicture: const CircleAvatar(
               backgroundColor: Colors.white,
               child: Icon(Icons.person, color: Colors.red),
@@ -277,7 +281,8 @@ Widget _pinnedChannels() {
               onPressed: () => Navigator.of(context).pop(),
             ),
             TextButton(
-              child: const Text('Sign Out', style: TextStyle(color: Colors.red)),
+              child:
+                  const Text('Sign Out', style: TextStyle(color: Colors.red)),
               onPressed: () async {
                 Navigator.of(context).pop(); // Close dialog
                 await _signOut(context);
@@ -292,7 +297,7 @@ Widget _pinnedChannels() {
   Future<void> _signOut(BuildContext context) async {
     try {
       final storageService = StorageService();
-      await storageService.deleteToken();
+      await storageService.clearUserSession(); // Use the new method
       
       if (!mounted) return;
       
@@ -313,11 +318,11 @@ Widget _pinnedChannels() {
   }
 
   void _unpinChannel(PinnedChannelModel channel) {
-  setState(() {
-    PinnedChannelModel.removePinnedChannel(channel);
-    pinnedChannels.removeWhere((pinned) => !pinned.isPinned);
-  });
-}
+    setState(() {
+      PinnedChannelModel.removePinnedChannel(channel);
+      pinnedChannels.removeWhere((pinned) => !pinned.isPinned);
+    });
+  }
 
   void _showTeamOptions(BuildContext context, TeamsModel team) {
     showModalBottomSheet(
@@ -330,7 +335,8 @@ Widget _pinnedChannels() {
             children: <Widget>[
               Text(
                 team.name,
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style:
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 10),
               ListTile(
@@ -347,7 +353,7 @@ Widget _pinnedChannels() {
                   Navigator.pop(context);
                 },
               ),
-                ListTile(
+              ListTile(
                 leading: const Icon(Icons.tag),
                 title: const Text('Bài tập'),
                 onTap: () {
