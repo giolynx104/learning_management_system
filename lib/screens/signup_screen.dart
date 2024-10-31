@@ -1,46 +1,138 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_management_system/routes/app_routes.dart';
+import 'package:learning_management_system/providers/auth_provider.dart';
+import 'package:learning_management_system/components/auth_header.dart';
+import 'package:learning_management_system/components/auth_text_field.dart';
+import 'package:learning_management_system/widgets/custom_button.dart';
+import 'package:learning_management_system/services/verification_service.dart';
+import 'package:learning_management_system/widgets/verification_dialog.dart';
 
-class SignUpScreen extends StatefulWidget {
+class SignUpScreen extends ConsumerStatefulWidget {
   const SignUpScreen({super.key});
 
   @override
-  SignUpScreenState createState() => SignUpScreenState();
+  ConsumerState<SignUpScreen> createState() => _SignUpScreenState();
 }
 
-class SignUpScreenState extends State<SignUpScreen> {
-  final FocusNode firstNameFocusNode = FocusNode();
+class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
-  bool _isEmailExisting = false;
+  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _fullNameController = TextEditingController();
   bool _obscureText = true;
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      FocusScope.of(context).requestFocus(firstNameFocusNode);
-    });
-    _emailController.addListener(_checkExistingEmail);
-  }
+  String _selectedRole = 'Student';
+  bool _isLoading = false;
 
   @override
   void dispose() {
-    firstNameFocusNode.dispose();
     _emailController.dispose();
+    _passwordController.dispose();
+    _fullNameController.dispose();
     super.dispose();
-  }
-
-  void _checkExistingEmail() {
-    setState(() {
-      _isEmailExisting = _emailController.text.trim() == 'existed@email.com';
-    });
   }
 
   void _togglePasswordVisibility() {
     setState(() {
       _obscureText = !_obscureText;
     });
+  }
+
+  Future<void> _handleSignUp() async {
+    if (_formKey.currentState!.validate()) {
+      setState(() => _isLoading = true);
+
+      try {
+        // 1. Sign up the user
+        final signUpData = {
+          'email': _emailController.text,
+          'password': _passwordController.text,
+          'uuid': 11111,
+          'role': _selectedRole.toUpperCase(),
+          'fullName': _fullNameController.text,
+        };
+
+        await ref.read(signUpProvider(signUpData).future);
+        
+        if (!mounted) return;
+
+        // 2. Get verification code
+        final verificationCode = await ref
+            .read(verificationServiceProvider)
+            .getVerificationCode(
+              email: _emailController.text,
+              password: _passwordController.text,
+            );
+
+        if (!mounted) return;
+
+        // 3. Show verification dialog
+        final userId = await showDialog<int>(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => VerificationDialog(
+            email: _emailController.text,
+            verificationCode: verificationCode,
+          ),
+        );
+
+        if (!mounted) return;
+
+        if (userId != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Email verified successfully!')),
+          );
+          Navigator.pushReplacementNamed(context, AppRoutes.signin);
+        }
+      } catch (e) {
+        if (!mounted) return;
+        
+        if (e.toString().contains('User already exists')) {
+          _showUserExistsDialog();
+        } else if (e.toString().contains('Email already verified')) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Email is already verified')),
+          );
+          Navigator.pushReplacementNamed(context, AppRoutes.signin);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error: ${e.toString()}')),
+          );
+        }
+      } finally {
+        if (mounted) {
+          setState(() => _isLoading = false);
+        }
+      }
+    }
+  }
+
+  void _showUserExistsDialog() {
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('User Already Exists'),
+          content: const Text('An account with this email already exists. Would you like to sign in instead?'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: const Text('Sign In'),
+              onPressed: () {
+                Navigator.of(context).pop();
+                Navigator.pushReplacementNamed(context, AppRoutes.signin);
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -58,240 +150,125 @@ class SignUpScreenState extends State<SignUpScreen> {
           },
         ),
       ),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
           child: Column(
             children: [
-              Image.asset('assets/images/HUST_icon.png'),
-              Text(
-                'Welcome to AllHust',
-                style: TextStyle(
-                  fontSize: 24.0,
-                  fontWeight: FontWeight.bold,
-                  color: theme.colorScheme.onPrimary,
-                ),
-              ),
-              const SizedBox(height: 16.0),
-              Row(
-                children: [
-                  Expanded(
-                    flex: 1,
-                    child: TextFormField(
-                      focusNode: firstNameFocusNode,
-                      style: TextStyle(color: theme.colorScheme.onPrimary),
-                      decoration: InputDecoration(
-                        labelText: 'First Name',
-                        labelStyle: TextStyle(color: theme.colorScheme.onPrimary),
-                        filled: true,
-                        fillColor: theme.colorScheme.primary,
-                        border: OutlineInputBorder(
-                          borderRadius: const BorderRadius.all(Radius.circular(8.0)),
-                          borderSide: BorderSide(color: theme.colorScheme.onPrimary),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: const BorderRadius.all(Radius.circular(8.0)),
-                          borderSide: BorderSide(color: theme.colorScheme.onPrimary),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: const BorderRadius.all(Radius.circular(8.0)),
-                          borderSide: BorderSide(color: theme.colorScheme.onPrimary),
-                        ),
-                        errorStyle: const TextStyle(color: Colors.yellow),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'First name is required';
-                        }
-                        return null;
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 16.0),
-                  Expanded(
-                    flex: 2,
-                    child: TextFormField(
-                      style: TextStyle(color: theme.colorScheme.onPrimary),
-                      decoration: InputDecoration(
-                        labelText: 'Last Name',
-                        labelStyle: TextStyle(color: theme.colorScheme.onPrimary),
-                        filled: true,
-                        fillColor: theme.colorScheme.primary,
-                        border: OutlineInputBorder(
-                          borderRadius: const BorderRadius.all(Radius.circular(8.0)),
-                          borderSide: BorderSide(color: theme.colorScheme.onPrimary),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: const BorderRadius.all(Radius.circular(8.0)),
-                          borderSide: BorderSide(color: theme.colorScheme.onPrimary),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: const BorderRadius.all(Radius.circular(8.0)),
-                          borderSide: BorderSide(color: theme.colorScheme.onPrimary),
-                        ),
-                        errorStyle: const TextStyle(color: Colors.yellow),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Last name is required';
-                        }
-                        return null;
-                      },
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16.0),
-              TextFormField(
-                controller: _emailController,
-                style: TextStyle(color: theme.colorScheme.onPrimary),
-                decoration: InputDecoration(
-                  labelText: 'Email',
-                  labelStyle: TextStyle(color: theme.colorScheme.onPrimary),
-                  filled: true,
-                  fillColor: theme.colorScheme.primary,
-                  border: OutlineInputBorder(
-                    borderRadius: const BorderRadius.all(Radius.circular(8.0)),
-                    borderSide: BorderSide(color: theme.colorScheme.onPrimary),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: const BorderRadius.all(Radius.circular(8.0)),
-                    borderSide: BorderSide(color: theme.colorScheme.onPrimary),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: const BorderRadius.all(Radius.circular(8.0)),
-                    borderSide: BorderSide(color: theme.colorScheme.onPrimary),
-                  ),
-                  errorStyle: const TextStyle(color: Colors.yellow),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Email is required';
-                  }
-                  if (_isEmailExisting) {
-                    return 'This email is already registered';
-                  }
-                  return null;
-                },
-              ),
-              if (_isEmailExisting)
-                const Padding(
-                  padding: EdgeInsets.only(top: 8.0),
-                  child: Text(
-                    'This email is already registered. Please use a different email.',
-                    style: TextStyle(color: Colors.yellow),
-                  ),
-                ),
-              const SizedBox(height: 16.0),
-              TextFormField(
-                obscureText: _obscureText,
-                style: TextStyle(color: theme.colorScheme.onPrimary),
-                decoration: InputDecoration(
-                  labelText: 'Password',
-                  labelStyle: TextStyle(color: theme.colorScheme.onPrimary),
-                  filled: true,
-                  fillColor: theme.colorScheme.primary,
-                  border: OutlineInputBorder(
-                    borderRadius: const BorderRadius.all(Radius.circular(8.0)),
-                    borderSide: BorderSide(color: theme.colorScheme.onPrimary),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: const BorderRadius.all(Radius.circular(8.0)),
-                    borderSide: BorderSide(color: theme.colorScheme.onPrimary),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: const BorderRadius.all(Radius.circular(8.0)),
-                    borderSide: BorderSide(color: theme.colorScheme.onPrimary),
-                  ),
-                  prefixIcon: Icon(Icons.lock, color: theme.colorScheme.onPrimary),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscureText ? Icons.visibility : Icons.visibility_off,
-                      color: theme.colorScheme.onPrimary,
-                    ),
-                    onPressed: _togglePasswordVisibility,
-                  ),
-                  errorStyle: const TextStyle(color: Colors.yellow),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Password is required';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16.0),
-              DropdownButtonFormField<String>(
-                dropdownColor: theme.colorScheme.primary,
-                decoration: InputDecoration(
-                  labelText: 'Role',
-                  labelStyle: TextStyle(color: theme.colorScheme.onPrimary),
-                  filled: true,
-                  fillColor: theme.colorScheme.primary,
-                  border: OutlineInputBorder(
-                    borderRadius: const BorderRadius.all(Radius.circular(8.0)),
-                    borderSide: BorderSide(color: theme.colorScheme.onPrimary),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: const BorderRadius.all(Radius.circular(8.0)),
-                    borderSide: BorderSide(color: theme.colorScheme.onPrimary),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: const BorderRadius.all(Radius.circular(8.0)),
-                    borderSide: BorderSide(color: theme.colorScheme.onPrimary),
-                  ),
-                  errorStyle: const TextStyle(color: Colors.yellow),
-                ),
-                value: 'Student',
-                items: [
-                  DropdownMenuItem(
-                    value: 'Student',
-                    child: Text('Student', style: TextStyle(color: theme.colorScheme.onPrimary)),
-                  ),
-                  DropdownMenuItem(
-                    value: 'Lecturer',
-                    child: Text('Lecturer', style: TextStyle(color: theme.colorScheme.onPrimary)),
-                  ),
-                ],
-                onChanged: (String? newValue) {
-                  // Handle role selection logic here
-                },
-                icon: Icon(Icons.arrow_drop_down, color: theme.colorScheme.onPrimary),
-                style: TextStyle(color: theme.colorScheme.onPrimary),
-              ),
+              const AuthHeader(title: 'Welcome to AllHust'),
+              _buildSignUpForm(),
               const SizedBox(height: 32.0),
-              ElevatedButton(
-                onPressed: () {
-                  if (_formKey.currentState!.validate()) {
-                    // Handle sign up logic here
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: theme.colorScheme.onPrimary,
-                  foregroundColor: theme.colorScheme.primary,
-                ),
-                child: const Text(
-                  'SIGN UP',
-                  style: TextStyle(fontSize: 18.0),
-                ),
+              CustomButton(
+                text: 'SIGN UP',
+                onPressed: _handleSignUp,
+                isLoading: _isLoading,
+                backgroundColor: theme.colorScheme.onPrimary,
+                textColor: theme.colorScheme.primary,
               ),
               const SizedBox(height: 16.0),
-              TextButton(
-                onPressed: () {
-                  Navigator.pushNamed(context, AppRoutes.signin);
-                },
-                child: Text(
-                  'Sign in with username/password',
-                  style: TextStyle(
-                    color: theme.colorScheme.onPrimary,
-                    decoration: TextDecoration.underline,
-                    decorationColor: Colors.white,
-                  ),
-                ),
-              ),
+              _buildSignInLink(),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSignUpForm() {
+    return Column(
+      children: [
+        AuthTextField(
+          controller: _fullNameController,
+          labelText: 'Full Name (Optional)',
+        ),
+        const SizedBox(height: 16.0),
+        AuthTextField(
+          controller: _emailController,
+          labelText: 'Email',
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'Email is required';
+            }
+            return null;
+          },
+        ),
+        const SizedBox(height: 16.0),
+        AuthTextField(
+          controller: _passwordController,
+          labelText: 'Password',
+          obscureText: _obscureText,
+          suffixIcon: IconButton(
+            icon: Icon(
+              _obscureText ? Icons.visibility : Icons.visibility_off,
+              color: Theme.of(context).colorScheme.onPrimary,
+            ),
+            onPressed: _togglePasswordVisibility,
+          ),
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'Password is required';
+            }
+            return null;
+          },
+        ),
+        const SizedBox(height: 16.0),
+        _buildRoleDropdown(),
+      ],
+    );
+  }
+
+  Widget _buildRoleDropdown() {
+    final theme = Theme.of(context);
+    return DropdownButtonFormField<String>(
+      dropdownColor: theme.colorScheme.primary,
+      decoration: InputDecoration(
+        labelText: 'Role',
+        labelStyle: TextStyle(color: theme.colorScheme.onPrimary),
+        filled: true,
+        fillColor: theme.colorScheme.primary,
+        border: OutlineInputBorder(
+          borderRadius: const BorderRadius.all(Radius.circular(8.0)),
+          borderSide: BorderSide(color: theme.colorScheme.onPrimary),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: const BorderRadius.all(Radius.circular(8.0)),
+          borderSide: BorderSide(color: theme.colorScheme.onPrimary),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: const BorderRadius.all(Radius.circular(8.0)),
+          borderSide: BorderSide(color: theme.colorScheme.onPrimary),
+        ),
+        errorStyle: const TextStyle(color: Colors.yellow),
+      ),
+      value: _selectedRole,
+      items: ['Student', 'Lecturer'].map((String value) {
+        return DropdownMenuItem<String>(
+          value: value,
+          child: Text(value, style: TextStyle(color: theme.colorScheme.onPrimary)),
+        );
+      }).toList(),
+      onChanged: (String? newValue) {
+        setState(() {
+          _selectedRole = newValue!;
+        });
+      },
+      icon: Icon(Icons.arrow_drop_down, color: theme.colorScheme.onPrimary),
+      style: TextStyle(color: theme.colorScheme.onPrimary),
+    );
+  }
+
+  Widget _buildSignInLink() {
+    return TextButton(
+      onPressed: () {
+        Navigator.pushNamed(context, AppRoutes.signin);
+      },
+      child: Text(
+        'Sign in with username/password',
+        style: TextStyle(
+          color: Theme.of(context).colorScheme.onPrimary,
+          decoration: TextDecoration.underline,
+          decorationColor: Colors.white,
         ),
       ),
     );

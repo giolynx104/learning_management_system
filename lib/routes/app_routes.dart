@@ -23,8 +23,8 @@ class AppRoutes {
   static const String submitSurvey = '/submit_survey';
   static const String surveyList = '/survey_list';
   static const String classRegistration = '/class_registration';
-  static const String studentHome = '/student_home_screen';
-  static const String teacherHome = '/teacher_home_screen';
+  static const String studentHome = '/student_home';
+  static const String teacherHome = '/teacher_home';
   static const String notification = '/notification_screen';
   static const String classManagement = '/class_management';
   static const String createClass = '/create_class';
@@ -86,11 +86,13 @@ class AppRoutes {
       case screenChatStudent:
         return MaterialPageRoute(builder: (_) => const ChatScreen());
       default:
-      // return MaterialPageRoute(builder: (_) => const SignInScreen());
-        return MaterialPageRoute(builder: (_) => const ChatScreen());
-
-
-
+        return MaterialPageRoute(
+          builder: (_) => Scaffold(
+            body: Center(
+              child: Text('No route defined for ${settings.name}'),
+            ),
+          ),
+        );
     }
   }
 }
