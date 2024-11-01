@@ -63,30 +63,34 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.notifications),
-            label: 'Noti',  
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.chat),
-            label: 'Chat', 
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.group),
-            label: 'Teams',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_today),
-            label: 'Calendar',
-          ),
-        ],
-        currentIndex: _selectedIndex,
-        selectedItemColor: Colors.blueAccent,
-        onTap: _onItemTapped,
-      ),
+      bottomNavigationBar: bottomNavBar(),
+    );
+  }
+
+  BottomNavigationBar bottomNavBar() {
+    return BottomNavigationBar(
+      type: BottomNavigationBarType.fixed,
+      items: const [
+        BottomNavigationBarItem(
+          icon: Icon(Icons.notifications),
+          label: 'Noti',  
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.chat),
+          label: 'Chat', 
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.group),
+          label: 'Teams',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.calendar_today),
+          label: 'Calendar',
+        ),
+      ],
+      currentIndex: _selectedIndex,
+      selectedItemColor: Colors.blueAccent,
+      onTap: _onItemTapped,
     );
   }
 
@@ -128,8 +132,6 @@ Widget _pinnedChannels() {
         icon: const Icon(Icons.add),
         onPressed: ()=> {},
         ),
-      // tilePadding: EdgeInsets.zero,
-      // childrenPadding:  EdgeInsets.zero,
       onExpansionChanged: (bool expanded) {
         setState(() => isClassesExpanded = expanded);
       },
@@ -224,26 +226,27 @@ Widget _pinnedChannels() {
               ),
               const SizedBox(height: 10),
               ListTile(
-                leading: const Icon(Icons.group),
+                leading: const Icon(Icons.description), 
                 title: const Text('Tài liệu'),
                 onTap: () {
                   Navigator.pop(context);
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.visibility),
+                leading: const Icon(Icons.check_circle_outline), 
                 title: const Text('Điểm danh'),
                 onTap: () {
                   Navigator.pop(context);
                 },
               ),
-                ListTile(
-                leading: const Icon(Icons.tag),
+              ListTile(
+                leading: const Icon(Icons.assignment),  
                 title: const Text('Giao bài tập'),
                 onTap: () {
                   Navigator.pop(context);
                 },
               ),
+
               ListTile(
                 leading: const Icon(Icons.exit_to_app),
                 title: const Text('Rời khỏi nhóm'),

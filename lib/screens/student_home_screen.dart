@@ -63,30 +63,34 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.notifications),
-            label: 'Noti',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.chat),
-            label: 'Chat', 
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.group),
-            label: 'Teams',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_today),
-            label: 'Calendar',
-          ),
-        ],
-        currentIndex: _selectedIndex,
-        selectedItemColor: Colors.blueAccent,
-        onTap: _onItemTapped,
-      ),
+      bottomNavigationBar: bottomNavBar(),
+    );
+  }
+
+  BottomNavigationBar bottomNavBar() {
+    return BottomNavigationBar(
+      type: BottomNavigationBarType.fixed,
+      items: const [
+        BottomNavigationBarItem(
+          icon: Icon(Icons.notifications),
+          label: 'Noti',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.chat),
+          label: 'Chat', 
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.group),
+          label: 'Teams',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.calendar_today),
+          label: 'Calendar',
+        ),
+      ],
+      currentIndex: _selectedIndex,
+      selectedItemColor: Colors.blueAccent,
+      onTap: _onItemTapped,
     );
   }
 
@@ -221,21 +225,21 @@ Widget _pinnedChannels() {
               ),
               const SizedBox(height: 10),
               ListTile(
-                leading: const Icon(Icons.group),
+                leading: const Icon(Icons.description),
                 title: const Text('Tài liệu'),
                 onTap: () {
                   Navigator.pop(context);
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.visibility),
+                leading: const Icon(Icons.event_busy),
                 title: const Text('Xin nghỉ'),
                 onTap: () {
                   Navigator.pop(context);
                 },
               ),
                 ListTile(
-                leading: const Icon(Icons.tag),
+                leading: const Icon(Icons.assignment),
                 title: const Text('Bài tập'),
                 onTap: () {
                   Navigator.pop(context);
