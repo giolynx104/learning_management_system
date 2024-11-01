@@ -7,6 +7,7 @@ import 'package:learning_management_system/components/auth_text_field.dart';
 import 'package:learning_management_system/widgets/custom_button.dart';
 import 'package:learning_management_system/services/storage_service.dart';
 import 'package:learning_management_system/models/user.dart';
+import 'package:learning_management_system/widgets/verification_dialog.dart';
 
 class SignInScreen extends ConsumerStatefulWidget {
   const SignInScreen({super.key});
@@ -56,7 +57,6 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     // TODO: Implement a method to get user details from the token
     return User(
       id: 1,
-      username: 'dummyuser@example.com',
       token: token,
       active: 'Active',
       role: 'STUDENT',
@@ -93,23 +93,66 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     };
 
     try {
-      final user = await ref.read(loginProvider(loginData).future);
-      if (!mounted) return;
+      final loginResponse = await ref.read(loginProvider(loginData).future);
       
-      ref.read(userProvider.notifier).state = user;
-      
-      await _storageService.saveUserSession(
-        token: user.token,
-        role: user.role,
-        userId: user.id,
-      );
+      if (loginResponse['needs_verification']) {
+        // Get new verification code
+        final verificationCode = await ref
+            .read(authServiceProvider)
+            .getVerifyCode(
+              email: loginData['email'] as String,
+              password: loginData['password'] as String,
+            );
+
+        if (!mounted) return;
+
+        // Show verification dialog
+        final verificationSuccess = await showDialog<bool>(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => VerificationDialog(
+            email: loginData['email'] as String,
+            verificationCode: verificationCode,
+          ),
+        );
+
+        if (!mounted) return;
+
+        if (verificationSuccess != true) {
+          throw Exception('Email verification failed');
+        }
+
+        // Try logging in again after verification
+        final secondLoginResponse = await ref.read(loginProvider(loginData).future);
+        if (secondLoginResponse['success'] == true) {
+          ref.read(userProvider.notifier).state = secondLoginResponse['user'] as User;
+        } else {
+          throw Exception('Login failed after verification');
+        }
+      } else if (loginResponse['success'] == true) {
+        ref.read(userProvider.notifier).state = loginResponse['user'] as User;
+      } else {
+        throw Exception('Login failed');
+      }
 
       if (!mounted) return;
+      
+      final currentUser = ref.read(userProvider);
+      if (currentUser == null) {
+        throw Exception('User state is null after login');
+      }
+
+      await _storageService.saveUserSession(
+        token: currentUser.token,
+        role: currentUser.role,
+        userId: currentUser.id,
+      );
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Login successful!')),
       );
 
-      _redirectToHome(user);
+      _redirectToHome(currentUser);
     } catch (e) {
       if (!mounted) return;
       String errorMessage = 'An unexpected error occurred. Please try again later.';
@@ -216,7 +259,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
           Navigator.pushNamed(context, AppRoutes.signup);
         },
         child: Text(
-          'Create new account',
+          'Create a new account',
           style: TextStyle(
             color: Theme.of(context).colorScheme.onPrimary,
             decoration: TextDecoration.underline,

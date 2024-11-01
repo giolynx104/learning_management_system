@@ -16,24 +16,27 @@ final signUpProvider = FutureProvider.family<Map<String, dynamic>, Map<String, d
   );
 });
 
-final loginProvider = FutureProvider.family<User, Map<String, dynamic>>((ref, loginData) async {
+final loginProvider = FutureProvider.family<Map<String, dynamic>, Map<String, dynamic>>((ref, loginData) async {
   final authService = ref.watch(authServiceProvider);
   final storageService = ref.watch(storageServiceProvider);
   
-  final user = await authService.login(
+  final response = await authService.login(
     email: loginData['email'] as String,
     password: loginData['password'] as String,
     deviceId: loginData['deviceId'] as int,
   );
 
-  // Save user session data after successful login
-  await storageService.saveUserSession(
-    token: user.token,
-    role: user.role,
-    userId: user.id,
-  );
+  if (response['success'] == true && !response['needs_verification']) {
+    final user = response['user'] as User;
+    // Save user session data after successful login
+    await storageService.saveUserSession(
+      token: user.token,
+      role: user.role,
+      userId: user.id,
+    );
+  }
 
-  return user;
+  return response;
 });
 
 final userProvider = StateProvider<User?>((ref) => null);
@@ -49,9 +52,10 @@ final userSessionProvider = FutureProvider<User?>((ref) async {
   if (token != null && role != null && userId != null) {
     return User(
       id: userId,
-      role: role,
       token: token,
-      // Add other required fields with default values or null
+      role: role,
+      active: 'Active', // Default value for existing sessions
+      classList: [], // Default empty list for existing sessions
     );
   }
   return null;

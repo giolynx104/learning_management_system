@@ -49,36 +49,25 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
           'password': _passwordController.text,
           'uuid': 11111,
           'role': _selectedRole.toUpperCase(),
-          'fullName': _fullNameController.text,
         };
 
-        await ref.read(signUpProvider(signUpData).future);
+        final signUpResponse = await ref.read(signUpProvider(signUpData).future);
         
         if (!mounted) return;
 
-        // 2. Get verification code
-        final verificationCode = await ref
-            .read(verificationServiceProvider)
-            .getVerificationCode(
-              email: _emailController.text,
-              password: _passwordController.text,
-            );
-
-        if (!mounted) return;
-
-        // 3. Show verification dialog
-        final userId = await showDialog<int>(
+        // 2. Show verification dialog with the code from signup response
+        final verificationSuccess = await showDialog<bool>(
           context: context,
           barrierDismissible: false,
           builder: (context) => VerificationDialog(
             email: _emailController.text,
-            verificationCode: verificationCode,
+            verificationCode: signUpResponse['verify_code'],
           ),
         );
 
         if (!mounted) return;
 
-        if (userId != null) {
+        if (verificationSuccess == true) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Email verified successfully!')),
           );
@@ -89,11 +78,6 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
         
         if (e.toString().contains('User already exists')) {
           _showUserExistsDialog();
-        } else if (e.toString().contains('Email already verified')) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Email is already verified')),
-          );
-          Navigator.pushReplacementNamed(context, AppRoutes.signin);
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Error: ${e.toString()}')),
