@@ -4,6 +4,8 @@ import 'package:learning_management_system/components/pinned_item.dart';
 import 'package:learning_management_system/components/teams_item.dart';
 import 'package:learning_management_system/models/pinnedChannel.dart';
 import 'package:learning_management_system/models/teams.dart';
+import 'package:go_router/go_router.dart';
+import 'package:learning_management_system/routes/routes.dart';
 class StudentHomeScreen extends StatefulWidget {
    const StudentHomeScreen({super.key});
 
@@ -63,34 +65,6 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: bottomNavBar(),
-    );
-  }
-
-  BottomNavigationBar bottomNavBar() {
-    return BottomNavigationBar(
-      type: BottomNavigationBarType.fixed,
-      items: const [
-        BottomNavigationBarItem(
-          icon: Icon(Icons.notifications),
-          label: 'Noti',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.chat),
-          label: 'Chat', 
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.group),
-          label: 'Teams',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.calendar_today),
-          label: 'Calendar',
-        ),
-      ],
-      currentIndex: _selectedIndex,
-      selectedItemColor: Colors.blueAccent,
-      onTap: _onItemTapped,
     );
   }
 
@@ -234,9 +208,9 @@ Widget _pinnedChannels() {
               ListTile(
                 leading: const Icon(Icons.event_busy),
                 title: const Text('Xin nghỉ'),
-                onTap: () {
-                  Navigator.pop(context);
-                },
+                onTap: () => context.push(
+                  Routes.nestedAbsentRequest
+                ) ,
               ),
                 ListTile(
                 leading: const Icon(Icons.assignment),
@@ -246,10 +220,18 @@ Widget _pinnedChannels() {
                 },
               ),
               ListTile(
+                leading: const Icon(Icons.list_alt),
+                title: const Text('Danh sách khảo sát'),
+                onTap: () => context.push(
+                  Routes.nestedSurveyList
+                ),
+              ),
+              ListTile(
                 leading: const Icon(Icons.exit_to_app),
                 title: const Text('Rời khỏi nhóm'),
                 onTap: () {
-                  Navigator.pop(context);
+                  Navigator.pop(context); 
+                  _showConfirmationDialog(context, team);
                 },
               ),
             ],
@@ -258,4 +240,30 @@ Widget _pinnedChannels() {
       },
     );
   }
+  void _showConfirmationDialog(BuildContext context, TeamsModel team) {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: const Text('Xác nhận'),
+        content: Text('Bạn có chắc chắn muốn rời khỏi nhóm "${team.name}"?'),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop(); 
+            },
+            child: const Text('Hủy'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop(); 
+            },
+            child: const Text('Xác nhận'),
+          ),
+        ],
+      );
+    },
+  );
+  }
 }
+

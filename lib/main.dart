@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:learning_management_system/layout/student_layout.dart';
+import 'package:learning_management_system/layout/teacher_layout.dart';
 import 'package:learning_management_system/routes/app_routes.dart';
+import 'package:learning_management_system/routes/router.dart';
 
 void main() {
   runApp(const ProviderScope(child: MyApp()));
@@ -12,6 +15,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      home: const StudentLayout(),
       debugShowCheckedModeBanner: false,
       title: 'Learning Management System',
       theme: ThemeData(
@@ -22,8 +26,6 @@ class MyApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      initialRoute: AppRoutes.studentHome,
-      onGenerateRoute: AppRoutes.generateRoute,
     );
   }
 }
