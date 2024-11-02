@@ -8,6 +8,9 @@ import 'package:learning_management_system/services/storage_service.dart';
 import 'package:learning_management_system/providers/auth_provider.dart';
 import 'package:learning_management_system/routes/app_routes.dart';
 
+import 'package:go_router/go_router.dart';
+import 'package:learning_management_system/routes/routes.dart';
+
 class StudentHomeScreen extends ConsumerStatefulWidget {
   const StudentHomeScreen({super.key});
 
@@ -68,30 +71,6 @@ class _StudentHomeScreenState extends ConsumerState<StudentHomeScreen> {
             ),
           ],
         ),
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.notifications),
-            label: 'Noti',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.chat),
-            label: 'Chat',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.group),
-            label: 'Teams',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_today),
-            label: 'Calendar',
-          ),
-        ],
-        currentIndex: _selectedIndex,
-        selectedItemColor: Colors.blueAccent,
-        onTap: _onItemTapped,
       ),
     );
   }
@@ -298,12 +277,12 @@ class _StudentHomeScreenState extends ConsumerState<StudentHomeScreen> {
     try {
       final storageService = StorageService();
       await storageService.clearUserSession(); // Use the new method
-      
+
       if (!mounted) return;
-      
+
       // Clear user state
       ref.read(userProvider.notifier).state = null;
-      
+
       // Navigate to sign in screen and remove all previous routes
       Navigator.of(context).pushNamedAndRemoveUntil(
         AppRoutes.signin,
@@ -340,35 +319,65 @@ class _StudentHomeScreenState extends ConsumerState<StudentHomeScreen> {
               ),
               const SizedBox(height: 10),
               ListTile(
-                leading: const Icon(Icons.group),
+                leading: const Icon(Icons.description),
                 title: const Text('Tài liệu'),
                 onTap: () {
                   Navigator.pop(context);
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.visibility),
+                leading: const Icon(Icons.event_busy),
                 title: const Text('Xin nghỉ'),
-                onTap: () {
-                  Navigator.pop(context);
-                },
+                onTap: () => context.push(Routes.nestedAbsentRequest),
               ),
               ListTile(
-                leading: const Icon(Icons.tag),
+                leading: const Icon(Icons.assignment),
                 title: const Text('Bài tập'),
                 onTap: () {
                   Navigator.pop(context);
                 },
               ),
               ListTile(
+                leading: const Icon(Icons.list_alt),
+                title: const Text('Danh sách khảo sát'),
+                onTap: () => context.push(Routes.nestedSurveyList),
+              ),
+              ListTile(
                 leading: const Icon(Icons.exit_to_app),
                 title: const Text('Rời khỏi nhóm'),
                 onTap: () {
                   Navigator.pop(context);
+                  _showConfirmationDialog(context, team);
                 },
               ),
             ],
           ),
+        );
+      },
+    );
+  }
+
+  void _showConfirmationDialog(BuildContext context, TeamsModel team) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Xác nhận'),
+          content: Text('Bạn có chắc chắn muốn rời khỏi nhóm "${team.name}"?'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Hủy'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Xác nhận'),
+            ),
+          ],
         );
       },
     );
