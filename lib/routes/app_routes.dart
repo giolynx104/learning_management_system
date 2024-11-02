@@ -14,7 +14,6 @@ import 'package:learning_management_system/screens/modify_class_screen.dart';
 import 'package:learning_management_system/screens/roll_call_management_screen.dart';
 import 'package:learning_management_system/screens/detailed_roll_call_info_screen.dart';
 import 'package:learning_management_system/screens/roll_call_action_screen.dart';
-import 'package:learning_management_system/screens/upload_file_screen.dart';
 import 'package:learning_management_system/screens/screen_chat.dart';
 class AppRoutes {
   static const String signup = '/signup';

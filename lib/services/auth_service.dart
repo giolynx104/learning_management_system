@@ -47,10 +47,9 @@ class AuthService {
     }
   }
 
-  Future<Map<String, dynamic>> login({
+  Future<Map<String, dynamic>> signIn({
     required String email,
     required String password,
-    required int deviceId,
   }) async {
     try {
       final response = await http.post(
@@ -62,20 +61,13 @@ class AuthService {
         body: jsonEncode({
           'email': email,
           'password': password,
-          'deviceId': deviceId,
         }),
       );
 
       final responseBody = jsonDecode(response.body);
 
       if (response.statusCode == 200) {
-        final user = User(
-          id: responseBody['id'] as int,
-          token: responseBody['token'] as String,
-          active: responseBody['active'] as String,
-          role: responseBody['role'] as String,
-          classList: (responseBody['class_list'] as List<dynamic>?)?.cast<String>() ?? [],
-        );
+        final user = User.fromJson(responseBody);
 
         return {
           'success': true,
@@ -83,7 +75,6 @@ class AuthService {
           'needs_verification': false,
         };
       } else if (response.statusCode == 403) {
-        // User needs verification
         return {
           'success': false,
           'needs_verification': true,

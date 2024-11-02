@@ -7,6 +7,7 @@ import 'package:learning_management_system/models/teams.dart';
 import 'package:learning_management_system/services/storage_service.dart';
 import 'package:learning_management_system/providers/auth_provider.dart';
 import 'package:learning_management_system/routes/app_routes.dart';
+import 'package:learning_management_system/mixins/sign_out_mixin.dart';
 
 class StudentHomeScreen extends ConsumerStatefulWidget {
   const StudentHomeScreen({super.key});
@@ -15,7 +16,7 @@ class StudentHomeScreen extends ConsumerStatefulWidget {
   ConsumerState<StudentHomeScreen> createState() => _StudentHomeScreenState();
 }
 
-class _StudentHomeScreenState extends ConsumerState<StudentHomeScreen> {
+class _StudentHomeScreenState extends ConsumerState<StudentHomeScreen> with SignOutMixin {
   List<TeamsModel> teams = [];
   bool isClassesExpanded = false;
   bool isPinnedChannelExpanded = false;
@@ -261,60 +262,14 @@ class _StudentHomeScreenState extends ConsumerState<StudentHomeScreen> {
           ListTile(
             leading: const Icon(Icons.logout, color: Colors.red),
             title: const Text('Sign Out', style: TextStyle(color: Colors.red)),
-            onTap: () => _handleSignOut(context),
+            onTap: () {
+              Navigator.pop(context); // Close drawer first
+              handleSignOut(); // No need to pass context and ref
+            },
           ),
         ],
       ),
     );
-  }
-
-  void _handleSignOut(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Sign Out'),
-          content: const Text('Are you sure you want to sign out?'),
-          actions: [
-            TextButton(
-              child: const Text('Cancel'),
-              onPressed: () => Navigator.of(context).pop(),
-            ),
-            TextButton(
-              child:
-                  const Text('Sign Out', style: TextStyle(color: Colors.red)),
-              onPressed: () async {
-                Navigator.of(context).pop(); // Close dialog
-                await _signOut(context);
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Future<void> _signOut(BuildContext context) async {
-    try {
-      final storageService = StorageService();
-      await storageService.clearUserSession(); // Use the new method
-      
-      if (!mounted) return;
-      
-      // Clear user state
-      ref.read(userProvider.notifier).state = null;
-      
-      // Navigate to sign in screen and remove all previous routes
-      Navigator.of(context).pushNamedAndRemoveUntil(
-        AppRoutes.signin,
-        (Route<dynamic> route) => false,
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to sign out. Please try again.')),
-      );
-    }
   }
 
   void _unpinChannel(PinnedChannelModel channel) {

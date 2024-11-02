@@ -1,17 +1,19 @@
-
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_management_system/components/pinned_item.dart';
 import 'package:learning_management_system/components/teams_item.dart';
+import 'package:learning_management_system/mixins/sign_out_mixin.dart';
 import 'package:learning_management_system/models/pinnedChannel.dart';
 import 'package:learning_management_system/models/teams.dart';
-class TeacherHomeScreen extends StatefulWidget {
-   const TeacherHomeScreen({super.key});
+
+class TeacherHomeScreen extends ConsumerStatefulWidget {
+  const TeacherHomeScreen({super.key});
 
   @override
-  State<TeacherHomeScreen> createState() => _TeacherHomeScreenState();
+  ConsumerState<TeacherHomeScreen> createState() => _TeacherHomeScreenState();
 }
 
-class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
+class _TeacherHomeScreenState extends ConsumerState<TeacherHomeScreen> with SignOutMixin {
   List<TeamsModel> teams = [];
   bool isClassesExpanded = false;
   bool isPinnedChannelExpanded = false;
@@ -23,12 +25,13 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
       _selectedIndex = index;
     });
   }
-  void _getPinnedChanel(){
+
+  void _getPinnedChannel() {
     setState(() {
       pinnedChannels = PinnedChannelModel.getPinnedChannels();
     });
   }
-  
+
   void _getTeams() {
     setState(() {
       teams = TeamsModel.getTeams();
@@ -39,13 +42,14 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
   void initState() {
     super.initState();
     _getTeams();
-    _getPinnedChanel();
+    _getPinnedChannel();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: appBar(),
+      appBar: _buildAppBar(),
+      endDrawer: _buildDrawer(),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -55,68 +59,154 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _pinnedChannels(), 
+                _pinnedChannels(),
                 const SizedBox(height: 20),
-                _teams(), 
+                _teams(),
               ],
             ),
           ],
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.notifications),
-            label: 'Noti',  
+      bottomNavigationBar: _buildBottomNavigationBar(),
+    );
+  }
+
+  PreferredSizeWidget _buildAppBar() {
+    return AppBar(
+      title: const Text(
+        'AllHust',
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      centerTitle: true,
+      backgroundColor: Colors.red,
+      elevation: 0.0,
+      actions: [
+        Builder(
+          builder: (context) => Padding(
+            padding: const EdgeInsets.only(right: 16.0),
+            child: GestureDetector(
+              onTap: () {
+                Scaffold.of(context).openEndDrawer();
+              },
+              child: const CircleAvatar(
+                backgroundColor: Colors.white,
+                child: Icon(Icons.person, color: Colors.red),
+              ),
+            ),
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.chat),
-            label: 'Chat', 
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDrawer() {
+    return Drawer(
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          UserAccountsDrawerHeader(
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            accountName: const Text('Teacher Name'),
+            accountEmail: const Text('teacher@example.com'),
+            currentAccountPicture: const CircleAvatar(
+              backgroundColor: Colors.white,
+              child: Icon(Icons.person, color: Colors.red),
+            ),
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.group),
-            label: 'Teams',
+          ListTile(
+            leading: const Icon(Icons.person),
+            title: const Text('Profile'),
+            onTap: () {
+              Navigator.pop(context);
+            },
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_today),
-            label: 'Calendar',
+          ListTile(
+            leading: const Icon(Icons.settings),
+            title: const Text('Settings'),
+            onTap: () {
+              Navigator.pop(context);
+            },
+          ),
+          const Divider(),
+          ListTile(
+            leading: const Icon(Icons.logout, color: Colors.red),
+            title: const Text('Sign Out', style: TextStyle(color: Colors.red)),
+            onTap: () {
+              Navigator.pop(context); // Close drawer first
+              handleSignOut(); // Using the mixin method
+            },
           ),
         ],
-        currentIndex: _selectedIndex,
-        selectedItemColor: Colors.blueAccent,
-        onTap: _onItemTapped,
       ),
     );
   }
 
-Widget _pinnedChannels() {
-  return ExpansionTile(
-    title: const Text("Pinned Channels"),
-    leading: Icon(
+  Widget _buildBottomNavigationBar() {
+    return BottomNavigationBar(
+      type: BottomNavigationBarType.fixed,
+      items: const [
+        BottomNavigationBarItem(
+          icon: Icon(Icons.notifications),
+          label: 'Noti',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.chat),
+          label: 'Chat',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.group),
+          label: 'Teams',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.calendar_today),
+          label: 'Calendar',
+        ),
+      ],
+      currentIndex: _selectedIndex,
+      selectedItemColor: Colors.blueAccent,
+      onTap: _onItemTapped,
+    );
+  }
+
+  Widget _pinnedChannels() {
+    return ExpansionTile(
+      title: const Text("Pinned Channels"),
+      leading: Icon(
         isPinnedChannelExpanded ? Icons.arrow_drop_down : Icons.arrow_right,
       ),
-    trailing: const SizedBox.shrink(),
-    onExpansionChanged: (bool expanded) {
+      trailing: const SizedBox.shrink(),
+      onExpansionChanged: (bool expanded) {
         setState(() => isPinnedChannelExpanded = expanded);
       },
-    children: [
-      ListView.builder(
-        shrinkWrap: true,
-        padding: EdgeInsets.zero,
-        physics: const NeverScrollableScrollPhysics(),
-        itemCount: pinnedChannels.length,
-        itemBuilder: (context, index) {
-          var channel = pinnedChannels[index];
-          return PinnedItem(
-            channel: channel,
-            onUnpinPressed: () => _unpinChannel(channel),
-          );
-        },
-      ),
-    ],
-  );
-}
+      children: [
+        ListView.builder(
+          shrinkWrap: true,
+          padding: EdgeInsets.zero,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: pinnedChannels.length,
+          itemBuilder: (context, index) {
+            var channel = pinnedChannels[index];
+            return PinnedItem(
+              channel: channel,
+              onUnpinPressed: () => _unpinChannel(channel),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  void _unpinChannel(PinnedChannelModel channel) {
+    setState(() {
+      pinnedChannels.remove(channel);
+    });
+  }
 
   Widget _teams() {
     return ExpansionTile(
@@ -124,19 +214,14 @@ Widget _pinnedChannels() {
       leading: Icon(
         isClassesExpanded ? Icons.arrow_drop_down : Icons.arrow_right,
       ),
-      trailing: IconButton(
-        icon: const Icon(Icons.add),
-        onPressed: ()=> {},
-        ),
-      // tilePadding: EdgeInsets.zero,
-      // childrenPadding:  EdgeInsets.zero,
+      trailing: const SizedBox.shrink(),
       onExpansionChanged: (bool expanded) {
         setState(() => isClassesExpanded = expanded);
       },
       children: [
         ListView.builder(
           shrinkWrap: true,
-          padding:  EdgeInsets.zero,
+          padding: EdgeInsets.zero,
           physics: const NeverScrollableScrollPhysics(),
           itemCount: teams.length,
           itemBuilder: (context, index) {
@@ -152,7 +237,37 @@ Widget _pinnedChannels() {
     );
   }
 
-  Container _searchField() {
+  void _showTeamOptions(BuildContext context, TeamsModel team) {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return Container(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.info),
+                title: const Text('View Details'),
+                onTap: () {
+                  Navigator.pop(context);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.edit),
+                title: const Text('Edit Class'),
+                onTap: () {
+                  Navigator.pop(context);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _searchField() {
     return Container(
       margin: const EdgeInsets.only(top: 40, left: 30, right: 30),
       decoration: BoxDecoration(
@@ -184,77 +299,6 @@ Widget _pinnedChannels() {
           ),
         ),
       ),
-    );
-  }
-
-  AppBar appBar() {
-    return AppBar(
-      title: const Text(
-        'QLDT',
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 20,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-      centerTitle: true,
-      backgroundColor: Colors.red,
-      elevation: 0.0,
-    );
-  }
-  void _unpinChannel(PinnedChannelModel channel) {
-  setState(() {
-    PinnedChannelModel.removePinnedChannel(channel);
-    pinnedChannels.removeWhere((pinned) => !pinned.isPinned);
-  });
-}
-
-  void _showTeamOptions(BuildContext context, TeamsModel team) {
-    showModalBottomSheet(
-      context: context,
-      builder: (BuildContext context) {
-        return Container(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              Text(
-                team.name,
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 10),
-              ListTile(
-                leading: const Icon(Icons.group),
-                title: const Text('Tài liệu'),
-                onTap: () {
-                  Navigator.pop(context);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.visibility),
-                title: const Text('Điểm danh'),
-                onTap: () {
-                  Navigator.pop(context);
-                },
-              ),
-                ListTile(
-                leading: const Icon(Icons.tag),
-                title: const Text('Giao bài tập'),
-                onTap: () {
-                  Navigator.pop(context);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.exit_to_app),
-                title: const Text('Rời khỏi nhóm'),
-                onTap: () {
-                  Navigator.pop(context);
-                },
-              ),
-            ],
-          ),
-        );
-      },
     );
   }
 }

@@ -20,20 +20,15 @@ final loginProvider = FutureProvider.family<Map<String, dynamic>, Map<String, dy
   final authService = ref.watch(authServiceProvider);
   final storageService = ref.watch(storageServiceProvider);
   
-  final response = await authService.login(
+  final response = await authService.signIn(
     email: loginData['email'] as String,
     password: loginData['password'] as String,
-    deviceId: loginData['deviceId'] as int,
   );
 
   if (response['success'] == true && !response['needs_verification']) {
     final user = response['user'] as User;
-    // Save user session data after successful login
-    await storageService.saveUserSession(
-      token: user.token,
-      role: user.role,
-      userId: user.id,
-    );
+    // Save complete user data
+    await storageService.saveUserData(user);
   }
 
   return response;
@@ -41,22 +36,49 @@ final loginProvider = FutureProvider.family<Map<String, dynamic>, Map<String, dy
 
 final userProvider = StateProvider<User?>((ref) => null);
 
-// Add a provider to check user session
+// Enhanced session provider that handles complete user data
 final userSessionProvider = FutureProvider<User?>((ref) async {
   final storageService = ref.watch(storageServiceProvider);
+  final authService = ref.watch(authServiceProvider);
   
-  final token = await storageService.getToken();
-  final role = await storageService.getUserRole();
-  final userId = await storageService.getUserId();
-
-  if (token != null && role != null && userId != null) {
-    return User(
-      id: userId,
-      token: token,
-      role: role,
-      active: 'Active', // Default value for existing sessions
-      classList: [], // Default empty list for existing sessions
-    );
+  try {
+    // Try to get stored user data first
+    final userData = await storageService.getUserData();
+    if (userData != null) {
+      // If we have stored data, use it
+      return userData;
+    }
+    
+    // If no stored data but we have token, try to refresh user data
+    final token = await storageService.getToken();
+    if (token != null) {
+      try {
+        // TODO: Implement refresh token API call
+        // final freshUserData = await authService.refreshUserData(token);
+        // await storageService.saveUserData(freshUserData);
+        // return freshUserData;
+        return null;
+      } catch (e) {
+        // If refresh fails, clear session and return null
+        await storageService.clearUserSession();
+        return null;
+      }
+    }
+    
+    return null;
+  } catch (e) {
+    // If any error occurs, clear session and return null
+    await storageService.clearUserSession();
+    return null;
   }
-  return null;
 });
+
+// Add a provider to handle session expiry
+final sessionStateProvider = StateProvider<SessionState>((ref) => SessionState.unknown);
+
+enum SessionState {
+  unknown,
+  valid,
+  expired,
+  none,
+}
