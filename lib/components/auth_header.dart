@@ -9,10 +9,21 @@ class AuthHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Image.asset('assets/images/HUST_icon.png'),
+        Center(
+          child: SizedBox(
+            height: 100,
+            child: Image.asset(
+              'assets/images/HUST_icon.png',
+              fit: BoxFit.contain,
+            ),
+          ),
+        ),
+        const SizedBox(height: 16.0),
         Text(
           title,
+          textAlign: TextAlign.center,
           style: TextStyle(
             fontSize: 24.0,
             fontWeight: FontWeight.bold,
