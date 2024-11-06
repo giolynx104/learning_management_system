@@ -8,7 +8,6 @@ import 'package:learning_management_system/services/storage_service.dart';
 import 'package:learning_management_system/providers/auth_provider.dart';
 import 'package:learning_management_system/routes/app_routes.dart';
 import 'package:learning_management_system/mixins/sign_out_mixin.dart';
-
 import 'package:go_router/go_router.dart';
 import 'package:learning_management_system/routes/routes.dart';
 
@@ -212,10 +211,8 @@ class _StudentHomeScreenState extends ConsumerState<StudentHomeScreen> with Sign
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.primary,
             ),
-            accountName:
-                const Text('Student Name'), // Replace with actual user name
-            accountEmail:
-                const Text('student@example.com'), // Replace with actual email
+            accountName: const Text('Student Name'), // Replace with actual user name
+            accountEmail: const Text('student@example.com'), // Replace with actual email
             currentAccountPicture: const CircleAvatar(
               backgroundColor: Colors.white,
               child: Icon(Icons.person, color: Colors.red),
@@ -225,16 +222,14 @@ class _StudentHomeScreenState extends ConsumerState<StudentHomeScreen> with Sign
             leading: const Icon(Icons.person),
             title: const Text('Profile'),
             onTap: () {
-              // Handle profile tap
-              Navigator.pop(context);
+              context.pop(); // Close drawer using go_router
             },
           ),
           ListTile(
             leading: const Icon(Icons.settings),
             title: const Text('Settings'),
             onTap: () {
-              // Handle settings tap
-              Navigator.pop(context);
+              context.pop(); // Close drawer using go_router
             },
           ),
           const Divider(),
@@ -242,62 +237,13 @@ class _StudentHomeScreenState extends ConsumerState<StudentHomeScreen> with Sign
             leading: const Icon(Icons.logout, color: Colors.red),
             title: const Text('Sign Out', style: TextStyle(color: Colors.red)),
             onTap: () {
-              Navigator.pop(context); // Close drawer first
-              handleSignOut(); // No need to pass context and ref
+              context.pop(); // Close drawer first
+              handleSignOut(); // Use the mixin's handleSignOut method
             },
           ),
         ],
       ),
     );
-  }
-
-  void _handleSignOut(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Sign Out'),
-          content: const Text('Are you sure you want to sign out?'),
-          actions: [
-            TextButton(
-              child: const Text('Cancel'),
-              onPressed: () => Navigator.of(context).pop(),
-            ),
-            TextButton(
-              child:
-                  const Text('Sign Out', style: TextStyle(color: Colors.red)),
-              onPressed: () async {
-                Navigator.of(context).pop(); // Close dialog
-                await _signOut(context);
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Future<void> _signOut(BuildContext context) async {
-    try {
-      final storageService = StorageService();
-      await storageService.clearUserSession(); // Use the new method
-
-      if (!mounted) return;
-
-      // Clear user state
-      ref.read(userProvider.notifier).state = null;
-
-      // Navigate to sign in screen and remove all previous routes
-      Navigator.of(context).pushNamedAndRemoveUntil(
-        AppRoutes.signin,
-        (Route<dynamic> route) => false,
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to sign out. Please try again.')),
-      );
-    }
   }
 
   void _unpinChannel(PinnedChannelModel channel) {
@@ -318,39 +264,44 @@ class _StudentHomeScreenState extends ConsumerState<StudentHomeScreen> with Sign
             children: <Widget>[
               Text(
                 team.name,
-                style:
-                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 10),
               ListTile(
                 leading: const Icon(Icons.description),
                 title: const Text('Tài liệu'),
                 onTap: () {
-                  Navigator.pop(context);
+                  context.pop(); // Use go_router
                 },
               ),
               ListTile(
                 leading: const Icon(Icons.event_busy),
                 title: const Text('Xin nghỉ'),
-                onTap: () => context.push(Routes.nestedAbsentRequest),
+                onTap: () {
+                  context.pop(); // Close bottom sheet first
+                  context.push(Routes.nestedAbsentRequest);
+                },
               ),
               ListTile(
                 leading: const Icon(Icons.assignment),
                 title: const Text('Bài tập'),
                 onTap: () {
-                  Navigator.pop(context);
+                  context.pop(); // Use go_router
                 },
               ),
               ListTile(
                 leading: const Icon(Icons.list_alt),
                 title: const Text('Danh sách khảo sát'),
-                onTap: () => context.push(Routes.nestedSurveyList),
+                onTap: () {
+                  context.pop(); // Close bottom sheet first
+                  context.push(Routes.nestedSurveyList);
+                },
               ),
               ListTile(
                 leading: const Icon(Icons.exit_to_app),
                 title: const Text('Rời khỏi nhóm'),
                 onTap: () {
-                  Navigator.pop(context);
+                  context.pop(); // Close bottom sheet using go_router
                   _showConfirmationDialog(context, team);
                 },
               ),
@@ -370,15 +321,11 @@ class _StudentHomeScreenState extends ConsumerState<StudentHomeScreen> with Sign
           content: Text('Bạn có chắc chắn muốn rời khỏi nhóm "${team.name}"?'),
           actions: <Widget>[
             TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
+              onPressed: () => context.pop(), // Use go_router
               child: const Text('Hủy'),
             ),
             TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
+              onPressed: () => context.pop(), // Use go_router
               child: const Text('Xác nhận'),
             ),
           ],

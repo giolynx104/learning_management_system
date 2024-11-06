@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:learning_management_system/services/storage_service.dart';
 import 'package:learning_management_system/providers/auth_provider.dart';
-import 'package:learning_management_system/routes/app_routes.dart';
+import 'package:learning_management_system/routes/routes.dart';
 
 mixin SignOutMixin<T extends ConsumerStatefulWidget> on ConsumerState<T> {
   Future<void> handleSignOut() {
@@ -15,12 +16,12 @@ mixin SignOutMixin<T extends ConsumerStatefulWidget> on ConsumerState<T> {
           actions: [
             TextButton(
               child: const Text('Cancel'),
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () => context.pop(),
             ),
             TextButton(
               child: const Text('Sign Out', style: TextStyle(color: Colors.red)),
               onPressed: () async {
-                Navigator.of(context).pop(); // Close dialog
+                context.pop();
                 await _signOut();
               },
             ),
@@ -39,11 +40,8 @@ mixin SignOutMixin<T extends ConsumerStatefulWidget> on ConsumerState<T> {
         // Clear user state
         ref.read(userProvider.notifier).state = null;
         
-        // Navigate to sign in screen and remove all previous routes
-        Navigator.of(context).pushNamedAndRemoveUntil(
-          AppRoutes.signin,
-          (Route<dynamic> route) => false,
-        );
+        // Navigate to sign in screen using go_router
+        context.go(Routes.signin);
       }
     } catch (e) {
       if (mounted) {
