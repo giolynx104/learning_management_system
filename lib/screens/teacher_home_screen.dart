@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:learning_management_system/components/pinned_item.dart';
 import 'package:learning_management_system/components/teams_item.dart';
 import 'package:learning_management_system/mixins/sign_out_mixin.dart';
 import 'package:learning_management_system/models/pinnedChannel.dart';
 import 'package:learning_management_system/models/teams.dart';
-
+import 'package:go_router/go_router.dart';
+import 'package:learning_management_system/routes/routes.dart';
 class TeacherHomeScreen extends ConsumerStatefulWidget {
-  const TeacherHomeScreen({super.key});
+   const TeacherHomeScreen({super.key});
 
   @override
   ConsumerState<TeacherHomeScreen> createState() => _TeacherHomeScreenState();
@@ -48,8 +49,7 @@ class _TeacherHomeScreenState extends ConsumerState<TeacherHomeScreen> with Sign
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: _buildAppBar(),
-      endDrawer: _buildDrawer(),
+      appBar: appBar(),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -67,117 +67,14 @@ class _TeacherHomeScreenState extends ConsumerState<TeacherHomeScreen> with Sign
           ],
         ),
       ),
-      bottomNavigationBar: _buildBottomNavigationBar(),
     );
   }
 
-  PreferredSizeWidget _buildAppBar() {
-    return AppBar(
-      title: const Text(
-        'AllHust',
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 20,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-      centerTitle: true,
-      backgroundColor: Colors.red,
-      elevation: 0.0,
-      actions: [
-        Builder(
-          builder: (context) => Padding(
-            padding: const EdgeInsets.only(right: 16.0),
-            child: GestureDetector(
-              onTap: () {
-                Scaffold.of(context).openEndDrawer();
-              },
-              child: const CircleAvatar(
-                backgroundColor: Colors.white,
-                child: Icon(Icons.person, color: Colors.red),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
 
-  Widget _buildDrawer() {
-    return Drawer(
-      child: ListView(
-        padding: EdgeInsets.zero,
-        children: [
-          UserAccountsDrawerHeader(
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            accountName: const Text('Teacher Name'),
-            accountEmail: const Text('teacher@example.com'),
-            currentAccountPicture: const CircleAvatar(
-              backgroundColor: Colors.white,
-              child: Icon(Icons.person, color: Colors.red),
-            ),
-          ),
-          ListTile(
-            leading: const Icon(Icons.person),
-            title: const Text('Profile'),
-            onTap: () {
-              Navigator.pop(context);
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.settings),
-            title: const Text('Settings'),
-            onTap: () {
-              Navigator.pop(context);
-            },
-          ),
-          const Divider(),
-          ListTile(
-            leading: const Icon(Icons.logout, color: Colors.red),
-            title: const Text('Sign Out', style: TextStyle(color: Colors.red)),
-            onTap: () {
-              Navigator.pop(context); // Close drawer first
-              handleSignOut(); // Using the mixin method
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBottomNavigationBar() {
-    return BottomNavigationBar(
-      type: BottomNavigationBarType.fixed,
-      items: const [
-        BottomNavigationBarItem(
-          icon: Icon(Icons.notifications),
-          label: 'Noti',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.chat),
-          label: 'Chat',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.group),
-          label: 'Teams',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.calendar_today),
-          label: 'Calendar',
-        ),
-      ],
-      currentIndex: _selectedIndex,
-      selectedItemColor: Colors.blueAccent,
-      onTap: _onItemTapped,
-    );
-  }
-
-  Widget _pinnedChannels() {
-    return ExpansionTile(
-      title: const Text("Pinned Channels"),
-      leading: Icon(
+Widget _pinnedChannels() {
+  return ExpansionTile(
+    title: const Text("Pinned Channels"),
+    leading: Icon(
         isPinnedChannelExpanded ? Icons.arrow_drop_down : Icons.arrow_right,
       ),
       trailing: const SizedBox.shrink(),
@@ -202,19 +99,18 @@ class _TeacherHomeScreenState extends ConsumerState<TeacherHomeScreen> with Sign
     );
   }
 
-  void _unpinChannel(PinnedChannelModel channel) {
-    setState(() {
-      pinnedChannels.remove(channel);
-    });
-  }
-
   Widget _teams() {
     return ExpansionTile(
       title: const Text("Classes"),
       leading: Icon(
         isClassesExpanded ? Icons.arrow_drop_down : Icons.arrow_right,
       ),
-      trailing: const SizedBox.shrink(),
+      trailing: IconButton(
+        icon: const Icon(Icons.add),
+        onPressed: () => context.push(
+                  Routes.nestedCreateClass
+                ) ,
+        ),
       onExpansionChanged: (bool expanded) {
         setState(() => isClassesExpanded = expanded);
       },
@@ -234,36 +130,6 @@ class _TeacherHomeScreenState extends ConsumerState<TeacherHomeScreen> with Sign
           },
         ),
       ],
-    );
-  }
-
-  void _showTeamOptions(BuildContext context, TeamsModel team) {
-    showModalBottomSheet(
-      context: context,
-      builder: (BuildContext context) {
-        return Container(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.info),
-                title: const Text('View Details'),
-                onTap: () {
-                  Navigator.pop(context);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.edit),
-                title: const Text('Edit Class'),
-                onTap: () {
-                  Navigator.pop(context);
-                },
-              ),
-            ],
-          ),
-        );
-      },
     );
   }
 
@@ -300,5 +166,114 @@ class _TeacherHomeScreenState extends ConsumerState<TeacherHomeScreen> with Sign
         ),
       ),
     );
+  }
+
+  AppBar appBar() {
+    return AppBar(
+      title: const Text(
+        'QLDT',
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      centerTitle: true,
+      backgroundColor: Colors.red,
+      elevation: 0.0,
+    );
+  }
+  void _unpinChannel(PinnedChannelModel channel) {
+  setState(() {
+    PinnedChannelModel.removePinnedChannel(channel);
+    pinnedChannels.removeWhere((pinned) => !pinned.isPinned);
+  });
+}
+
+  void _showTeamOptions(BuildContext context, TeamsModel team) {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Text(
+                team.name,
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 10),
+              ListTile(
+                leading: const Icon(Icons.class_rounded),  
+                title: const Text('Chỉnh sửa lớp'),
+                onTap: () => context.push(
+                  Routes.nestedModifyClass
+                ) ,
+              ),
+              ListTile(
+                leading: const Icon(Icons.assignment),  
+                title: const Text('Giao bài tập'),
+                onTap: () => Navigator.pop(context),
+              ),
+              ListTile(
+                leading: const Icon(Icons.description), 
+                title: const Text('Tài liệu'),
+                onTap: () => context.push(
+                  Routes.nestedUploadFile
+                ) ,
+              ),
+              ListTile(
+                leading: const Icon(Icons.check_circle_outline), 
+                title: const Text('Điểm danh'),
+                onTap: () => context.push(
+                  Routes.nestedRollCallAction
+                ) ,
+              ),
+              ListTile(
+                leading: const Icon(Icons.poll),
+                title: const Text('Tạo khảo sát'),
+                onTap: () => context.push(
+                  Routes.nestedCreateSurvey
+                ),
+              ),
+              ListTile(
+                leading: const Icon(Icons.exit_to_app),
+                title: const Text('Rời khỏi nhóm'),
+                onTap: () {
+                  Navigator.pop(context); 
+                  _showConfirmationDialog(context, team);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+  void _showConfirmationDialog(BuildContext context, TeamsModel team) {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: const Text('Xác nhận'),
+        content: Text('Bạn có chắc chắn muốn rời khỏi nhóm "${team.name}"?'),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: const Text('Hủy'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop(); 
+            },
+            child: const Text('Xác nhận'),
+          ),
+        ],
+      );
+    },
+  );
   }
 }

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:learning_management_system/services/storage_service.dart';
 import 'package:learning_management_system/providers/auth_provider.dart';
 import 'package:learning_management_system/routes/app_routes.dart';
 
-mixin SignOutMixin on ConsumerState {
+mixin SignOutMixin<T extends ConsumerStatefulWidget> on ConsumerState<T> {
   Future<void> handleSignOut() {
     return showDialog(
       context: context,
