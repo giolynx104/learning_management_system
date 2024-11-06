@@ -16,6 +16,8 @@ import 'package:learning_management_system/screens/detailed_roll_call_info_scree
 import 'package:learning_management_system/screens/roll_call_action_screen.dart';
 import 'package:learning_management_system/screens/upload_file_screen.dart';
 import 'package:learning_management_system/screens/screen_chat.dart';
+import 'package:learning_management_system/screens/absence_req_screen.dart';
+
 class AppRoutes {
   static const String signup = '/signup';
   static const String signin = '/signin';
@@ -34,7 +36,9 @@ class AppRoutes {
   static const String rollCallAction = '/roll_call_action';
   static const String createAssignment = '/create_assignment';
   static const String uploadFile = '/upload_file';
-  static const String screenChatStudent ='/screen_chat';
+  static const String screenChatStudent = '/screen_chat';
+  static const String absenceRequestScreen = '/absence_request_screen';
+  static const String absenceReqScreen = '/absence_req_screen';
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -60,7 +64,8 @@ class AppRoutes {
       case surveyList:
         return MaterialPageRoute(builder: (_) => const SurveyListScreen());
       case classRegistration:
-        return MaterialPageRoute(builder: (_) => const ClassRegistrationScreen());
+        return MaterialPageRoute(
+            builder: (_) => const ClassRegistrationScreen());
       case studentHome:
         return MaterialPageRoute(builder: (_) => const StudentHomeScreen());
       case teacherHome:
@@ -76,15 +81,19 @@ class AppRoutes {
       case rollCall:
         return MaterialPageRoute(builder: (_) => const RollCallScreen());
       case detailedRollCall:
-        return MaterialPageRoute(builder: (_) => const DetailedRollCallInfoScreen());
+        return MaterialPageRoute(
+            builder: (_) => const DetailedRollCallInfoScreen());
       case rollCallAction:
         return MaterialPageRoute(builder: (_) => const RollCallActionScreen());
       // case createAssignment:
       //   return MaterialPageRoute(builder: (_) => const CreateAssignmentScreen());
-      // case uploadFile:
-      //   return MaterialPageRoute(builder: (_) => const UploadFileScreen());
+      case uploadFile:
+        return MaterialPageRoute(builder: (_) => const UploadFileScreen());
       case screenChatStudent:
         return MaterialPageRoute(builder: (_) => const ChatScreen());
+      case absenceRequestScreen:
+        return MaterialPageRoute(
+            builder: (_) => const absenceRequestScreenNew());
       default:
         return MaterialPageRoute(
           builder: (_) => Scaffold(
