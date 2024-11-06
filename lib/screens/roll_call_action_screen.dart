@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:learning_management_system/routes/app_routes.dart';
+import 'package:learning_management_system/routes/routes.dart';
+import 'package:go_router/go_router.dart';
 
 class RollCallActionScreen extends ConsumerStatefulWidget {
   const RollCallActionScreen({super.key});
@@ -67,7 +68,7 @@ class _RollCallActionScreenState extends ConsumerState<RollCallActionScreen> {
               ),
               onPressed: () {
                 Navigator.of(context).pop();
-                Navigator.of(context).pushReplacementNamed(AppRoutes.rollCall);
+                context.go(Routes.rollCall);
               },
             ),
           ],

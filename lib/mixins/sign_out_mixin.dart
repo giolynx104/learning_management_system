@@ -6,49 +6,22 @@ import 'package:learning_management_system/providers/auth_provider.dart';
 import 'package:learning_management_system/routes/routes.dart';
 
 mixin SignOutMixin<T extends ConsumerStatefulWidget> on ConsumerState<T> {
-  Future<void> handleSignOut() {
-    return showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Sign Out'),
-          content: const Text('Are you sure you want to sign out?'),
-          actions: [
-            TextButton(
-              child: const Text('Cancel'),
-              onPressed: () => context.pop(),
-            ),
-            TextButton(
-              child: const Text('Sign Out', style: TextStyle(color: Colors.red)),
-              onPressed: () async {
-                context.pop();
-                await _signOut();
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
+  final _storageService = StorageService();
 
-  Future<void> _signOut() async {
+  Future<void> handleSignOut() async {
     try {
-      final storageService = StorageService();
-      await storageService.clearUserSession();
+      await _storageService.clearUserSession();
+      if (!mounted) return;
       
-      if (mounted) {
-        // Clear user state
-        ref.read(userProvider.notifier).state = null;
-        
-        // Navigate to sign in screen using go_router
-        context.go(Routes.signin);
-      }
+      await ref.read(authProvider.notifier).logout();
+      
+      if (!mounted) return;
+      context.go(Routes.signin);
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to sign out. Please try again.')),
-        );
-      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error signing out: $e')),
+      );
     }
   }
 } 

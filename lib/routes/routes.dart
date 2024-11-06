@@ -1,4 +1,3 @@
-
 class Routes {
   Routes._();
   static const String signup = '/signup';

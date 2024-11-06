@@ -1,84 +1,41 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:learning_management_system/services/auth_service.dart';
-import 'package:learning_management_system/services/storage_service.dart';
-import 'package:learning_management_system/models/user.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+import '../models/user.dart';
+import '../services/user_service.dart';
+import '../services/storage_service.dart';
+import '../services/api_service.dart';
 
-final authServiceProvider = Provider((ref) => AuthService());
-final storageServiceProvider = Provider((ref) => StorageService());
+part 'auth_provider.g.dart';
 
-final signUpProvider = FutureProvider.family<Map<String, dynamic>, Map<String, dynamic>>((ref, signUpData) async {
-  final authService = ref.watch(authServiceProvider);
-  return authService.signUp(
-    email: signUpData['email'] as String,
-    password: signUpData['password'] as String,
-    uuid: signUpData['uuid'] as int,
-    role: signUpData['role'] as String,
-  );
-});
-
-final loginProvider = FutureProvider.family<Map<String, dynamic>, Map<String, dynamic>>((ref, loginData) async {
-  final authService = ref.watch(authServiceProvider);
-  final storageService = ref.watch(storageServiceProvider);
-  
-  final response = await authService.signIn(
-    email: loginData['email'] as String,
-    password: loginData['password'] as String,
-  );
-
-  if (response['success'] == true && !response['needs_verification']) {
-    final user = response['user'] as User;
-    // Save complete user data
-    await storageService.saveUserData(user);
+@riverpod
+class Auth extends _$Auth {
+  @override
+  Future<User?> build() async {
+    final token = await StorageService().getToken();
+    if (token == null) return null;
+    
+    try {
+      final user = await ref.read(userServiceProvider).getUserInfo(token);
+      return user;
+    } catch (e) {
+      await StorageService().clearToken();
+      return null;
+    }
   }
 
-  return response;
-});
-
-final userProvider = StateProvider<User?>((ref) => null);
-
-// Enhanced session provider that handles complete user data
-final userSessionProvider = FutureProvider<User?>((ref) async {
-  final storageService = ref.watch(storageServiceProvider);
-  final authService = ref.watch(authServiceProvider);
-  
-  try {
-    // Try to get stored user data first
-    final userData = await storageService.getUserData();
-    if (userData != null) {
-      // If we have stored data, use it
-      return userData;
-    }
-    
-    // If no stored data but we have token, try to refresh user data
-    final token = await storageService.getToken();
-    if (token != null) {
-      try {
-        // TODO: Implement refresh token API call
-        // final freshUserData = await authService.refreshUserData(token);
-        // await storageService.saveUserData(freshUserData);
-        // return freshUserData;
-        return null;
-      } catch (e) {
-        // If refresh fails, clear session and return null
-        await storageService.clearUserSession();
-        return null;
-      }
-    }
-    
-    return null;
-  } catch (e) {
-    // If any error occurs, clear session and return null
-    await storageService.clearUserSession();
-    return null;
+  Future<void> login(User user, String token) async {
+    await StorageService().saveToken(token);
+    state = AsyncValue.data(user);
   }
-});
 
-// Add a provider to handle session expiry
-final sessionStateProvider = StateProvider<SessionState>((ref) => SessionState.unknown);
-
-enum SessionState {
-  unknown,
-  valid,
-  expired,
-  none,
+  Future<void> logout() async {
+    await StorageService().clearToken();
+    state = const AsyncValue.data(null);
+  }
 }
+
+@riverpod
+ApiService apiService(ApiServiceRef ref) => ApiService();
+
+@riverpod
+UserService userService(UserServiceRef ref) => 
+    UserService(ref.watch(apiServiceProvider));

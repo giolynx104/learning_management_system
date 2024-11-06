@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:developer';
-import 'package:learning_management_system/routes/app_routes.dart';
+import 'package:go_router/go_router.dart';
+import 'package:learning_management_system/routes/routes.dart';
 
 class ClassManagementScreen extends StatefulWidget {
   const ClassManagementScreen({super.key});
@@ -93,12 +94,8 @@ class ClassManagementScreenState extends State<ClassManagementScreen> {
             ),
           ),
           _ManagementActions(
-            onCreateClass: () {
-              Navigator.pushNamed(context, AppRoutes.createClass);
-            },
-            onModifyClass: () {
-              Navigator.pushNamed(context, AppRoutes.modifyClass);
-            },
+            onCreateClass: () => context.push(Routes.createClass),
+            onModifyClass: () => context.push(Routes.modifyClass),
           ),
           const SizedBox(height: 16),
           const _AvailableClassesLink(),
@@ -368,7 +365,7 @@ class _ManagementActions extends StatelessWidget {
         children: [
           Expanded(
             child: ElevatedButton(
-              onPressed: onCreateClass,
+              onPressed: () => context.push(Routes.createClass),
               style: ElevatedButton.styleFrom(
                 backgroundColor: theme.colorScheme.primary,
                 foregroundColor: theme.colorScheme.onPrimary,
@@ -382,7 +379,7 @@ class _ManagementActions extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(
             child: ElevatedButton(
-              onPressed: onModifyClass,
+              onPressed: () => context.push(Routes.modifyClass),
               style: ElevatedButton.styleFrom(
                 backgroundColor: theme.colorScheme.primary,
                 foregroundColor: theme.colorScheme.onPrimary,
@@ -407,7 +404,8 @@ class _AvailableClassesLink extends StatelessWidget {
     final theme = Theme.of(context);
     return GestureDetector(
       onTap: () {
-        // TODO: Implement navigation to available classes list
+        // TODO: Implement navigation to available classes list using GoRouter
+        // context.push(Routes.availableClasses); // Uncomment when route is added
       },
       child: Text(
         'List of currently available classes',

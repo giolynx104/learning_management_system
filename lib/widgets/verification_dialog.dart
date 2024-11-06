@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:learning_management_system/providers/auth_provider.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:learning_management_system/providers/signup_provider.dart';
 
 class VerificationDialog extends ConsumerStatefulWidget {
   final String email;

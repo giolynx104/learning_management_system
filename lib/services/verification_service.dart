@@ -1,22 +1,22 @@
 import 'package:dio/dio.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:learning_management_system/services/api_service.dart';
 
-class VerificationService {
-  final Dio _dio;
-  final String _baseUrl;
+part 'verification_service.g.dart';
 
-  VerificationService() 
-      : _baseUrl = ApiService().baseUrl,
-        _dio = Dio();
+class VerificationService {
+  final ApiService _apiService;
+
+  VerificationService(this._apiService);
 
   Future<String> getVerificationCode({
     required String email, 
     required String password,
   }) async {
     try {
-      final response = await _dio.post(
-        '$_baseUrl/get_verify_code',
+      final response = await _apiService.dio.post(
+        '/get_verify_code',
         data: {
           'email': email,
           'password': password,
@@ -52,8 +52,8 @@ class VerificationService {
     required String code,
   }) async {
     try {
-      final response = await _dio.post(
-        '$_baseUrl/verify_code',
+      final response = await _apiService.dio.post(
+        '/verify_code',
         data: {
           'email': email,
           'code': code,
@@ -91,4 +91,8 @@ class VerificationException implements Exception {
   String toString() => message;
 }
 
-final verificationServiceProvider = Provider((ref) => VerificationService());
+@riverpod
+VerificationService verificationService(Ref ref) {
+  final apiService = ref.watch(apiServiceProvider);
+  return VerificationService(apiService);
+}

@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:learning_management_system/routes/app_routes.dart';
+import 'package:go_router/go_router.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:learning_management_system/providers/auth_provider.dart';
 import 'package:learning_management_system/components/auth_header.dart';
 import 'package:learning_management_system/components/auth_text_field.dart';
 import 'package:learning_management_system/widgets/custom_button.dart';
-import 'package:learning_management_system/services/storage_service.dart';
 import 'package:learning_management_system/models/user.dart';
 import 'package:learning_management_system/services/auth_service.dart';
+import 'package:learning_management_system/routes/routes.dart';
 
 class SignInScreen extends ConsumerStatefulWidget {
   const SignInScreen({super.key});
@@ -19,7 +19,6 @@ class SignInScreen extends ConsumerStatefulWidget {
 class _SignInScreenState extends ConsumerState<SignInScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final _storageService = StorageService();
   final _authService = AuthService();
   bool _obscureText = true;
   bool _isLoading = false;
@@ -40,25 +39,18 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   }
 
   Future<void> _checkExistingToken() async {
-    try {
-      final token = await _storageService.getToken();
-      if (token != null) {
-        final role = await _storageService.getUserRole();
-        if (role != null) {
-          if (!mounted) return;
-          _redirectBasedOnRole(role);
-        }
-      }
-    } catch (e) {
-      debugPrint('Error checking token: $e');
+    final authState = await ref.read(authProvider.future);
+    if (authState != null) {
+      if (!mounted) return;
+      _redirectBasedOnRole(authState.role);
     }
   }
 
   void _redirectBasedOnRole(String role) {
     if (role.toUpperCase() == 'LECTURER') {
-      Navigator.pushReplacementNamed(context, AppRoutes.teacherHome);
+      context.go(Routes.teacherHome);
     } else if (role.toUpperCase() == 'STUDENT') {
-      Navigator.pushReplacementNamed(context, AppRoutes.studentHome);
+      context.go(Routes.studentHome);
     }
   }
 
@@ -72,7 +64,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
 
     try {
       setState(() => _isLoading = true);
-      
+
       final result = await _authService.signIn(
         email: _emailController.text,
         password: _passwordController.text,
@@ -81,24 +73,20 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
       if (!mounted) return;
 
       if (result['success'] == true) {
-        final user = result['user'] as User;
-        
-        await _storageService.saveUserSession(
-          token: user.token,
-          role: user.role,
-          userId: user.id,
-        );
+        final userData = result['user'] as Map<String, dynamic>;
+        final user = User.fromJson(userData);
+        final token = userData['token'] as String;
 
-        ref.read(userProvider.notifier).state = user;
+        // Save token and update user state
+        await ref.read(authProvider.notifier).login(user, token);
 
         if (!mounted) return;
         _redirectBasedOnRole(user.role);
       } else if (result['needs_verification'] == true) {
         if (!mounted) return;
-        Navigator.pushNamed(
-          context,
-          AppRoutes.signin,
-          arguments: {
+        context.go(
+          Routes.signin,
+          extra: {
             'email': _emailController.text,
             'password': _passwordController.text,
           },
@@ -131,9 +119,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
             children: [
               IconButton(
                 icon: Icon(Icons.arrow_back, color: theme.colorScheme.onPrimary),
-                onPressed: () {
-                  Navigator.pop(context);
-                },
+                onPressed: () => context.pop(),
               ),
               const SizedBox(height: 16.0),
               const AuthHeader(title: 'Welcome Back to AllHust'),
@@ -200,9 +186,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   Widget _buildSignUpLink() {
     return Center(
       child: TextButton(
-        onPressed: () {
-          Navigator.pushNamed(context, AppRoutes.signup);
-        },
+        onPressed: () => context.push(Routes.signup),
         child: Text(
           'Create a new account',
           style: TextStyle(
