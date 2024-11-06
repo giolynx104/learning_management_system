@@ -2,7 +2,7 @@ name: learning_management_system
 description: "A new Flutter project."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
-publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+publish_to: "none" # Remove this line if you wish to publish to pub.dev
 
 # The following defines the version and build number for your application.
 # A version number is three numbers separated by dots, like 1.2.43
@@ -33,23 +33,25 @@ dependencies:
   flutter_hooks: ^0.19.0
   hooks_riverpod: ^2.0.0
   intl: ^0.19.0
-  image_picker: ^0.8.7+3 # Kiểm tra phiên bản mới nhất
+  image_picker: ^0.8.7+3
   riverpod_annotation: any
   file_picker: ^8.1.2
   http: ^1.2.2
   flutter_svg: ^1.0.0
-
+  shared_preferences: ^2.2.2  # Add this line
+  go_router: ^14.2.6
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
-  flutter_riverpod: ^2.5.1
+  flutter_riverpod: ^2.3.6
+  dio: ^5.4.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
 
   riverpod_generator: any
-  build_runner: ^2.4.0  # Use the latest version available
+  build_runner: ^2.4.0 # Use the latest version available
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
   # activated in the `analysis_options.yaml` file located at the root of your

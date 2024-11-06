@@ -1,17 +1,24 @@
-
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_management_system/components/pinned_item.dart';
 import 'package:learning_management_system/components/teams_item.dart';
 import 'package:learning_management_system/models/pinnedChannel.dart';
 import 'package:learning_management_system/models/teams.dart';
-class StudentHomeScreen extends StatefulWidget {
-   const StudentHomeScreen({super.key});
+import 'package:learning_management_system/services/storage_service.dart';
+import 'package:learning_management_system/providers/auth_provider.dart';
+import 'package:learning_management_system/routes/app_routes.dart';
+
+import 'package:go_router/go_router.dart';
+import 'package:learning_management_system/routes/routes.dart';
+
+class StudentHomeScreen extends ConsumerStatefulWidget {
+  const StudentHomeScreen({super.key});
 
   @override
-  State<StudentHomeScreen> createState() => _StudentHomeScreenState();
+  ConsumerState<StudentHomeScreen> createState() => _StudentHomeScreenState();
 }
 
-class _StudentHomeScreenState extends State<StudentHomeScreen> {
+class _StudentHomeScreenState extends ConsumerState<StudentHomeScreen> {
   List<TeamsModel> teams = [];
   bool isClassesExpanded = false;
   bool isPinnedChannelExpanded = false;
@@ -23,12 +30,13 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
       _selectedIndex = index;
     });
   }
-  void _getPinnedChanel(){
+
+  void _getPinnedChanel() {
     setState(() {
       pinnedChannels = PinnedChannelModel.getPinnedChannels();
     });
   }
-  
+
   void _getTeams() {
     setState(() {
       teams = TeamsModel.getTeams();
@@ -46,6 +54,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: appBar(),
+      endDrawer: _buildDrawer(),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -55,68 +64,44 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _pinnedChannels(), 
+                _pinnedChannels(),
                 const SizedBox(height: 20),
-                _teams(), 
+                _teams(),
               ],
             ),
           ],
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.notifications),
-            label: 'Noti',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.chat),
-            label: 'Chat', 
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.group),
-            label: 'Teams',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_today),
-            label: 'Calendar',
-          ),
-        ],
-        currentIndex: _selectedIndex,
-        selectedItemColor: Colors.blueAccent,
-        onTap: _onItemTapped,
-      ),
     );
   }
 
-Widget _pinnedChannels() {
-  return ExpansionTile(
-    title: const Text("Pinned Channels"),
-    leading: Icon(
+  Widget _pinnedChannels() {
+    return ExpansionTile(
+      title: const Text("Pinned Channels"),
+      leading: Icon(
         isPinnedChannelExpanded ? Icons.arrow_drop_down : Icons.arrow_right,
       ),
-    trailing: const SizedBox.shrink(),
-    onExpansionChanged: (bool expanded) {
+      trailing: const SizedBox.shrink(),
+      onExpansionChanged: (bool expanded) {
         setState(() => isPinnedChannelExpanded = expanded);
       },
-    children: [
-      ListView.builder(
-        shrinkWrap: true,
-        padding: EdgeInsets.zero,
-        physics: const NeverScrollableScrollPhysics(),
-        itemCount: pinnedChannels.length,
-        itemBuilder: (context, index) {
-          var channel = pinnedChannels[index];
-          return PinnedItem(
-            channel: channel,
-            onUnpinPressed: () => _unpinChannel(channel),
-          );
-        },
-      ),
-    ],
-  );
-}
+      children: [
+        ListView.builder(
+          shrinkWrap: true,
+          padding: EdgeInsets.zero,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: pinnedChannels.length,
+          itemBuilder: (context, index) {
+            var channel = pinnedChannels[index];
+            return PinnedItem(
+              channel: channel,
+              onUnpinPressed: () => _unpinChannel(channel),
+            );
+          },
+        ),
+      ],
+    );
+  }
 
   Widget _teams() {
     return ExpansionTile(
@@ -133,7 +118,7 @@ Widget _pinnedChannels() {
       children: [
         ListView.builder(
           shrinkWrap: true,
-          padding:  EdgeInsets.zero,
+          padding: EdgeInsets.zero,
           physics: const NeverScrollableScrollPhysics(),
           itemCount: teams.length,
           itemBuilder: (context, index) {
@@ -184,7 +169,7 @@ Widget _pinnedChannels() {
     );
   }
 
-  AppBar appBar() {
+  PreferredSizeWidget appBar() {
     return AppBar(
       title: const Text(
         'QLDT',
@@ -197,14 +182,126 @@ Widget _pinnedChannels() {
       centerTitle: true,
       backgroundColor: Colors.red,
       elevation: 0.0,
+      actions: [
+        Builder(
+          // Wrap the Padding with Builder
+          builder: (context) => Padding(
+            padding: const EdgeInsets.only(right: 16.0),
+            child: GestureDetector(
+              onTap: () {
+                Scaffold.of(context).openEndDrawer();
+              },
+              child: const CircleAvatar(
+                backgroundColor: Colors.white,
+                child: Icon(Icons.person, color: Colors.red),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
+
+  Widget _buildDrawer() {
+    return Drawer(
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          UserAccountsDrawerHeader(
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            accountName:
+                const Text('Student Name'), // Replace with actual user name
+            accountEmail:
+                const Text('student@example.com'), // Replace with actual email
+            currentAccountPicture: const CircleAvatar(
+              backgroundColor: Colors.white,
+              child: Icon(Icons.person, color: Colors.red),
+            ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.person),
+            title: const Text('Profile'),
+            onTap: () {
+              // Handle profile tap
+              Navigator.pop(context);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.settings),
+            title: const Text('Settings'),
+            onTap: () {
+              // Handle settings tap
+              Navigator.pop(context);
+            },
+          ),
+          const Divider(),
+          ListTile(
+            leading: const Icon(Icons.logout, color: Colors.red),
+            title: const Text('Sign Out', style: TextStyle(color: Colors.red)),
+            onTap: () => _handleSignOut(context),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _handleSignOut(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Sign Out'),
+          content: const Text('Are you sure you want to sign out?'),
+          actions: [
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+            TextButton(
+              child:
+                  const Text('Sign Out', style: TextStyle(color: Colors.red)),
+              onPressed: () async {
+                Navigator.of(context).pop(); // Close dialog
+                await _signOut(context);
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _signOut(BuildContext context) async {
+    try {
+      final storageService = StorageService();
+      await storageService.clearUserSession(); // Use the new method
+
+      if (!mounted) return;
+
+      // Clear user state
+      ref.read(userProvider.notifier).state = null;
+
+      // Navigate to sign in screen and remove all previous routes
+      Navigator.of(context).pushNamedAndRemoveUntil(
+        AppRoutes.signin,
+        (Route<dynamic> route) => false,
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to sign out. Please try again.')),
+      );
+    }
+  }
+
   void _unpinChannel(PinnedChannelModel channel) {
-  setState(() {
-    PinnedChannelModel.removePinnedChannel(channel);
-    pinnedChannels.removeWhere((pinned) => !pinned.isPinned);
-  });
-}
+    setState(() {
+      PinnedChannelModel.removePinnedChannel(channel);
+      pinnedChannels.removeWhere((pinned) => !pinned.isPinned);
+    });
+  }
 
   void _showTeamOptions(BuildContext context, TeamsModel team) {
     showModalBottomSheet(
@@ -217,39 +314,70 @@ Widget _pinnedChannels() {
             children: <Widget>[
               Text(
                 team.name,
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style:
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 10),
               ListTile(
-                leading: const Icon(Icons.group),
+                leading: const Icon(Icons.description),
                 title: const Text('Tài liệu'),
                 onTap: () {
                   Navigator.pop(context);
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.visibility),
+                leading: const Icon(Icons.event_busy),
                 title: const Text('Xin nghỉ'),
-                onTap: () {
-                  Navigator.pop(context);
-                },
+                onTap: () => context.push(Routes.nestedAbsentRequest),
               ),
-                ListTile(
-                leading: const Icon(Icons.tag),
+              ListTile(
+                leading: const Icon(Icons.assignment),
                 title: const Text('Bài tập'),
                 onTap: () {
                   Navigator.pop(context);
                 },
               ),
               ListTile(
+                leading: const Icon(Icons.list_alt),
+                title: const Text('Danh sách khảo sát'),
+                onTap: () => context.push(Routes.nestedSurveyList),
+              ),
+              ListTile(
                 leading: const Icon(Icons.exit_to_app),
                 title: const Text('Rời khỏi nhóm'),
                 onTap: () {
                   Navigator.pop(context);
+                  _showConfirmationDialog(context, team);
                 },
               ),
             ],
           ),
+        );
+      },
+    );
+  }
+
+  void _showConfirmationDialog(BuildContext context, TeamsModel team) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Xác nhận'),
+          content: Text('Bạn có chắc chắn muốn rời khỏi nhóm "${team.name}"?'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Hủy'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Xác nhận'),
+            ),
+          ],
         );
       },
     );

@@ -17,6 +17,7 @@ import 'package:learning_management_system/screens/roll_call_action_screen.dart'
 import 'package:learning_management_system/screens/upload_file_screen.dart';
 import 'package:learning_management_system/screens/screen_chat.dart';
 import 'package:learning_management_system/screens/absence_req_screen.dart';
+
 class AppRoutes {
   static const String signup = '/signup';
   static const String signin = '/signin';
@@ -24,8 +25,8 @@ class AppRoutes {
   static const String submitSurvey = '/submit_survey';
   static const String surveyList = '/survey_list';
   static const String classRegistration = '/class_registration';
-  static const String studentHome = '/student_home_screen';
-  static const String teacherHome = '/teacher_home_screen';
+  static const String studentHome = '/student_home';
+  static const String teacherHome = '/teacher_home';
   static const String notification = '/notification_screen';
   static const String classManagement = '/class_management';
   static const String createClass = '/create_class';
@@ -35,9 +36,9 @@ class AppRoutes {
   static const String rollCallAction = '/roll_call_action';
   static const String createAssignment = '/create_assignment';
   static const String uploadFile = '/upload_file';
-  static const String screenChatStudent ='/screen_chat';
-  static const String absenceRequestScreen ='/absence_request_screen';
-  static const String absenceReqScreen='/absence_req_screen';
+  static const String screenChatStudent = '/screen_chat';
+  static const String absenceRequestScreen = '/absence_request_screen';
+  static const String absenceReqScreen = '/absence_req_screen';
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -63,7 +64,8 @@ class AppRoutes {
       case surveyList:
         return MaterialPageRoute(builder: (_) => const SurveyListScreen());
       case classRegistration:
-        return MaterialPageRoute(builder: (_) => const ClassRegistrationScreen());
+        return MaterialPageRoute(
+            builder: (_) => const ClassRegistrationScreen());
       case studentHome:
         return MaterialPageRoute(builder: (_) => const StudentHomeScreen());
       case teacherHome:
@@ -79,7 +81,8 @@ class AppRoutes {
       case rollCall:
         return MaterialPageRoute(builder: (_) => const RollCallScreen());
       case detailedRollCall:
-        return MaterialPageRoute(builder: (_) => const DetailedRollCallInfoScreen());
+        return MaterialPageRoute(
+            builder: (_) => const DetailedRollCallInfoScreen());
       case rollCallAction:
         return MaterialPageRoute(builder: (_) => const RollCallActionScreen());
       // case createAssignment:
@@ -88,13 +91,17 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => const UploadFileScreen());
       case screenChatStudent:
         return MaterialPageRoute(builder: (_) => const ChatScreen());
-
+      case absenceRequestScreen:
+        return MaterialPageRoute(
+            builder: (_) => const absenceRequestScreenNew());
       default:
-      return MaterialPageRoute(builder: (_) =>  const absenceRequestScreenNew());
-        // return MaterialPageRoute(builder: (_) => const ChatScreen());
-
-
-
+        return MaterialPageRoute(
+          builder: (_) => Scaffold(
+            body: Center(
+              child: Text('No route defined for ${settings.name}'),
+            ),
+          ),
+        );
     }
   }
 }
