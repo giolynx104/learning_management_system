@@ -15,7 +15,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: const StudentLayout(),
+      home: const TeacherLayout(),
       debugShowCheckedModeBanner: false,
       title: 'Learning Management System',
       theme: ThemeData(
@@ -26,8 +26,6 @@ class MyApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      initialRoute: AppRoutes.classManagement,
-      onGenerateRoute: AppRoutes.generateRoute,
     );
   }
 }

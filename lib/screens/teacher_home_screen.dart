@@ -212,7 +212,9 @@ Widget _pinnedChannels() {
               ListTile(
                 leading: const Icon(Icons.assignment),  
                 title: const Text('Giao bài tập'),
-                onTap: () => Navigator.pop(context),
+                onTap: () => context.push(
+                    Routes.nestedTeacherSurveyList
+                ) ,
               ),
               ListTile(
                 leading: const Icon(Icons.description), 
