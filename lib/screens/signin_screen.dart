@@ -75,7 +75,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
       if (result['success'] == true) {
         final userData = result['user'] as Map<String, dynamic>;
         final user = User.fromJson(userData);
-        final token = userData['token'] as String;
+        final token = user.token;
 
         // Save token and update user state
         await ref.read(authProvider.notifier).login(user, token);
@@ -118,7 +118,8 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               IconButton(
-                icon: Icon(Icons.arrow_back, color: theme.colorScheme.onPrimary),
+                icon:
+                    Icon(Icons.arrow_back, color: theme.colorScheme.onPrimary),
                 onPressed: () => context.pop(),
               ),
               const SizedBox(height: 16.0),

@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:learning_management_system/services/class_service.dart';
+import 'package:learning_management_system/providers/auth_provider.dart';
+import 'package:learning_management_system/services/storage_service.dart';
 
 class CreateClassScreen extends HookConsumerWidget {
   const CreateClassScreen({super.key});
@@ -18,6 +22,52 @@ class CreateClassScreen extends HookConsumerWidget {
     final classType = useState<String?>(null);
     final startDate = useState<DateTime?>(null);
     final endDate = useState<DateTime?>(null);
+
+    Future<void> handleCreateClass() async {
+      if (formKey.currentState?.validate() ?? false) {
+        try {
+          final classService = ref.read(classServiceProvider.notifier);
+          
+          final token = await StorageService().getToken();
+          print('Debug - Stored token: $token');
+          
+          final authState = await ref.read(authProvider.future);
+          print('Debug - Auth state: $authState');
+          
+          if (authState == null) {
+            throw Exception('Not authenticated');
+          }
+          
+          print('Debug - Auth token: ${authState.token}');
+          
+          await classService.createClass(
+            token: authState.token,
+            classId: classCodeController.text,
+            className: classNameController.text,
+            classType: classType.value!,
+            startDate: startDate.value!,
+            endDate: endDate.value!,
+            maxStudentAmount: int.parse(maxStudentsController.text),
+            attachedCode: associatedClassCodeController.text.isNotEmpty 
+              ? associatedClassCodeController.text 
+              : null,
+          );
+
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Class created successfully')),
+            );
+            context.pop();
+          }
+        } catch (e) {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Failed to create class: ${e.toString()}')),
+            );
+          }
+        }
+      }
+    }
 
     return Scaffold(
       backgroundColor: theme.colorScheme.onPrimary,
@@ -115,11 +165,7 @@ class CreateClassScreen extends HookConsumerWidget {
               const SizedBox(height: 32),
               Center(
                 child: ElevatedButton(
-                  onPressed: () {
-                    if (formKey.currentState?.validate() ?? false) {
-                      // TODO: Implement class creation logic
-                    }
-                  },
+                  onPressed: handleCreateClass,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: theme.colorScheme.primary,
                     foregroundColor: theme.colorScheme.onPrimary,

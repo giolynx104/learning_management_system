@@ -21,17 +21,23 @@ ClassModel _$ClassModelFromJson(Map<String, dynamic> json) {
 /// @nodoc
 mixin _$ClassModel {
   int get id => throw _privateConstructorUsedError;
+  @JsonKey(name: 'class_id')
   String get classId => throw _privateConstructorUsedError;
+  @JsonKey(name: 'class_name')
   String get className => throw _privateConstructorUsedError;
   String? get schedule => throw _privateConstructorUsedError;
+  @JsonKey(name: 'lecturer_id')
   int get lecturerId => throw _privateConstructorUsedError;
+  @JsonKey(name: 'max_student_amount')
   int get maxStudentAmount => throw _privateConstructorUsedError;
+  @JsonKey(name: 'attached_code')
   String? get attachedCode => throw _privateConstructorUsedError;
+  @JsonKey(name: 'class_type')
   String get classType => throw _privateConstructorUsedError;
-  @JsonKey(fromJson: _dateFromJson, toJson: _dateToJson)
-  DateTime get startDate => throw _privateConstructorUsedError;
-  @JsonKey(fromJson: _dateFromJson, toJson: _dateToJson)
-  DateTime get endDate => throw _privateConstructorUsedError;
+  @JsonKey(name: 'start_date')
+  String get startDate => throw _privateConstructorUsedError;
+  @JsonKey(name: 'end_date')
+  String get endDate => throw _privateConstructorUsedError;
   String get status => throw _privateConstructorUsedError;
 
   /// Serializes this ClassModel to a JSON map.
@@ -52,15 +58,15 @@ abstract class $ClassModelCopyWith<$Res> {
   @useResult
   $Res call(
       {int id,
-      String classId,
-      String className,
+      @JsonKey(name: 'class_id') String classId,
+      @JsonKey(name: 'class_name') String className,
       String? schedule,
-      int lecturerId,
-      int maxStudentAmount,
-      String? attachedCode,
-      String classType,
-      @JsonKey(fromJson: _dateFromJson, toJson: _dateToJson) DateTime startDate,
-      @JsonKey(fromJson: _dateFromJson, toJson: _dateToJson) DateTime endDate,
+      @JsonKey(name: 'lecturer_id') int lecturerId,
+      @JsonKey(name: 'max_student_amount') int maxStudentAmount,
+      @JsonKey(name: 'attached_code') String? attachedCode,
+      @JsonKey(name: 'class_type') String classType,
+      @JsonKey(name: 'start_date') String startDate,
+      @JsonKey(name: 'end_date') String endDate,
       String status});
 }
 
@@ -127,11 +133,11 @@ class _$ClassModelCopyWithImpl<$Res, $Val extends ClassModel>
       startDate: null == startDate
           ? _value.startDate
           : startDate // ignore: cast_nullable_to_non_nullable
-              as DateTime,
+              as String,
       endDate: null == endDate
           ? _value.endDate
           : endDate // ignore: cast_nullable_to_non_nullable
-              as DateTime,
+              as String,
       status: null == status
           ? _value.status
           : status // ignore: cast_nullable_to_non_nullable
@@ -150,15 +156,15 @@ abstract class _$$ClassModelImplCopyWith<$Res>
   @useResult
   $Res call(
       {int id,
-      String classId,
-      String className,
+      @JsonKey(name: 'class_id') String classId,
+      @JsonKey(name: 'class_name') String className,
       String? schedule,
-      int lecturerId,
-      int maxStudentAmount,
-      String? attachedCode,
-      String classType,
-      @JsonKey(fromJson: _dateFromJson, toJson: _dateToJson) DateTime startDate,
-      @JsonKey(fromJson: _dateFromJson, toJson: _dateToJson) DateTime endDate,
+      @JsonKey(name: 'lecturer_id') int lecturerId,
+      @JsonKey(name: 'max_student_amount') int maxStudentAmount,
+      @JsonKey(name: 'attached_code') String? attachedCode,
+      @JsonKey(name: 'class_type') String classType,
+      @JsonKey(name: 'start_date') String startDate,
+      @JsonKey(name: 'end_date') String endDate,
       String status});
 }
 
@@ -223,11 +229,11 @@ class __$$ClassModelImplCopyWithImpl<$Res>
       startDate: null == startDate
           ? _value.startDate
           : startDate // ignore: cast_nullable_to_non_nullable
-              as DateTime,
+              as String,
       endDate: null == endDate
           ? _value.endDate
           : endDate // ignore: cast_nullable_to_non_nullable
-              as DateTime,
+              as String,
       status: null == status
           ? _value.status
           : status // ignore: cast_nullable_to_non_nullable
@@ -241,17 +247,15 @@ class __$$ClassModelImplCopyWithImpl<$Res>
 class _$ClassModelImpl implements _ClassModel {
   const _$ClassModelImpl(
       {required this.id,
-      required this.classId,
-      required this.className,
+      @JsonKey(name: 'class_id') required this.classId,
+      @JsonKey(name: 'class_name') required this.className,
       this.schedule,
-      required this.lecturerId,
-      required this.maxStudentAmount,
-      this.attachedCode,
-      required this.classType,
-      @JsonKey(fromJson: _dateFromJson, toJson: _dateToJson)
-      required this.startDate,
-      @JsonKey(fromJson: _dateFromJson, toJson: _dateToJson)
-      required this.endDate,
+      @JsonKey(name: 'lecturer_id') required this.lecturerId,
+      @JsonKey(name: 'max_student_amount') required this.maxStudentAmount,
+      @JsonKey(name: 'attached_code') this.attachedCode,
+      @JsonKey(name: 'class_type') required this.classType,
+      @JsonKey(name: 'start_date') required this.startDate,
+      @JsonKey(name: 'end_date') required this.endDate,
       required this.status});
 
   factory _$ClassModelImpl.fromJson(Map<String, dynamic> json) =>
@@ -260,25 +264,31 @@ class _$ClassModelImpl implements _ClassModel {
   @override
   final int id;
   @override
+  @JsonKey(name: 'class_id')
   final String classId;
   @override
+  @JsonKey(name: 'class_name')
   final String className;
   @override
   final String? schedule;
   @override
+  @JsonKey(name: 'lecturer_id')
   final int lecturerId;
   @override
+  @JsonKey(name: 'max_student_amount')
   final int maxStudentAmount;
   @override
+  @JsonKey(name: 'attached_code')
   final String? attachedCode;
   @override
+  @JsonKey(name: 'class_type')
   final String classType;
   @override
-  @JsonKey(fromJson: _dateFromJson, toJson: _dateToJson)
-  final DateTime startDate;
+  @JsonKey(name: 'start_date')
+  final String startDate;
   @override
-  @JsonKey(fromJson: _dateFromJson, toJson: _dateToJson)
-  final DateTime endDate;
+  @JsonKey(name: 'end_date')
+  final String endDate;
   @override
   final String status;
 
@@ -347,17 +357,15 @@ class _$ClassModelImpl implements _ClassModel {
 abstract class _ClassModel implements ClassModel {
   const factory _ClassModel(
       {required final int id,
-      required final String classId,
-      required final String className,
+      @JsonKey(name: 'class_id') required final String classId,
+      @JsonKey(name: 'class_name') required final String className,
       final String? schedule,
-      required final int lecturerId,
-      required final int maxStudentAmount,
-      final String? attachedCode,
-      required final String classType,
-      @JsonKey(fromJson: _dateFromJson, toJson: _dateToJson)
-      required final DateTime startDate,
-      @JsonKey(fromJson: _dateFromJson, toJson: _dateToJson)
-      required final DateTime endDate,
+      @JsonKey(name: 'lecturer_id') required final int lecturerId,
+      @JsonKey(name: 'max_student_amount') required final int maxStudentAmount,
+      @JsonKey(name: 'attached_code') final String? attachedCode,
+      @JsonKey(name: 'class_type') required final String classType,
+      @JsonKey(name: 'start_date') required final String startDate,
+      @JsonKey(name: 'end_date') required final String endDate,
       required final String status}) = _$ClassModelImpl;
 
   factory _ClassModel.fromJson(Map<String, dynamic> json) =
@@ -366,25 +374,31 @@ abstract class _ClassModel implements ClassModel {
   @override
   int get id;
   @override
+  @JsonKey(name: 'class_id')
   String get classId;
   @override
+  @JsonKey(name: 'class_name')
   String get className;
   @override
   String? get schedule;
   @override
+  @JsonKey(name: 'lecturer_id')
   int get lecturerId;
   @override
+  @JsonKey(name: 'max_student_amount')
   int get maxStudentAmount;
   @override
+  @JsonKey(name: 'attached_code')
   String? get attachedCode;
   @override
+  @JsonKey(name: 'class_type')
   String get classType;
   @override
-  @JsonKey(fromJson: _dateFromJson, toJson: _dateToJson)
-  DateTime get startDate;
+  @JsonKey(name: 'start_date')
+  String get startDate;
   @override
-  @JsonKey(fromJson: _dateFromJson, toJson: _dateToJson)
-  DateTime get endDate;
+  @JsonKey(name: 'end_date')
+  String get endDate;
   @override
   String get status;
 

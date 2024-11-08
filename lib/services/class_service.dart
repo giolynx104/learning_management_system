@@ -13,12 +13,12 @@ class ClassService extends _$ClassService {
   Future<ClassModel> createClass({
     required String token,
     required String classId,
-    required String className, 
+    required String className,
     required String classType,
     required DateTime startDate,
     required DateTime endDate,
     required int maxStudentAmount,
-    required int lecturerId,
+    String? attachedCode,
   }) async {
     try {
       final response = await ref.read(apiClientProvider).post(
@@ -27,11 +27,11 @@ class ClassService extends _$ClassService {
           'token': token,
           'class_id': classId,
           'class_name': className,
-          'class_type': classType,
-          'start_date': startDate.toIso8601String().split('T')[0], // YYYY-MM-DD format
+          'class_type': _mapClassType(classType),
+          'start_date': startDate.toIso8601String().split('T')[0],
           'end_date': endDate.toIso8601String().split('T')[0],
           'max_student_amount': maxStudentAmount,
-          'lecturer_id': lecturerId,
+          if (attachedCode != null) 'attached_code': attachedCode,
         },
       );
 
@@ -40,17 +40,35 @@ class ClassService extends _$ClassService {
       }
 
       final responseData = response.data as Map<String, dynamic>;
-      final meta = responseData['meta'] as Map<String, dynamic>;
+      final meta = responseData['meta'] as Map<String, dynamic>?;
       
-      if (meta['code'] != 1000) {
+      if (meta != null && meta['code'] != 1000) {
         throw Exception(meta['message'] ?? 'Unknown error occurred');
       }
 
       return ClassModel.fromJson(responseData['data']);
     } on DioException catch (e) {
+      if (e.response?.statusCode == 400) {
+        final responseData = e.response?.data as Map<String, dynamic>?;
+        final meta = responseData?['meta'] as Map<String, dynamic>?;
+        throw Exception(meta?['message'] ?? 'Invalid parameters');
+      }
       throw Exception('Network error: ${e.message}');
     } catch (e) {
       throw Exception('Failed to create class: $e');
+    }
+  }
+
+  String _mapClassType(String type) {
+    switch (type.toLowerCase()) {
+      case 'theory':
+        return 'LT';
+      case 'exercise':
+        return 'BT';
+      case 'both':
+        return 'LT_BT';
+      default:
+        throw Exception('Invalid class type');
     }
   }
 

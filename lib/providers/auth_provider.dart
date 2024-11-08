@@ -11,20 +11,25 @@ class Auth extends _$Auth {
   @override
   Future<User?> build() async {
     final token = await StorageService().getToken();
+    print('Debug - Auth build - Token from storage: $token');
+    
     if (token == null) return null;
     
     try {
       final user = await ref.read(userServiceProvider).getUserInfo(token);
-      return user;
+      print('Debug - Auth build - Got user: $user');
+      return user.copyWith(token: token);
     } catch (e) {
+      print('Debug - Auth build - Error: $e');
       await StorageService().clearToken();
       return null;
     }
   }
 
   Future<void> login(User user, String token) async {
+    print('Debug - Auth login - Token: $token');
     await StorageService().saveToken(token);
-    state = AsyncValue.data(user);
+    state = AsyncValue.data(user.copyWith(token: token));
   }
 
   Future<void> logout() async {
