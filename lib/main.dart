@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_management_system/layout/student_layout.dart';
 import 'package:learning_management_system/layout/teacher_layout.dart';
-import 'package:learning_management_system/routes/app_routes.dart';
-import 'package:learning_management_system/routes/router.dart';
 
 void main() {
   runApp(const ProviderScope(child: MyApp()));

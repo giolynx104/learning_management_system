@@ -15,16 +15,10 @@ class TeacherHomeScreen extends StatefulWidget {
 
 class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
   List<TeamsModel> teams = [];
-  bool isClassesExpanded = false;
+  bool isClassesExpanded = true;
   bool isPinnedChannelExpanded = false;
-  int _selectedIndex = 2;
   List<PinnedChannelModel> pinnedChannels = [];
 
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-  }
   void _getPinnedChanel(){
     setState(() {
       pinnedChannels = PinnedChannelModel.getPinnedChannels();
@@ -47,7 +41,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: appBar(),
+     // appBar: appBar(),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -57,8 +51,6 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _pinnedChannels(), 
-                const SizedBox(height: 20),
                 _teams(), 
               ],
             ),
@@ -71,6 +63,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
 
 Widget _pinnedChannels() {
   return ExpansionTile(
+   
     title: const Text("Pinned Channels"),
     leading: Icon(
         isPinnedChannelExpanded ? Icons.arrow_drop_down : Icons.arrow_right,
@@ -99,6 +92,7 @@ Widget _pinnedChannels() {
 
   Widget _teams() {
     return ExpansionTile(
+      initiallyExpanded: true,
       title: const Text("Classes"),
       leading: Icon(
         isClassesExpanded ? Icons.arrow_drop_down : Icons.arrow_right,
@@ -120,7 +114,7 @@ Widget _pinnedChannels() {
           itemCount: teams.length,
           itemBuilder: (context, index) {
             var team = teams[index];
-            return TeamsExpansionItem(
+            return TeamsItem(
               name: team.name,
               color: team.color,
               onMorePressed: () => _showTeamOptions(context, team),

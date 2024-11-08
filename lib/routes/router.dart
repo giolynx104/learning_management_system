@@ -1,23 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:learning_management_system/routes/custom_layout_scaffold.dart';
 import 'package:learning_management_system/routes/destinations.dart';
 import 'package:learning_management_system/routes/routes.dart';
-import 'package:learning_management_system/screens/absence_request_screen.dart';
-import 'package:learning_management_system/screens/class_management.dart';
-import 'package:learning_management_system/screens/class_registration_screen.dart';
-import 'package:learning_management_system/screens/create_class_screen.dart';
-import 'package:learning_management_system/screens/create_survey_screen.dart';
-import 'package:learning_management_system/screens/detailed_roll_call_info_screen.dart';
-import 'package:learning_management_system/screens/modify_class_screen.dart';
-import 'package:learning_management_system/screens/notification_screen.dart';
-import 'package:learning_management_system/screens/roll_call_action_screen.dart';
-import 'package:learning_management_system/screens/roll_call_management_screen.dart';
-import 'package:learning_management_system/screens/student_home_screen.dart';
-import 'package:learning_management_system/routes/custom_layout_scaffold.dart';
-import 'package:learning_management_system/screens/submit_survey_screen.dart';
-import 'package:learning_management_system/screens/survey_list_screen.dart';
-import 'package:learning_management_system/screens/teacher_home_screen.dart';
-import 'package:learning_management_system/screens/upload_file_screen.dart';
+import 'package:learning_management_system/screens/screen.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
 
@@ -27,7 +13,8 @@ final studentRouter = GoRouter(
   routes: [
     StatefulShellRoute.indexedStack(
       builder: (context, state, navigationShell) => LayoutScaffold(
-        navigationShell: navigationShell, destinations: studentDestinations,
+        navigationShell: navigationShell,
+        destinations: studentDestinations,
       ),
       branches: [
         StatefulShellBranch(
@@ -82,7 +69,8 @@ final teacherRouter = GoRouter(
   routes: [
     StatefulShellRoute.indexedStack(
       builder: (context, state, navigationShell) => LayoutScaffold(
-        navigationShell: navigationShell, destinations: teacherDestinations,
+        navigationShell: navigationShell, 
+        destinations: teacherDestinations,
       ),
       branches: [
         StatefulShellBranch(
@@ -110,7 +98,7 @@ final teacherRouter = GoRouter(
                   ),
                 GoRoute(
                   path: Routes.rollCallAction,
-                  builder: (context,state)=> const RollCallActionScreen()
+                  builder: (context,state)=> const RollCallScreen()
                   ),
                 GoRoute(
                   path: Routes.createSurvey,

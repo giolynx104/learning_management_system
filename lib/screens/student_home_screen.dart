@@ -17,14 +17,8 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
   List<TeamsModel> teams = [];
   bool isClassesExpanded = false;
   bool isPinnedChannelExpanded = false;
-  int _selectedIndex = 2;
   List<PinnedChannelModel> pinnedChannels = [];
 
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-  }
   void _getPinnedChanel(){
     setState(() {
       pinnedChannels = PinnedChannelModel.getPinnedChannels();
@@ -47,7 +41,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: appBar(),
+      //appBar: appBar(),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -57,8 +51,8 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _pinnedChannels(), 
-                const SizedBox(height: 20),
+                // _pinnedChannels(), 
+                // const SizedBox(height: 20),
                 _teams(), 
               ],
             ),
@@ -98,6 +92,7 @@ Widget _pinnedChannels() {
 
   Widget _teams() {
     return ExpansionTile(
+      initiallyExpanded: true,
       title: const Text("Classes"),
       leading: Icon(
         isClassesExpanded ? Icons.arrow_drop_down : Icons.arrow_right,
@@ -116,7 +111,7 @@ Widget _pinnedChannels() {
           itemCount: teams.length,
           itemBuilder: (context, index) {
             var team = teams[index];
-            return TeamsExpansionItem(
+            return TeamsItem(
               name: team.name,
               color: team.color,
               onMorePressed: () => _showTeamOptions(context, team),
