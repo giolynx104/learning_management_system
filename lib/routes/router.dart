@@ -152,15 +152,16 @@ final appRouter = GoRouter(
         // Classes Branch
         StatefulShellBranch(
           routes: [
-            // Student Class Registration
-            GoRoute(
-              path: Routes.classRegistration,
-              builder: (context, state) => const ClassRegistrationScreen(),
-            ),
-            // Teacher Class Management
             GoRoute(
               path: Routes.classManagement,
-              builder: (context, state) => const ClassManagementScreen(),
+              builder: (context, state) {
+                final container = ProviderScope.containerOf(context);
+                final isStudent = container.read(authProvider).value?.role.toUpperCase() == 'STUDENT';
+                
+                return isStudent 
+                  ? const ClassRegistrationScreen() 
+                  : const ClassManagementScreen();
+              },
             ),
           ],
         ),

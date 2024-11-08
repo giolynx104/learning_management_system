@@ -183,9 +183,7 @@ class _TeacherHomeScreenState extends ConsumerState<TeacherHomeScreen> with Sign
       ),
       trailing: IconButton(
         icon: const Icon(Icons.add),
-        onPressed: () => context.push(
-          Routes.nestedCreateClass
-        ),
+        onPressed: () => context.push(Routes.nestedCreateClass),
       ),
       onExpansionChanged: (bool expanded) {
         setState(() => isClassesExpanded = expanded);
