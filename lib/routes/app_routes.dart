@@ -16,7 +16,7 @@ import 'package:learning_management_system/screens/detailed_roll_call_info_scree
 import 'package:learning_management_system/screens/roll_call_action_screen.dart';
 import 'package:learning_management_system/screens/upload_file_screen.dart';
 import 'package:learning_management_system/screens/screen_chat.dart';
-import 'package:learning_management_system/screens/absence_req_screen.dart';
+import 'package:learning_management_system/screens/absence_request_screen.dart';
 
 class AppRoutes {
   static const String signup = '/signup';

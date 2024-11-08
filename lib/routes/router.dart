@@ -38,7 +38,7 @@ final studentRouter = GoRouter(
               routes: [
                 GoRoute(
                   path: Routes.absentRequest,
-                  builder: (context,state)=> const AbsenceRequestScreen(),
+                  builder: (context,state)=> const absenceRequestScreenNew(),
                   ),
                 GoRoute(
                   path: Routes.surveyList,
