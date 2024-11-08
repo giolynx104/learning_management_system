@@ -9,10 +9,11 @@ class User with _$User {
     required int id,
     @JsonKey(name: 'ho') required String firstName,
     @JsonKey(name: 'ten') required String lastName,
-    required String name,
-    required String email,
+    @JsonKey(name: 'username') required String email,
+    @JsonKey(name: 'token') required String token,
+    @JsonKey(name: 'active') required String status,
     required String role,
-    @JsonKey(name: 'status') required String status,
+    @JsonKey(name: 'class_list') required List<dynamic> classList,
     String? avatar,
   }) = _User;
 

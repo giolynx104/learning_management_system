@@ -7,7 +7,7 @@ import 'package:learning_management_system/routes/routes.dart';
 import 'package:learning_management_system/screens/signin_screen.dart';
 import 'package:learning_management_system/screens/signup_screen.dart';
 import 'package:learning_management_system/screens/absence_request_screen.dart';
-import 'package:learning_management_system/screens/class_management.dart';
+import 'package:learning_management_system/screens/class_management_screen.dart';
 import 'package:learning_management_system/screens/class_registration_screen.dart';
 import 'package:learning_management_system/screens/create_class_screen.dart';
 import 'package:learning_management_system/screens/create_survey_screen.dart';

@@ -61,30 +61,24 @@ class AuthService {
         body: jsonEncode({
           'email': email,
           'password': password,
+          'deviceId': 1,
         }),
       );
 
-      final responseBody = jsonDecode(response.body);
-
       if (response.statusCode == 200) {
-        final user = User.fromJson(responseBody);
-
+        final responseData = jsonDecode(response.body);
+        final user = User.fromJson(responseData);
+        
         return {
           'success': true,
-          'user': user,
+          'user': responseData,
+          'token': user.token,
           'needs_verification': false,
-        };
-      } else if (response.statusCode == 403) {
-        return {
-          'success': false,
-          'needs_verification': true,
-          'email': email,
-          'password': password,
         };
       } else if (response.statusCode == 401) {
         throw Exception('User not found or wrong password');
       } else {
-        throw Exception('Failed to login: ${responseBody['message'] ?? 'Unknown error'}');
+        throw Exception('Failed to login: ${response.body}');
       }
     } catch (e) {
       rethrow;

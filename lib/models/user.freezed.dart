@@ -25,11 +25,15 @@ mixin _$User {
   String get firstName => throw _privateConstructorUsedError;
   @JsonKey(name: 'ten')
   String get lastName => throw _privateConstructorUsedError;
-  String get name => throw _privateConstructorUsedError;
+  @JsonKey(name: 'username')
   String get email => throw _privateConstructorUsedError;
-  String get role => throw _privateConstructorUsedError;
-  @JsonKey(name: 'status')
+  @JsonKey(name: 'token')
+  String get token => throw _privateConstructorUsedError;
+  @JsonKey(name: 'active')
   String get status => throw _privateConstructorUsedError;
+  String get role => throw _privateConstructorUsedError;
+  @JsonKey(name: 'class_list')
+  List<dynamic> get classList => throw _privateConstructorUsedError;
   String? get avatar => throw _privateConstructorUsedError;
 
   /// Serializes this User to a JSON map.
@@ -50,10 +54,11 @@ abstract class $UserCopyWith<$Res> {
       {int id,
       @JsonKey(name: 'ho') String firstName,
       @JsonKey(name: 'ten') String lastName,
-      String name,
-      String email,
+      @JsonKey(name: 'username') String email,
+      @JsonKey(name: 'token') String token,
+      @JsonKey(name: 'active') String status,
       String role,
-      @JsonKey(name: 'status') String status,
+      @JsonKey(name: 'class_list') List<dynamic> classList,
       String? avatar});
 }
 
@@ -75,10 +80,11 @@ class _$UserCopyWithImpl<$Res, $Val extends User>
     Object? id = null,
     Object? firstName = null,
     Object? lastName = null,
-    Object? name = null,
     Object? email = null,
-    Object? role = null,
+    Object? token = null,
     Object? status = null,
+    Object? role = null,
+    Object? classList = null,
     Object? avatar = freezed,
   }) {
     return _then(_value.copyWith(
@@ -94,22 +100,26 @@ class _$UserCopyWithImpl<$Res, $Val extends User>
           ? _value.lastName
           : lastName // ignore: cast_nullable_to_non_nullable
               as String,
-      name: null == name
-          ? _value.name
-          : name // ignore: cast_nullable_to_non_nullable
-              as String,
       email: null == email
           ? _value.email
           : email // ignore: cast_nullable_to_non_nullable
               as String,
-      role: null == role
-          ? _value.role
-          : role // ignore: cast_nullable_to_non_nullable
+      token: null == token
+          ? _value.token
+          : token // ignore: cast_nullable_to_non_nullable
               as String,
       status: null == status
           ? _value.status
           : status // ignore: cast_nullable_to_non_nullable
               as String,
+      role: null == role
+          ? _value.role
+          : role // ignore: cast_nullable_to_non_nullable
+              as String,
+      classList: null == classList
+          ? _value.classList
+          : classList // ignore: cast_nullable_to_non_nullable
+              as List<dynamic>,
       avatar: freezed == avatar
           ? _value.avatar
           : avatar // ignore: cast_nullable_to_non_nullable
@@ -129,10 +139,11 @@ abstract class _$$UserImplCopyWith<$Res> implements $UserCopyWith<$Res> {
       {int id,
       @JsonKey(name: 'ho') String firstName,
       @JsonKey(name: 'ten') String lastName,
-      String name,
-      String email,
+      @JsonKey(name: 'username') String email,
+      @JsonKey(name: 'token') String token,
+      @JsonKey(name: 'active') String status,
       String role,
-      @JsonKey(name: 'status') String status,
+      @JsonKey(name: 'class_list') List<dynamic> classList,
       String? avatar});
 }
 
@@ -151,10 +162,11 @@ class __$$UserImplCopyWithImpl<$Res>
     Object? id = null,
     Object? firstName = null,
     Object? lastName = null,
-    Object? name = null,
     Object? email = null,
-    Object? role = null,
+    Object? token = null,
     Object? status = null,
+    Object? role = null,
+    Object? classList = null,
     Object? avatar = freezed,
   }) {
     return _then(_$UserImpl(
@@ -170,22 +182,26 @@ class __$$UserImplCopyWithImpl<$Res>
           ? _value.lastName
           : lastName // ignore: cast_nullable_to_non_nullable
               as String,
-      name: null == name
-          ? _value.name
-          : name // ignore: cast_nullable_to_non_nullable
-              as String,
       email: null == email
           ? _value.email
           : email // ignore: cast_nullable_to_non_nullable
               as String,
-      role: null == role
-          ? _value.role
-          : role // ignore: cast_nullable_to_non_nullable
+      token: null == token
+          ? _value.token
+          : token // ignore: cast_nullable_to_non_nullable
               as String,
       status: null == status
           ? _value.status
           : status // ignore: cast_nullable_to_non_nullable
               as String,
+      role: null == role
+          ? _value.role
+          : role // ignore: cast_nullable_to_non_nullable
+              as String,
+      classList: null == classList
+          ? _value._classList
+          : classList // ignore: cast_nullable_to_non_nullable
+              as List<dynamic>,
       avatar: freezed == avatar
           ? _value.avatar
           : avatar // ignore: cast_nullable_to_non_nullable
@@ -201,11 +217,13 @@ class _$UserImpl implements _User {
       {required this.id,
       @JsonKey(name: 'ho') required this.firstName,
       @JsonKey(name: 'ten') required this.lastName,
-      required this.name,
-      required this.email,
+      @JsonKey(name: 'username') required this.email,
+      @JsonKey(name: 'token') required this.token,
+      @JsonKey(name: 'active') required this.status,
       required this.role,
-      @JsonKey(name: 'status') required this.status,
-      this.avatar});
+      @JsonKey(name: 'class_list') required final List<dynamic> classList,
+      this.avatar})
+      : _classList = classList;
 
   factory _$UserImpl.fromJson(Map<String, dynamic> json) =>
       _$$UserImplFromJson(json);
@@ -219,20 +237,31 @@ class _$UserImpl implements _User {
   @JsonKey(name: 'ten')
   final String lastName;
   @override
-  final String name;
-  @override
+  @JsonKey(name: 'username')
   final String email;
   @override
-  final String role;
+  @JsonKey(name: 'token')
+  final String token;
   @override
-  @JsonKey(name: 'status')
+  @JsonKey(name: 'active')
   final String status;
+  @override
+  final String role;
+  final List<dynamic> _classList;
+  @override
+  @JsonKey(name: 'class_list')
+  List<dynamic> get classList {
+    if (_classList is EqualUnmodifiableListView) return _classList;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(_classList);
+  }
+
   @override
   final String? avatar;
 
   @override
   String toString() {
-    return 'User(id: $id, firstName: $firstName, lastName: $lastName, name: $name, email: $email, role: $role, status: $status, avatar: $avatar)';
+    return 'User(id: $id, firstName: $firstName, lastName: $lastName, email: $email, token: $token, status: $status, role: $role, classList: $classList, avatar: $avatar)';
   }
 
   @override
@@ -245,17 +274,28 @@ class _$UserImpl implements _User {
                 other.firstName == firstName) &&
             (identical(other.lastName, lastName) ||
                 other.lastName == lastName) &&
-            (identical(other.name, name) || other.name == name) &&
             (identical(other.email, email) || other.email == email) &&
-            (identical(other.role, role) || other.role == role) &&
+            (identical(other.token, token) || other.token == token) &&
             (identical(other.status, status) || other.status == status) &&
+            (identical(other.role, role) || other.role == role) &&
+            const DeepCollectionEquality()
+                .equals(other._classList, _classList) &&
             (identical(other.avatar, avatar) || other.avatar == avatar));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hash(
-      runtimeType, id, firstName, lastName, name, email, role, status, avatar);
+      runtimeType,
+      id,
+      firstName,
+      lastName,
+      email,
+      token,
+      status,
+      role,
+      const DeepCollectionEquality().hash(_classList),
+      avatar);
 
   /// Create a copy of User
   /// with the given fields replaced by the non-null parameter values.
@@ -278,10 +318,11 @@ abstract class _User implements User {
       {required final int id,
       @JsonKey(name: 'ho') required final String firstName,
       @JsonKey(name: 'ten') required final String lastName,
-      required final String name,
-      required final String email,
+      @JsonKey(name: 'username') required final String email,
+      @JsonKey(name: 'token') required final String token,
+      @JsonKey(name: 'active') required final String status,
       required final String role,
-      @JsonKey(name: 'status') required final String status,
+      @JsonKey(name: 'class_list') required final List<dynamic> classList,
       final String? avatar}) = _$UserImpl;
 
   factory _User.fromJson(Map<String, dynamic> json) = _$UserImpl.fromJson;
@@ -295,14 +336,19 @@ abstract class _User implements User {
   @JsonKey(name: 'ten')
   String get lastName;
   @override
-  String get name;
-  @override
+  @JsonKey(name: 'username')
   String get email;
+  @override
+  @JsonKey(name: 'token')
+  String get token;
+  @override
+  @JsonKey(name: 'active')
+  String get status;
   @override
   String get role;
   @override
-  @JsonKey(name: 'status')
-  String get status;
+  @JsonKey(name: 'class_list')
+  List<dynamic> get classList;
   @override
   String? get avatar;
 
