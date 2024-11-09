@@ -5,10 +5,10 @@ class CustomDataTable extends StatelessWidget {
   final List<DataRow> rows;
 
   const CustomDataTable({
-    Key? key,
+    super.key,
     required this.columns,
     required this.rows,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -18,7 +18,7 @@ class CustomDataTable extends StatelessWidget {
       child: Theme(
         data: Theme.of(context).copyWith(
           dataTableTheme: DataTableThemeData(
-            headingRowColor: MaterialStateProperty.all(theme.colorScheme.primary),
+            headingRowColor: WidgetStateProperty.all(theme.colorScheme.primary),
             headingTextStyle: TextStyle(
               color: theme.colorScheme.onPrimary,
               fontWeight: FontWeight.bold,

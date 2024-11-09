@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:learning_management_system/routes/app_routes.dart';
+import 'package:go_router/go_router.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:learning_management_system/providers/auth_provider.dart';
 import 'package:learning_management_system/components/auth_header.dart';
 import 'package:learning_management_system/components/auth_text_field.dart';
 import 'package:learning_management_system/widgets/custom_button.dart';
-import 'package:learning_management_system/services/storage_service.dart';
 import 'package:learning_management_system/models/user.dart';
+import 'package:learning_management_system/services/auth_service.dart';
+import 'package:learning_management_system/routes/routes.dart';
 
 class SignInScreen extends ConsumerStatefulWidget {
   const SignInScreen({super.key});
@@ -18,7 +19,7 @@ class SignInScreen extends ConsumerStatefulWidget {
 class _SignInScreenState extends ConsumerState<SignInScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final _storageService = StorageService();
+  final _authService = AuthService();
   bool _obscureText = true;
   bool _isLoading = false;
 
@@ -38,94 +39,69 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   }
 
   Future<void> _checkExistingToken() async {
-    try {
-      final token = await _storageService.getToken();
-      if (token != null) {
-        final user = await _getUserFromToken(token);
-        if (!mounted) return;
-        if (user != null) {
-          _redirectToHome(user);
-        }
-      }
-    } catch (e) {
-      debugPrint('Error checking token: $e');
+    final authState = await ref.read(authProvider.future);
+    if (authState != null) {
+      if (!mounted) return;
+      _redirectBasedOnRole(authState.role);
     }
   }
 
-  Future<User?> _getUserFromToken(String token) async {
-    // TODO: Implement a method to get user details from the token
-    return User(
-      id: 1,
-      username: 'dummyuser@example.com',
-      token: token,
-      active: 'Active',
-      role: 'STUDENT',
-      classList: ['Dummy Class'],
-    );
-  }
-
-  void _redirectToHome(User user) {
-    if (!mounted) return;
-    ref.read(userProvider.notifier).state = user;
-    if (user.role.toLowerCase() == 'teacher') {
-      Navigator.pushReplacementNamed(context, AppRoutes.teacherHome);
-    } else if (user.role.toLowerCase() == 'student') {
-      Navigator.pushReplacementNamed(context, AppRoutes.studentHome);
+  void _redirectBasedOnRole(String role) {
+    if (role.toUpperCase() == 'LECTURER') {
+      context.go(Routes.teacherHome);
+    } else if (role.toUpperCase() == 'STUDENT') {
+      context.go(Routes.studentHome);
     }
-  }
-
-  void _togglePasswordVisibility() {
-    setState(() {
-      _obscureText = !_obscureText;
-    });
   }
 
   Future<void> _handleSignIn() async {
-    if (!mounted) return;
-    setState(() {
-      _isLoading = true;
-    });
-
-    final loginData = {
-      'email': _emailController.text,
-      'password': _passwordController.text,
-      'deviceId': 1,
-    };
+    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please fill in all fields')),
+      );
+      return;
+    }
 
     try {
-      final user = await ref.read(loginProvider(loginData).future);
-      if (!mounted) return;
-      
-      ref.read(userProvider.notifier).state = user;
-      
-      await _storageService.saveUserSession(
-        token: user.token,
-        role: user.role,
-        userId: user.id,
+      setState(() => _isLoading = true);
+
+      final result = await _authService.signIn(
+        email: _emailController.text,
+        password: _passwordController.text,
       );
 
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Login successful!')),
-      );
+      print('Debug - Sign in response: $result');
 
-      _redirectToHome(user);
-    } catch (e) {
       if (!mounted) return;
-      String errorMessage = 'An unexpected error occurred. Please try again later.';
-      if (e is Exception) {
-        if (e.toString().contains('User not found or wrong password')) {
-          errorMessage = 'Invalid email or password. Please check your credentials and try again.';
-        }
+
+      if (result['success'] == true) {
+        final userData = result['user'] as Map<String, dynamic>;
+        print('Debug - User data: $userData');
+
+        final user = User.fromJson(userData);
+        print('Debug - Parsed user: $user');
+
+        final token = userData['token'] as String;
+        print('Debug - Token from response: $token');
+
+        // Save token and update user state
+        await ref.read(authProvider.notifier).login(user, token);
+        print('Debug - After login call');
+
+        if (!mounted) return;
+        _redirectBasedOnRole(user.role);
+      } else {
+        throw Exception('Login failed');
       }
+    } catch (e) {
+      print('Debug - Sign in error: $e');
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(errorMessage)),
+        SnackBar(content: Text(e.toString())),
       );
     } finally {
       if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
+        setState(() => _isLoading = false);
       }
     }
   }
@@ -142,10 +118,9 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               IconButton(
-                icon: Icon(Icons.arrow_back, color: theme.colorScheme.onPrimary),
-                onPressed: () {
-                  Navigator.pop(context);
-                },
+                icon:
+                    Icon(Icons.arrow_back, color: theme.colorScheme.onPrimary),
+                onPressed: () => context.pop(),
               ),
               const SizedBox(height: 16.0),
               const AuthHeader(title: 'Welcome Back to AllHust'),
@@ -212,11 +187,9 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   Widget _buildSignUpLink() {
     return Center(
       child: TextButton(
-        onPressed: () {
-          Navigator.pushNamed(context, AppRoutes.signup);
-        },
+        onPressed: () => context.push(Routes.signup),
         child: Text(
-          'Create new account',
+          'Create a new account',
           style: TextStyle(
             color: Theme.of(context).colorScheme.onPrimary,
             decoration: TextDecoration.underline,
@@ -225,5 +198,11 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
         ),
       ),
     );
+  }
+
+  void _togglePasswordVisibility() {
+    setState(() {
+      _obscureText = !_obscureText;
+    });
   }
 }

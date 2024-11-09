@@ -1,58 +1,60 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:learning_management_system/services/auth_service.dart';
-import 'package:learning_management_system/services/storage_service.dart';
-import 'package:learning_management_system/models/user.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+import '../models/user.dart';
+import '../services/user_service.dart';
+import '../services/storage_service.dart';
+import '../services/api_service.dart';
 
-final authServiceProvider = Provider((ref) => AuthService());
-final storageServiceProvider = Provider((ref) => StorageService());
+part 'auth_provider.g.dart';
 
-final signUpProvider = FutureProvider.family<Map<String, dynamic>, Map<String, dynamic>>((ref, signUpData) async {
-  final authService = ref.watch(authServiceProvider);
-  return authService.signUp(
-    email: signUpData['email'] as String,
-    password: signUpData['password'] as String,
-    uuid: signUpData['uuid'] as int,
-    role: signUpData['role'] as String,
-  );
-});
+@riverpod
+class Auth extends _$Auth {
+  @override
+  Future<User?> build() async {
+    final token = await StorageService().getToken();
+    print('Debug - Auth build - Token from storage: $token');
 
-final loginProvider = FutureProvider.family<User, Map<String, dynamic>>((ref, loginData) async {
-  final authService = ref.watch(authServiceProvider);
-  final storageService = ref.watch(storageServiceProvider);
-  
-  final user = await authService.login(
-    email: loginData['email'] as String,
-    password: loginData['password'] as String,
-    deviceId: loginData['deviceId'] as int,
-  );
+    if (token == null) {
+      print('Debug - Auth build - No token found in storage');
+      return null;
+    }
 
-  // Save user session data after successful login
-  await storageService.saveUserSession(
-    token: user.token,
-    role: user.role,
-    userId: user.id,
-  );
-
-  return user;
-});
-
-final userProvider = StateProvider<User?>((ref) => null);
-
-// Add a provider to check user session
-final userSessionProvider = FutureProvider<User?>((ref) async {
-  final storageService = ref.watch(storageServiceProvider);
-  
-  final token = await storageService.getToken();
-  final role = await storageService.getUserRole();
-  final userId = await storageService.getUserId();
-
-  if (token != null && role != null && userId != null) {
-    return User(
-      id: userId,
-      role: role,
-      token: token,
-      // Add other required fields with default values or null
-    );
+    try {
+      final user = await ref.read(userServiceProvider).getUserInfo(token);
+      print('Debug - Auth build - Got user: $user');
+      final userWithToken = user.copyWith(token: token);
+      print('Debug - Auth build - User with token: $userWithToken');
+      return userWithToken;
+    } catch (e) {
+      print('Debug - Auth build - Error: $e');
+      await StorageService().clearToken();
+      return null;
+    }
   }
-  return null;
-});
+
+  Future<void> login(User user, String token) async {
+    print('Debug - Auth login - Starting login');
+    print('Debug - Auth login - Token: $token');
+    print('Debug - Auth login - User: $user');
+
+    await StorageService().saveToken(token);
+    final savedToken = await StorageService().getToken();
+    print('Debug - Auth login - Saved token verification: $savedToken');
+
+    state = AsyncValue.data(user.copyWith(token: token));
+    print('Debug - Auth login - State updated');
+  }
+
+  Future<void> logout() async {
+    print('Debug - Auth logout - Starting logout');
+    await StorageService().clearToken();
+    state = const AsyncValue.data(null);
+    print('Debug - Auth logout - Completed logout');
+  }
+}
+
+@riverpod
+ApiService apiService(ApiServiceRef ref) => ApiService();
+
+@riverpod
+UserService userService(UserServiceRef ref) =>
+    UserService(ref.watch(apiServiceProvider));

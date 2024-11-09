@@ -1,49 +1,31 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
 class StorageService {
-  static const String _tokenKey = 'user_token';
-  static const String _userRoleKey = 'user_role';
-  static const String _userIdKey = 'user_id';
+  static const String _tokenKey = 'auth_token';
 
-  // Save user session data
-  Future<void> saveUserSession({
-    required String token,
-    required String role,
-    required int userId,
-  }) async {
+  Future<void> saveToken(String token) async {
+    print('Debug - StorageService - Saving token: $token');
     final prefs = await SharedPreferences.getInstance();
-    await Future.wait([
-      prefs.setString(_tokenKey, token),
-      prefs.setString(_userRoleKey, role),
-      prefs.setInt(_userIdKey, userId),
-    ]);
+    await prefs.setString(_tokenKey, token);
+    final savedToken = await prefs.getString(_tokenKey);
+    print('Debug - StorageService - Verification of saved token: $savedToken');
   }
 
-  // Get token
   Future<String?> getToken() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_tokenKey);
+    final token = prefs.getString(_tokenKey);
+    print('Debug - StorageService - Retrieved token: $token');
+    return token;
   }
 
-  // Get role
-  Future<String?> getUserRole() async {
+  Future<void> clearToken() async {
+    print('Debug - StorageService - Clearing token');
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_userRoleKey);
+    await prefs.remove(_tokenKey);
   }
 
-  // Get user ID
-  Future<int?> getUserId() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getInt(_userIdKey);
-  }
-
-  // Clear all user session data
   Future<void> clearUserSession() async {
     final prefs = await SharedPreferences.getInstance();
-    await Future.wait([
-      prefs.remove(_tokenKey),
-      prefs.remove(_userRoleKey),
-      prefs.remove(_userIdKey),
-    ]);
+    await prefs.remove(_tokenKey);
   }
 }

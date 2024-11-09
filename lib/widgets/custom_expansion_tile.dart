@@ -6,11 +6,11 @@ class CustomExpansionTile extends StatefulWidget {
   final VoidCallback? onExpansionChanged;
 
   const CustomExpansionTile({
-    Key? key,
+    super.key,
     required this.title,
     required this.children,
     this.onExpansionChanged,
-  }) : super(key: key);
+  });
 
   @override
   _CustomExpansionTileState createState() => _CustomExpansionTileState();

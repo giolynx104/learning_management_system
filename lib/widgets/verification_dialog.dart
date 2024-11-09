@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:learning_management_system/services/verification_service.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:learning_management_system/providers/signup_provider.dart';
 
 class VerificationDialog extends ConsumerStatefulWidget {
   final String email;
@@ -39,13 +39,19 @@ class _VerificationDialogState extends ConsumerState<VerificationDialog> {
     });
 
     try {
-      final userId = await ref.read(verificationServiceProvider).verifyCode(
+      final authService = ref.read(authServiceProvider);
+      final success = await authService.checkVerifyCode(
         email: widget.email,
-        code: _codeController.text,
+        verifyCode: _codeController.text,
       );
-      
+
       if (!mounted) return;
-      Navigator.of(context).pop(userId);
+
+      if (success) {
+        Navigator.of(context).pop(true);
+      } else {
+        setState(() => _errorMessage = 'Invalid verification code');
+      }
     } catch (e) {
       setState(() => _errorMessage = e.toString());
     } finally {
@@ -56,7 +62,7 @@ class _VerificationDialogState extends ConsumerState<VerificationDialog> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return AlertDialog(
       title: const Text('Email Verification'),
       content: Column(
@@ -80,17 +86,16 @@ class _VerificationDialogState extends ConsumerState<VerificationDialog> {
             decoration: InputDecoration(
               labelText: 'Enter verification code',
               errorText: _errorMessage,
-              border: const OutlineInputBorder(),
             ),
           ),
         ],
       ),
       actions: [
         TextButton(
-          onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
+          onPressed: _isLoading ? null : () => Navigator.of(context).pop(false),
           child: const Text('Cancel'),
         ),
-        ElevatedButton(
+        TextButton(
           onPressed: _isLoading ? null : _verifyCode,
           child: _isLoading
               ? const SizedBox(

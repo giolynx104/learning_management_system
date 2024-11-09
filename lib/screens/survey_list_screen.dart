@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:learning_management_system/routes/app_routes.dart';
+import 'package:go_router/go_router.dart';
+import 'package:learning_management_system/routes/routes.dart';
 import 'package:intl/intl.dart';
 import 'package:learning_management_system/screens/submit_survey_screen.dart';
 import 'package:go_router/go_router.dart';
@@ -84,6 +85,7 @@ class SurveyListScreenState extends State<SurveyListScreen> {
           backgroundColor: Colors.red[900],
           title: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text(
                 'SURVEY LIST',
@@ -97,14 +99,15 @@ class SurveyListScreenState extends State<SurveyListScreen> {
                 'assets/images/HUST_white.png',
                 height: 30,
                 fit: BoxFit.contain,
+                'assets/images/HUST_white.png',
+                height: 30,
+                fit: BoxFit.contain,
               ),
             ],
           ),
           leading: IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () {
-              Navigator.pushNamed(context, AppRoutes.signup);
-            },
+            onPressed: () => context.pop(),
           ),
           bottom: const TabBar(
             labelColor: Colors.white,
@@ -179,12 +182,18 @@ class SurveyTabContent extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       color: Colors.white,
+      color: Colors.white,
       child: ListView.builder(
+        itemCount: surveys.length,
         itemCount: surveys.length,
         itemBuilder: (context, index) {
           final survey = surveys[index];
           final endTimeFormatted = DateFormat('HH:mm dd-MM-yyyy').format(survey.endTime);
+          final survey = surveys[index];
+          final endTimeFormatted = DateFormat('HH:mm dd-MM-yyyy').format(survey.endTime);
           final turnInTimeFormatted = survey.turnInTime != null
+              ? DateFormat('HH:mm dd-MM-yyyy').format(survey.turnInTime!)
+              : null;
               ? DateFormat('HH:mm dd-MM-yyyy').format(survey.turnInTime!)
               : null;
 
@@ -207,8 +216,10 @@ class SurveyTabContent extends StatelessWidget {
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
+                        fontSize: 16,
                       ),
                     ),
+                    const SizedBox(height: 8.0),
                     const SizedBox(height: 8.0),
                     Text(survey.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
                     if (survey.description != null)

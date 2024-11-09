@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:learning_management_system/routes/app_routes.dart';
-import 'package:learning_management_system/providers/auth_provider.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:learning_management_system/components/auth_header.dart';
 import 'package:learning_management_system/components/auth_text_field.dart';
 import 'package:learning_management_system/widgets/custom_button.dart';
-import 'package:learning_management_system/services/verification_service.dart';
 import 'package:learning_management_system/widgets/verification_dialog.dart';
+import 'package:go_router/go_router.dart';
+import 'package:learning_management_system/providers/signup_provider.dart';
+import 'package:learning_management_system/routes/routes.dart';
 
 class SignUpScreen extends ConsumerStatefulWidget {
   const SignUpScreen({super.key});
@@ -43,57 +43,48 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
       setState(() => _isLoading = true);
 
       try {
-        // 1. Sign up the user
         final signUpData = {
           'email': _emailController.text,
           'password': _passwordController.text,
           'uuid': 11111,
           'role': _selectedRole.toUpperCase(),
-          'fullName': _fullNameController.text,
         };
 
-        await ref.read(signUpProvider(signUpData).future);
-        
+        final signUpResponse = await ref.read(signUpProvider(
+          email: _emailController.text,
+          password: _passwordController.text,
+          uuid: 11111,
+          role: _selectedRole.toUpperCase(),
+        ).future);
+
         if (!mounted) return;
 
-        // 2. Get verification code
-        final verificationCode = await ref
-            .read(verificationServiceProvider)
-            .getVerificationCode(
+        if (signUpResponse['verify_code'] != null) {
+          final verificationSuccess = await showDialog<bool>(
+            context: context,
+            barrierDismissible: false,
+            builder: (context) => VerificationDialog(
               email: _emailController.text,
-              password: _passwordController.text,
-            );
-
-        if (!mounted) return;
-
-        // 3. Show verification dialog
-        final userId = await showDialog<int>(
-          context: context,
-          barrierDismissible: false,
-          builder: (context) => VerificationDialog(
-            email: _emailController.text,
-            verificationCode: verificationCode,
-          ),
-        );
-
-        if (!mounted) return;
-
-        if (userId != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Email verified successfully!')),
+              verificationCode: signUpResponse['verify_code'],
+            ),
           );
-          Navigator.pushReplacementNamed(context, AppRoutes.signin);
+
+          if (!mounted) return;
+
+          if (verificationSuccess == true) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Email verified successfully!')),
+            );
+            context.go(Routes.signin);
+          }
+        } else {
+          throw Exception('Verification code not received');
         }
       } catch (e) {
         if (!mounted) return;
         
         if (e.toString().contains('User already exists')) {
           _showUserExistsDialog();
-        } else if (e.toString().contains('Email already verified')) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Email is already verified')),
-          );
-          Navigator.pushReplacementNamed(context, AppRoutes.signin);
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Error: ${e.toString()}')),
@@ -108,25 +99,23 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   }
 
   void _showUserExistsDialog() {
-    if (!mounted) return;
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text('User Already Exists'),
-          content: const Text('An account with this email already exists. Would you like to sign in instead?'),
+          content: const Text(
+              'An account with this email already exists. Would you like to sign in instead?'),
           actions: <Widget>[
             TextButton(
               child: const Text('Cancel'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
+              onPressed: () => context.pop(),
             ),
             TextButton(
               child: const Text('Sign In'),
               onPressed: () {
-                Navigator.of(context).pop();
-                Navigator.pushReplacementNamed(context, AppRoutes.signin);
+                context.pop();
+                context.go(Routes.signin);
               },
             ),
           ],
@@ -142,12 +131,11 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
       backgroundColor: theme.colorScheme.primary,
       appBar: AppBar(
         backgroundColor: theme.colorScheme.primary,
-        title: Text('Sign Up', style: TextStyle(color: theme.colorScheme.onPrimary)),
+        title: Text('Sign Up',
+            style: TextStyle(color: theme.colorScheme.onPrimary)),
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: theme.colorScheme.onPrimary),
-          onPressed: () {
-            Navigator.pushNamed(context, AppRoutes.signin);
-          },
+          onPressed: () => context.go(Routes.signin),
         ),
       ),
       body: SingleChildScrollView(
@@ -245,7 +233,8 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
       items: ['Student', 'Lecturer'].map((String value) {
         return DropdownMenuItem<String>(
           value: value,
-          child: Text(value, style: TextStyle(color: theme.colorScheme.onPrimary)),
+          child:
+              Text(value, style: TextStyle(color: theme.colorScheme.onPrimary)),
         );
       }).toList(),
       onChanged: (String? newValue) {
@@ -260,9 +249,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
 
   Widget _buildSignInLink() {
     return TextButton(
-      onPressed: () {
-        Navigator.pushNamed(context, AppRoutes.signin);
-      },
+      onPressed: () => context.go(Routes.signin),
       child: Text(
         'Sign in with username/password',
         style: TextStyle(
