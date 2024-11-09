@@ -27,7 +27,11 @@ class Routes {
   static const String nestedCreateAssignment = '/teacher_home/create_assignment';
   static const String uploadFile = 'upload_file';
   static const String nestedUploadFile = '/teacher_home/upload_file';
+  static const String teacherSurveyList = '/teacher_survey_list';
+  static const String nestedTeacherSurveyList = '/teacher_home/teacher_survey_list';
   static const String createSurvey = 'create_survey';
-  static const String nestedCreateSurvey = '/teacher_home/create_survey';
+  static const String nestedCreateSurvey = '/teacher_home/teacher_survey_list/create_survey';
+  static const String editSurvey = 'edit_survey';
+  static const String nestedEditSurvey = '/teacher_home/teacher_survey_list/edit_survey';
  
 }

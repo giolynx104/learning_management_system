@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:learning_management_system/models/class_model.dart';
+import 'package:learning_management_system/models/class_list_model.dart';
 import 'package:learning_management_system/utils/api_client.dart';
 
 part 'class_service.g.dart';
@@ -52,6 +53,31 @@ class ClassService extends _$ClassService {
       final responseData = e.response?.data as Map<String, dynamic>?;
       final meta = responseData?['meta'] as Map<String, dynamic>?;
       throw Exception(meta?['message'] ?? 'Failed to create class');
+    }
+  }
+
+  Future<List<ClassListItem>> getClassList(String token) async {
+    try {
+      final response = await ref.read(apiClientProvider).post(
+        '/it5023e/get_class_list',
+        data: {'token': token},
+      );
+
+      final responseData = response.data as Map<String, dynamic>;
+      final meta = responseData['meta'] as Map<String, dynamic>;
+      
+      if (meta['code'] != 1000) {
+        throw Exception(meta['message'] ?? 'Failed to get class list');
+      }
+
+      final List<dynamic> classListData = responseData['data'];
+      return classListData
+          .map((json) => ClassListItem.fromJson(json))
+          .toList();
+    } on DioException catch (e) {
+      final responseData = e.response?.data as Map<String, dynamic>?;
+      final meta = responseData?['meta'] as Map<String, dynamic>?;
+      throw Exception(meta?['message'] ?? 'Failed to get class list');
     }
   }
 

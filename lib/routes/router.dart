@@ -4,14 +4,15 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:learning_management_system/providers/auth_provider.dart';
 import 'package:learning_management_system/routes/destinations.dart';
 import 'package:learning_management_system/routes/routes.dart';
+import 'package:learning_management_system/screens/screen_chat.dart';
 import 'package:learning_management_system/screens/signin_screen.dart';
 import 'package:learning_management_system/screens/signup_screen.dart';
-import 'package:learning_management_system/screens/absence_request_screen.dart';
 import 'package:learning_management_system/screens/class_management_screen.dart';
 import 'package:learning_management_system/screens/class_registration_screen.dart';
 import 'package:learning_management_system/screens/create_class_screen.dart';
 import 'package:learning_management_system/screens/create_survey_screen.dart';
 import 'package:learning_management_system/screens/detailed_roll_call_info_screen.dart';
+import 'package:learning_management_system/screens/edit_survey_screen.dart';
 import 'package:learning_management_system/screens/modify_class_screen.dart';
 import 'package:learning_management_system/screens/notification_screen.dart';
 import 'package:learning_management_system/screens/roll_call_action_screen.dart';
@@ -21,7 +22,10 @@ import 'package:learning_management_system/routes/custom_layout_scaffold.dart';
 import 'package:learning_management_system/screens/submit_survey_screen.dart';
 import 'package:learning_management_system/screens/survey_list_screen.dart';
 import 'package:learning_management_system/screens/teacher_home_screen.dart';
+import 'package:learning_management_system/screens/teacher_survey_list_screen.dart';
 import 'package:learning_management_system/screens/upload_file_screen.dart';
+import 'package:learning_management_system/screens/absence_request_screen.dart';
+import 'package:learning_management_system/models/survey.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
 
@@ -31,23 +35,23 @@ final appRouter = GoRouter(
   redirect: (BuildContext context, GoRouterState state) {
     final container = ProviderScope.containerOf(context);
     final authState = container.read(authProvider);
-    
+
     return authState.when(
       data: (user) {
-        if (user == null && 
-            state.uri.path != Routes.signin && 
+        if (user == null &&
+            state.uri.path != Routes.signin &&
             state.uri.path != Routes.signup) {
           return Routes.signin;
         }
-        
-        if (user != null && 
-            (state.uri.path == Routes.signin || 
-             state.uri.path == Routes.signup)) {
-          return user.role.toUpperCase() == 'STUDENT' 
-              ? Routes.studentHome 
+
+        if (user != null &&
+            (state.uri.path == Routes.signin ||
+                state.uri.path == Routes.signup)) {
+          return user.role.toUpperCase() == 'STUDENT'
+              ? Routes.studentHome
               : Routes.teacherHome;
         }
-        
+
         return null;
       },
       loading: () => null,
@@ -64,13 +68,14 @@ final appRouter = GoRouter(
       path: Routes.signup,
       builder: (context, state) => const SignUpScreen(),
     ),
-    
+
     // Main app shell
     StatefulShellRoute.indexedStack(
       builder: (context, state, navigationShell) {
         final container = ProviderScope.containerOf(context);
-        final isStudent = container.read(authProvider).value?.role.toUpperCase() == 'STUDENT';
-        
+        final isStudent =
+            container.read(authProvider).value?.role.toUpperCase() == 'STUDENT';
+
         return LayoutScaffold(
           navigationShell: navigationShell,
           destinations: isStudent ? studentDestinations : teacherDestinations,
@@ -122,15 +127,27 @@ final appRouter = GoRouter(
                 ),
                 GoRoute(
                   path: Routes.detailedRollCall,
-                  builder: (context, state) => const DetailedRollCallInfoScreen(),
+                  builder: (context, state) =>
+                      const DetailedRollCallInfoScreen(),
                 ),
                 GoRoute(
-                  path: Routes.rollCallAction,
-                  builder: (context, state) => const RollCallActionScreen(),
-                ),
+                    path: Routes.rollCallAction,
+                    builder: (context, state) => const RollCallActionScreen()),
                 GoRoute(
-                  path: Routes.createSurvey,
-                  builder: (context, state) => const CreateSurveyScreen(),
+                  path: Routes.teacherSurveyList,
+                  builder: (context, state) => const TeacherSurveyListScreen(),
+                  routes: [
+                    GoRoute(
+                        path: Routes.createSurvey,
+                        builder: (context, state) =>
+                            const CreateSurveyScreen()),
+                    GoRoute(
+                      path: Routes.editSurvey,
+                      builder: (context, state) => EditSurveyScreen(
+                        survey: state.extra as TeacherSmallSurvey,
+                      ),
+                    ),
+                  ],
                 ),
                 GoRoute(
                   path: Routes.uploadFile,
@@ -156,12 +173,23 @@ final appRouter = GoRouter(
               path: Routes.classManagement,
               builder: (context, state) {
                 final container = ProviderScope.containerOf(context);
-                final isStudent = container.read(authProvider).value?.role.toUpperCase() == 'STUDENT';
-                
-                return isStudent 
-                  ? const ClassRegistrationScreen() 
-                  : const ClassManagementScreen();
+                final isStudent =
+                    container.read(authProvider).value?.role.toUpperCase() ==
+                        'STUDENT';
+
+                return isStudent
+                    ? const ClassRegistrationScreen()
+                    : const ClassManagementScreen();
               },
+            ),
+          ],
+        ),
+        // Chat Branch
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/chat',
+              builder: (context, state) => const ChatScreen(),
             ),
           ],
         ),

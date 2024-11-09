@@ -1,3 +1,4 @@
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../services/auth_service.dart';
 
@@ -5,7 +6,7 @@ part 'signup_provider.g.dart';
 
 @riverpod
 Future<Map<String, dynamic>> signUp(
-  SignUpRef ref,
+  Ref ref,
   {
     required String email,
     required String password,
@@ -24,4 +25,4 @@ Future<Map<String, dynamic>> signUp(
 }
 
 @riverpod
-AuthService authService(AuthServiceRef ref) => AuthService(); 
+AuthService authService(Ref ref) => AuthService(); 
