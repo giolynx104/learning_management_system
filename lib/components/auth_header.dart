@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 class AuthHeader extends StatelessWidget {
   final String title;
 
-  const AuthHeader({Key? key, required this.title}) : super(key: key);
+  const AuthHeader({super.key, required this.title});
 
   @override
   Widget build(BuildContext context) {
