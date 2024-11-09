@@ -1,29 +1,26 @@
 import 'package:flutter/material.dart';
-import 'dart:developer';
-import 'package:learning_management_system/routes/app_routes.dart';
+import 'package:go_router/go_router.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:learning_management_system/routes/routes.dart';
+import 'package:learning_management_system/models/class_list_model.dart';
+import 'package:learning_management_system/services/class_service.dart';
+import 'package:learning_management_system/providers/auth_provider.dart';
 
-class ClassManagementScreen extends StatefulWidget {
+class ClassManagementScreen extends ConsumerStatefulWidget {
   const ClassManagementScreen({super.key});
 
   @override
-  ClassManagementScreenState createState() => ClassManagementScreenState();
+  ConsumerState<ClassManagementScreen> createState() => ClassManagementScreenState();
 }
 
-class ClassManagementScreenState extends State<ClassManagementScreen> {
+class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
   final TextEditingController _classCodeController = TextEditingController();
   final FocusNode _classCodeFocusNode = FocusNode();
-  final List<String> _searchedClassCodes = [];
-  final Set<int> _selectedRowIndices = {};
-  final ScrollController _scrollController = ScrollController();
-  final ScrollController _horizontalScrollController = ScrollController();
   bool _isSearchButtonEnabled = false;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _classCodeFocusNode.requestFocus();
-    });
     _classCodeController.addListener(_updateSearchButtonState);
   }
 
@@ -32,8 +29,6 @@ class ClassManagementScreenState extends State<ClassManagementScreen> {
     _classCodeController.removeListener(_updateSearchButtonState);
     _classCodeController.dispose();
     _classCodeFocusNode.dispose();
-    _scrollController.dispose();
-    _horizontalScrollController.dispose();
     super.dispose();
   }
 
@@ -43,379 +38,200 @@ class ClassManagementScreenState extends State<ClassManagementScreen> {
     });
   }
 
-  void _searchClass() {
+  Future<void> _searchClass() async {
     final classCode = _classCodeController.text.trim();
-    if (classCode.length == 6 && !_searchedClassCodes.contains(classCode)) {
-      setState(() {
-        _searchedClassCodes.add(classCode);
-        _classCodeController.clear();
-      });
-      log('Searched class code: $classCode');
-    } else if (_searchedClassCodes.contains(classCode)) {
+    if (classCode.length == 6) {
+      // TODO: Implement class search by code
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('This class code has already been searched.'),
-          duration: Duration(seconds: 2),
-        ),
+        const SnackBar(content: Text('Class search to be implemented')),
       );
+      _classCodeController.clear();
+    }
+  }
+
+  Future<List<ClassListItem>> _getClassList() async {
+    try {
+      final authState = await ref.read(authProvider.future);
+      if (authState == null) {
+        throw Exception('Not authenticated');
+      }
+      return await ref.read(classServiceProvider.notifier).getClassList(authState.token);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString())),
+        );
+      }
+      return [];
+    }
+  }
+
+  void _handleClassAction(String action, ClassListItem classItem) {
+    switch (action) {
+      case 'edit':
+        context.push(Routes.nestedModifyClass);
+        break;
+      case 'assignment':
+        context.push(Routes.nestedTeacherSurveyList);
+        break;
+      case 'files':
+        context.push(Routes.nestedUploadFile);
+        break;
+      case 'attendance':
+        context.push(Routes.nestedRollCallAction);
+        break;
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Class Management'),
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text('Class Management'),
+            Image.asset(
+              'assets/images/HUST_white.png',
+              height: 30,
+              fit: BoxFit.contain,
+            ),
+          ],
+        ),
       ),
       body: Column(
         children: [
-          _ClassSearchForm(
-            classCodeController: _classCodeController,
-            classCodeFocusNode: _classCodeFocusNode,
-            isSearchButtonEnabled: _isSearchButtonEnabled,
-            onSearch: _searchClass,
+          // Search Class Card
+          Card(
+            margin: const EdgeInsets.all(16),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'Search Class by Code',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  IntrinsicHeight(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Expanded(
+                          child: SizedBox(
+                            height: 40, // Match button height
+                            child: TextField(
+                              controller: _classCodeController,
+                              focusNode: _classCodeFocusNode,
+                              decoration: const InputDecoration(
+                                labelText: 'Class Code',
+                                hintText: 'Enter 6-digit code',
+                                contentPadding: EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 8,
+                                ),
+                              ),
+                              maxLength: 6,
+                              buildCounter: (context, {required currentLength, required isFocused, maxLength}) => null,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        FilledButton(
+                          onPressed: _isSearchButtonEnabled ? _searchClass : null,
+                          child: const Text('Search'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
+
+          // Class List
           Expanded(
-            child: _ClassManagementTable(
-              searchedClassCodes: _searchedClassCodes,
-              selectedRowIndices: _selectedRowIndices,
-              scrollController: _scrollController,
-              horizontalScrollController: _horizontalScrollController,
-              onSelectChanged: (int index, bool? isSelected) {
-                setState(() {
-                  if (isSelected!) {
-                    _selectedRowIndices.add(index);
-                  } else {
-                    _selectedRowIndices.remove(index);
-                  }
-                });
+            child: FutureBuilder<List<ClassListItem>>(
+              future: _getClassList(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                }
+
+                final classes = snapshot.data ?? [];
+
+                return Stack(
+                  children: [
+                    ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: classes.length,
+                      itemBuilder: (context, index) {
+                        final classItem = classes[index];
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          child: ListTile(
+                            title: Text(
+                              classItem.className,
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Type: ${classItem.classType}'),
+                                Text('Students: ${classItem.studentCount}'),
+                                Text('Period: ${classItem.startDate} - ${classItem.endDate}'),
+                              ],
+                            ),
+                            trailing: PopupMenuButton<String>(
+                              onSelected: (value) => _handleClassAction(value, classItem),
+                              itemBuilder: (BuildContext context) => [
+                                const PopupMenuItem(
+                                  value: 'edit',
+                                  child: Text('Edit Class'),
+                                ),
+                                const PopupMenuItem(
+                                  value: 'assignment',
+                                  child: Text('Assignments'),
+                                ),
+                                const PopupMenuItem(
+                                  value: 'files',
+                                  child: Text('Files'),
+                                ),
+                                const PopupMenuItem(
+                                  value: 'attendance',
+                                  child: Text('Attendance'),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    Positioned(
+                      right: 16,
+                      bottom: 16,
+                      child: FloatingActionButton(
+                        onPressed: () => context.push(Routes.nestedCreateClass),
+                        child: const Icon(Icons.add),
+                      ),
+                    ),
+                  ],
+                );
               },
             ),
           ),
-          _ManagementActions(
-            onCreateClass: () {
-              Navigator.pushNamed(context, AppRoutes.createClass);
-            },
-            onModifyClass: () {
-              Navigator.pushNamed(context, AppRoutes.modifyClass);
-            },
-          ),
-          const SizedBox(height: 16),
-          const _AvailableClassesLink(),
-          const SizedBox(height: 16),
         ],
-      ),
-    );
-  }
-}
-
-class _ClassSearchForm extends StatelessWidget {
-  final TextEditingController classCodeController;
-  final FocusNode classCodeFocusNode;
-  final bool isSearchButtonEnabled;
-  final VoidCallback onSearch;
-
-  const _ClassSearchForm({
-    required this.classCodeController,
-    required this.classCodeFocusNode,
-    required this.isSearchButtonEnabled,
-    required this.onSearch,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          IntrinsicHeight(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Expanded(
-                  child: _ClassCodeTextField(
-                    controller: classCodeController,
-                    focusNode: classCodeFocusNode,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                _SearchButton(
-                  isEnabled: isSearchButtonEnabled,
-                  onPressed: onSearch,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 20),
-        ],
-      ),
-    );
-  }
-}
-
-class _ClassCodeTextField extends StatelessWidget {
-  final TextEditingController controller;
-  final FocusNode focusNode;
-
-  const _ClassCodeTextField({
-    required this.controller,
-    required this.focusNode,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return TextField(
-      controller: controller,
-      focusNode: focusNode,
-      keyboardType: TextInputType.number,
-      maxLength: 6,
-      decoration: InputDecoration(
-        labelText: 'Class Code',
-        labelStyle: TextStyle(color: theme.colorScheme.primary),
-        border: OutlineInputBorder(
-          borderSide: BorderSide(color: theme.colorScheme.primary),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: theme.colorScheme.primary),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: theme.colorScheme.primary),
-        ),
-        counterText: '',
-        suffixIcon: controller.text.isNotEmpty
-            ? IconButton(
-                icon: const Icon(Icons.clear),
-                onPressed: controller.clear,
-              )
-            : null,
-      ),
-    );
-  }
-}
-
-class _SearchButton extends StatelessWidget {
-  final bool isEnabled;
-  final VoidCallback onPressed;
-
-  const _SearchButton({
-    required this.isEnabled,
-    required this.onPressed,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return ElevatedButton(
-      onPressed: isEnabled ? onPressed : null,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: theme.colorScheme.primary,
-        foregroundColor: theme.colorScheme.onPrimary,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(4),
-        ),
-        disabledBackgroundColor: Colors.grey,
-      ),
-      child: const Text('Search'),
-    );
-  }
-}
-
-class _ClassManagementTable extends StatelessWidget {
-  final List<String> searchedClassCodes;
-  final Set<int> selectedRowIndices;
-  final ScrollController scrollController;
-  final ScrollController horizontalScrollController;
-  final Function(int, bool?) onSelectChanged;
-
-  const _ClassManagementTable({
-    required this.searchedClassCodes,
-    required this.selectedRowIndices,
-    required this.scrollController,
-    required this.horizontalScrollController,
-    required this.onSelectChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          child: Container(
-            decoration: BoxDecoration(
-              border: Border.all(
-                color: theme.colorScheme.primary,
-                width: 2,
-              ),
-            ),
-            child: Theme(
-              data: Theme.of(context).copyWith(
-                dataTableTheme: DataTableThemeData(
-                  headingRowColor: WidgetStateProperty.all(
-                    theme.colorScheme.primary,
-                  ),
-                  headingTextStyle: TextStyle(
-                    color: theme.colorScheme.onPrimary,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              child: SingleChildScrollView(
-                controller: scrollController,
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  controller: horizontalScrollController,
-                  child: DataTable(
-                    columnSpacing: 16,
-                    horizontalMargin: 16,
-                    columns: [
-                      DataColumn(
-                        label: Text(
-                          'Class Code',
-                          style: TextStyle(
-                            color: theme.colorScheme.onPrimary,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                      DataColumn(
-                        label: Text(
-                          'Associated Code',
-                          style: TextStyle(
-                            color: theme.colorScheme.onPrimary,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                      DataColumn(
-                        label: Text(
-                          'Class Name',
-                          style: TextStyle(
-                            color: theme.colorScheme.onPrimary,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
-                    rows: searchedClassCodes.isEmpty
-                        ? [
-                            DataRow(
-                              cells: [
-                                DataCell(Text('No data', style: TextStyle(color: theme.colorScheme.primary))),
-                                DataCell(Text('No data', style: TextStyle(color: theme.colorScheme.primary))),
-                                DataCell(Text('No data', style: TextStyle(color: theme.colorScheme.primary))),
-                              ],
-                            ),
-                          ]
-                        : searchedClassCodes
-                            .asMap()
-                            .entries
-                            .map((entry) => DataRow(
-                                  selected: selectedRowIndices.contains(entry.key),
-                                  onSelectChanged: (isSelected) =>
-                                      onSelectChanged(entry.key, isSelected),
-                                  cells: [
-                                    DataCell(
-                                      Text(
-                                        entry.value,
-                                        style: TextStyle(color: theme.colorScheme.primary),
-                                      ),
-                                    ),
-                                    DataCell(
-                                      Text(
-                                        'TBD',
-                                        style: TextStyle(color: theme.colorScheme.primary),
-                                      ),
-                                    ),
-                                    DataCell(
-                                      Text(
-                                        'TBD',
-                                        style: TextStyle(color: theme.colorScheme.primary),
-                                      ),
-                                    ),
-                                  ],
-                                ))
-                            .toList(),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
-
-class _ManagementActions extends StatelessWidget {
-  final VoidCallback onCreateClass;
-  final VoidCallback onModifyClass;
-
-  const _ManagementActions({
-    required this.onCreateClass,
-    required this.onModifyClass,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Row(
-        children: [
-          Expanded(
-            child: ElevatedButton(
-              onPressed: onCreateClass,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: theme.colorScheme.primary,
-                foregroundColor: theme.colorScheme.onPrimary,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              ),
-              child: const Text('Create Class'),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: ElevatedButton(
-              onPressed: onModifyClass,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: theme.colorScheme.primary,
-                foregroundColor: theme.colorScheme.onPrimary,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              ),
-              child: const Text('Modify Class'),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _AvailableClassesLink extends StatelessWidget {
-  const _AvailableClassesLink();
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return GestureDetector(
-      onTap: () {
-        // TODO: Implement navigation to available classes list
-      },
-      child: Text(
-        'List of currently available classes',
-        style: TextStyle(
-          color: theme.colorScheme.primary,
-          decoration: TextDecoration.underline,
-          decorationColor: theme.colorScheme.primary,
-        ),
       ),
     );
   }

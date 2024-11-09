@@ -1,19 +1,22 @@
-
 import 'package:flutter/material.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:learning_management_system/components/pinned_item.dart';
 import 'package:learning_management_system/components/teams_item.dart';
 import 'package:learning_management_system/models/pinnedChannel.dart';
 import 'package:learning_management_system/models/teams.dart';
+import 'package:learning_management_system/mixins/sign_out_mixin.dart';
 import 'package:go_router/go_router.dart';
+import 'package:learning_management_system/providers/auth_provider.dart';
 import 'package:learning_management_system/routes/routes.dart';
-class StudentHomeScreen extends StatefulWidget {
-   const StudentHomeScreen({super.key});
+
+class StudentHomeScreen extends ConsumerStatefulWidget {
+  const StudentHomeScreen({super.key});
 
   @override
-  State<StudentHomeScreen> createState() => _StudentHomeScreenState();
+  ConsumerState<StudentHomeScreen> createState() => _StudentHomeScreenState();
 }
 
-class _StudentHomeScreenState extends State<StudentHomeScreen> {
+class _StudentHomeScreenState extends ConsumerState<StudentHomeScreen> with SignOutMixin {
   List<TeamsModel> teams = [];
   bool isClassesExpanded = false;
   bool isPinnedChannelExpanded = false;
@@ -24,7 +27,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
       pinnedChannels = PinnedChannelModel.getPinnedChannels();
     });
   }
-  
+
   void _getTeams() {
     setState(() {
       teams = TeamsModel.getTeams();
@@ -41,7 +44,6 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      //appBar: appBar(),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -51,8 +53,6 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // _pinnedChannels(), 
-                // const SizedBox(height: 20),
                 _teams(), 
               ],
             ),
@@ -62,33 +62,33 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
     );
   }
 
-Widget _pinnedChannels() {
-  return ExpansionTile(
-    title: const Text("Pinned Channels"),
-    leading: Icon(
+  Widget _pinnedChannels() {
+    return ExpansionTile(
+      title: const Text("Pinned Channels"),
+      leading: Icon(
         isPinnedChannelExpanded ? Icons.arrow_drop_down : Icons.arrow_right,
       ),
-    trailing: const SizedBox.shrink(),
-    onExpansionChanged: (bool expanded) {
+      trailing: const SizedBox.shrink(),
+      onExpansionChanged: (bool expanded) {
         setState(() => isPinnedChannelExpanded = expanded);
       },
-    children: [
-      ListView.builder(
-        shrinkWrap: true,
-        padding: EdgeInsets.zero,
-        physics: const NeverScrollableScrollPhysics(),
-        itemCount: pinnedChannels.length,
-        itemBuilder: (context, index) {
-          var channel = pinnedChannels[index];
-          return PinnedItem(
-            channel: channel,
-            onUnpinPressed: () => _unpinChannel(channel),
-          );
-        },
-      ),
-    ],
-  );
-}
+      children: [
+        ListView.builder(
+          shrinkWrap: true,
+          padding: EdgeInsets.zero,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: pinnedChannels.length,
+          itemBuilder: (context, index) {
+            var channel = pinnedChannels[index];
+            return PinnedItem(
+              channel: channel,
+              onUnpinPressed: () => _unpinChannel(channel),
+            );
+          },
+        ),
+      ],
+    );
+  }
 
   Widget _teams() {
     return ExpansionTile(
@@ -106,7 +106,7 @@ Widget _pinnedChannels() {
       children: [
         ListView.builder(
           shrinkWrap: true,
-          padding:  EdgeInsets.zero,
+          padding: EdgeInsets.zero,
           physics: const NeverScrollableScrollPhysics(),
           itemCount: teams.length,
           itemBuilder: (context, index) {
@@ -157,7 +157,7 @@ Widget _pinnedChannels() {
     );
   }
 
-  AppBar appBar() {
+  PreferredSizeWidget appBar() {
     return AppBar(
       title: const Text(
         'QLDT',
@@ -170,14 +170,93 @@ Widget _pinnedChannels() {
       centerTitle: true,
       backgroundColor: Colors.red,
       elevation: 0.0,
+      actions: [
+        Builder(
+          // Wrap the Padding with Builder
+          builder: (context) => Padding(
+            padding: const EdgeInsets.only(right: 16.0),
+            child: GestureDetector(
+              onTap: () {
+                Scaffold.of(context).openEndDrawer();
+              },
+              child: const CircleAvatar(
+                backgroundColor: Colors.white,
+                child: Icon(Icons.person, color: Colors.red),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
+
+  Widget _buildDrawer() {
+    final userState = ref.watch(authProvider);
+
+    return Drawer(
+      child: userState.when(
+        data: (user) {
+          if (user == null) return const SizedBox.shrink();
+
+          return ListView(
+            padding: EdgeInsets.zero,
+            children: [
+              UserAccountsDrawerHeader(
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                accountName: Text('${user.firstName} ${user.lastName}'),
+                accountEmail: Text(user.email),
+                currentAccountPicture: user.avatar != null
+                    ? CircleAvatar(
+                        backgroundImage: NetworkImage(user.avatar!),
+                        backgroundColor: Colors.white,
+                      )
+                    : const CircleAvatar(
+                        backgroundColor: Colors.white,
+                        child: Icon(Icons.person, color: Colors.red),
+                      ),
+              ),
+              ListTile(
+                leading: const Icon(Icons.person),
+                title: const Text('Profile'),
+                onTap: () {
+                  context.pop();
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.settings),
+                title: const Text('Settings'),
+                onTap: () {
+                  context.pop();
+                },
+              ),
+              const Divider(),
+              ListTile(
+                leading: const Icon(Icons.logout, color: Colors.red),
+                title: const Text('Sign Out', style: TextStyle(color: Colors.red)),
+                onTap: () {
+                  context.pop();
+                  handleSignOut();
+                },
+              ),
+            ],
+          );
+        },
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, stack) => Center(
+          child: Text('Error loading user data: $error'),
+        ),
+      ),
+    );
+  }
+
   void _unpinChannel(PinnedChannelModel channel) {
-  setState(() {
-    PinnedChannelModel.removePinnedChannel(channel);
-    pinnedChannels.removeWhere((pinned) => !pinned.isPinned);
-  });
-}
+    setState(() {
+      PinnedChannelModel.removePinnedChannel(channel);
+      pinnedChannels.removeWhere((pinned) => !pinned.isPinned);
+    });
+  }
 
   void _showTeamOptions(BuildContext context, TeamsModel team) {
     showModalBottomSheet(
@@ -197,35 +276,37 @@ Widget _pinnedChannels() {
                 leading: const Icon(Icons.description),
                 title: const Text('Tài liệu'),
                 onTap: () {
-                  Navigator.pop(context);
+                  context.pop(); // Use go_router
                 },
               ),
               ListTile(
                 leading: const Icon(Icons.event_busy),
                 title: const Text('Xin nghỉ'),
-                onTap: () => context.push(
-                  Routes.nestedAbsentRequest
-                ) ,
+                onTap: () {
+                  context.pop(); // Close bottom sheet first
+                  context.push(Routes.nestedAbsentRequest);
+                },
               ),
-                ListTile(
+              ListTile(
                 leading: const Icon(Icons.assignment),
                 title: const Text('Bài tập'),
                 onTap: () {
-                  Navigator.pop(context);
+                  context.pop(); // Use go_router
                 },
               ),
               ListTile(
                 leading: const Icon(Icons.list_alt),
                 title: const Text('Danh sách khảo sát'),
-                onTap: () => context.push(
-                  Routes.nestedSurveyList
-                ),
+                onTap: () {
+                  context.pop(); // Close bottom sheet first
+                  context.push(Routes.nestedSurveyList);
+                },
               ),
               ListTile(
                 leading: const Icon(Icons.exit_to_app),
                 title: const Text('Rời khỏi nhóm'),
                 onTap: () {
-                  Navigator.pop(context); 
+                  context.pop(); // Close bottom sheet using go_router
                   _showConfirmationDialog(context, team);
                 },
               ),
@@ -235,30 +316,26 @@ Widget _pinnedChannels() {
       },
     );
   }
+
   void _showConfirmationDialog(BuildContext context, TeamsModel team) {
-  showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      return AlertDialog(
-        title: const Text('Xác nhận'),
-        content: Text('Bạn có chắc chắn muốn rời khỏi nhóm "${team.name}"?'),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop(); 
-            },
-            child: const Text('Hủy'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop(); 
-            },
-            child: const Text('Xác nhận'),
-          ),
-        ],
-      );
-    },
-  );
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Xác nhận'),
+          content: Text('Bạn có chắc chắn muốn rời khỏi nhóm "${team.name}"?'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => context.pop(), // Use go_router
+              child: const Text('Hủy'),
+            ),
+            TextButton(
+              onPressed: () => context.pop(), // Use go_router
+              child: const Text('Xác nhận'),
+            ),
+          ],
+        );
+      },
+    );
   }
 }
-

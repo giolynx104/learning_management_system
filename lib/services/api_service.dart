@@ -1,20 +1,26 @@
-import 'package:http/http.dart' as http;
-import 'package:learning_management_system/services/storage_service.dart';
+import 'package:dio/dio.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+
+part 'api_service.g.dart';
 
 class ApiService {
-  final String baseUrl = 'http://160.30.168.228:8080/it4788';
-  final StorageService _storageService = StorageService();
+  final Dio _dio;
 
-  Future<http.Response> get(String endpoint) async {
-    final token = await _storageService.getToken();
-    return await http.get(
-      Uri.parse('$baseUrl/$endpoint'),
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      },
-    );
+  ApiService() : _dio = Dio() {
+    _dio.options.baseUrl = 'http://160.30.168.228:8080'; // Replace with your actual base URL
+    _dio.options.connectTimeout = const Duration(seconds: 5);
+    _dio.options.receiveTimeout = const Duration(seconds: 3);
+    _dio.options.headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    };
   }
 
-  // Similarly, implement post, put, delete methods...
+  Dio get dio => _dio;
+}
+
+@riverpod
+ApiService apiService(Ref ref) {
+  return ApiService();
 }

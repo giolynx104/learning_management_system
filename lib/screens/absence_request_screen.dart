@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:intl/intl.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class AbsenceRequestScreen extends StatefulWidget {
   const AbsenceRequestScreen({super.key});
@@ -8,154 +12,152 @@ class AbsenceRequestScreen extends StatefulWidget {
 }
 
 class _AbsenceRequestScreenState extends State<AbsenceRequestScreen> {
-  final _formKey = GlobalKey<FormState>();
-  String? _startTime;
-  String? _endTime;
+  DateTime? _selectedDate;
+  String? _selectedFile;
+  final TextEditingController _titleController = TextEditingController();
+  final TextEditingController _reasonController = TextEditingController();
+
+  Future<void> _pickDate() async {
+    final DateTime? pickedDate = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2101),
+    );
+    if (pickedDate != null && pickedDate != _selectedDate) {
+      setState(() {
+        _selectedDate = pickedDate;
+      });
+    }
+  }
+
+  Future<void> _pickFile() async {
+    final result = await FilePicker.platform.pickFiles();
+    if (result != null) {
+      setState(() {
+        _selectedFile = result.files.single.name;
+      });
+    }
+  }
+
+  Future<void> _submit() async {
+    if (_selectedDate == null || _selectedFile == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('Please select a date and upload proof file')),
+      );
+      return;
+    }
+
+    final String reason = _reasonController.text;
+    final String formattedDate =
+        DateFormat('yyyy-MM-dd').format(_selectedDate!);
+
+    try {
+      final response = await http.post(
+        Uri.parse('http://160.30.168.228:8080/it5023e/request_absence'),
+        headers: {
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: jsonEncode({
+          'token': 'ZeLxSs', // TODO: Get from auth provider
+          'class_id': '783226', // TODO: Get from class context
+          'date': formattedDate,
+          'reason': reason,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Absence request submitted successfully')),
+        );
+      } else {
+        throw Exception('Failed to submit request');
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: ${e.toString()}')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
+
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.red[900],
+        title: const Text('Absence Request'),
         centerTitle: true,
-        title: const SizedBox(
-          height: 100,
-          child:  Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Padding(padding: EdgeInsets.all(20.0),
-                  child: Text('HUST', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 30, color: Colors.white))
-              )
-              ,
-              Padding(padding: EdgeInsets.all(20.0),
-                  child:  Text(
-                    'CREATE SURVEY',
-                    style: TextStyle(fontSize: 20, color: Colors.white),
-                  )
-              )
-
-            ],
-          ),
-        ),
-
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
-        ),
       ),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
-
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              TextFormField(
-                decoration: const InputDecoration(
-                    labelText: 'Tên bài kiểm tra*',
-                    border: OutlineInputBorder(),
-                    enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.red, width: 2.0))),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter the test name';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16.0),
-
-              TextFormField(
-                decoration: const InputDecoration(
-                  labelText: 'Mô tả',
-                  border: OutlineInputBorder(),
-                ),
-                maxLines: 3,
-              ),
-              const SizedBox(height: 16.0),
-
-              ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red[900],
-                ),
-                onPressed: () {
-                },
-                icon: const Icon(Icons.upload_file, color: Colors.white),
-                label: const Text('Tải tài liệu lên',
-                    style: TextStyle(color: Colors.white)),
-              ),
-              const SizedBox(height: 16.0),
-
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    TextField(
+                      controller: _titleController,
                       decoration: const InputDecoration(
-                        labelText: 'Bắt đầu',
+                        labelText: 'Title',
                         border: OutlineInputBorder(),
                       ),
-                      value: _startTime,
-                      onChanged: (newValue) {
-                        setState(() {
-                          _startTime = newValue;
-                        });
-                      },
-                      items: <String>['8:00', '9:00', '10:00']
-                          .map<DropdownMenuItem<String>>((String value) {
-                        return DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(value),
-                        );
-                      }).toList(),
                     ),
-                  ),
-                  const SizedBox(width: 16.0),
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: _reasonController,
+                      maxLines: 3,
                       decoration: const InputDecoration(
-                        labelText: 'Kết thúc',
+                        labelText: 'Reason',
                         border: OutlineInputBorder(),
+                        alignLabelWithHint: true,
                       ),
-                      value: _endTime,
-                      onChanged: (newValue) {
-                        setState(() {
-                          _endTime = newValue;
-                        });
-                      },
-                      items: <String>['10:00', '11:00', '12:00']
-                          .map<DropdownMenuItem<String>>((String value) {
-                        return DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(value),
-                        );
-                      }).toList(),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 32.0),
-
-              Center(
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red[900],
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 24.0, vertical: 12.0),
-                  ),
-                  onPressed: () {
-                    if (_formKey.currentState!.validate()) {
-                    }
-                  },
-                  child: const Text('Submit',
-                      style: TextStyle(color: Colors.white)),
+                    const SizedBox(height: 16),
+                    TextField(
+                      readOnly: true,
+                      controller: TextEditingController(
+                        text: _selectedDate != null
+                            ? DateFormat('yyyy-MM-dd').format(_selectedDate!)
+                            : '',
+                      ),
+                      decoration: InputDecoration(
+                        labelText: 'Date',
+                        border: const OutlineInputBorder(),
+                        suffixIcon: IconButton(
+                          icon: const Icon(Icons.calendar_today),
+                          onPressed: _pickDate,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    FilledButton.tonalIcon(
+                      onPressed: _pickFile,
+                      icon: const Icon(Icons.attach_file),
+                      label: const Text('Upload Proof'),
+                    ),
+                    if (_selectedFile != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8.0),
+                        child: Text('Selected file: $_selectedFile'),
+                      ),
+                  ],
                 ),
               ),
-            ],
-          ),
+            ),
+            const SizedBox(height: 16),
+            FilledButton(
+              onPressed: _submit,
+              child: const Text('Submit Request'),
+            ),
+          ],
         ),
       ),
     );

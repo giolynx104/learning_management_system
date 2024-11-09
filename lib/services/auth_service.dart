@@ -29,24 +29,27 @@ class AuthService {
       final responseBody = jsonDecode(response.body);
 
       if (response.statusCode == 200) {
-        return responseBody;
+        if (responseBody['status_code'] == 1000) {
+          return {
+            'success': true,
+            'verify_code': responseBody['verify_code'],
+          };
+        } else {
+          throw Exception('Signup failed: ${responseBody['message']}');
+        }
       } else if (response.statusCode == 409) {
-        // Handle the 409 Conflict specifically
         throw Exception('User already exists: ${responseBody['message']}');
       } else {
-        // Handle other status codes
         throw Exception('Failed to sign up: ${response.body}');
       }
     } catch (e) {
-      // Handle any network or other errors
       throw Exception('Error during sign up: $e');
     }
   }
 
-  Future<User> login({
+  Future<Map<String, dynamic>> signIn({
     required String email,
     required String password,
-    required int deviceId,
   }) async {
     try {
       final response = await http.post(
@@ -58,21 +61,93 @@ class AuthService {
         body: jsonEncode({
           'email': email,
           'password': password,
-          'deviceId': deviceId,
+          'deviceId': 1,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        final user = User.fromJson(responseData);
+        
+        return {
+          'success': true,
+          'user': responseData,
+          'token': user.token,
+          'needs_verification': false,
+        };
+      } else if (response.statusCode == 401) {
+        throw Exception('User not found or wrong password');
+      } else {
+        throw Exception('Failed to login: ${response.body}');
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<String> getVerifyCode({
+    required String email,
+    required String password,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$_baseUrl/get_verify_code'),
+        headers: {
+          'Content-Type': 'application/json',
+          'User-Agent': 'PostmanRuntime/7.42.0',
+        },
+        body: jsonEncode({
+          'email': email,
+          'password': password,
         }),
       );
 
       final responseBody = jsonDecode(response.body);
 
       if (response.statusCode == 200) {
-        return User.fromJson(responseBody);
-      } else if (response.statusCode == 401) {
-        throw Exception('User not found or wrong password');
+        return responseBody['verify_code'];
       } else {
-        throw Exception('Failed to login: ${responseBody['message']}');
+        throw Exception(
+            'Failed to get verification code: ${responseBody['message']}');
       }
     } catch (e) {
-      rethrow;
+      throw Exception('Error getting verification code: $e');
+    }
+  }
+
+  Future<bool> checkVerifyCode({
+    required String email,
+    required String verifyCode,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$_baseUrl/check_verify_code'),
+        headers: {
+          'Content-Type': 'application/json',
+          'User-Agent': 'PostmanRuntime/7.42.0',
+        },
+        body: jsonEncode({
+          'email': email,
+          'verify_code': verifyCode,
+        }),
+      );
+
+      final responseBody = jsonDecode(response.body);
+      
+      if (response.statusCode == 200) {
+        // Success case: message contains "1000 | OK"
+        return responseBody['message']?.contains('1000 | OK') ?? false;
+      } else if (response.statusCode == 409) {
+        // Email already verified case
+        if (responseBody.toString().contains('Email already verified')) {
+          return true; // Consider already verified as success
+        }
+        throw Exception('Email verification failed: ${responseBody.toString()}');
+      } else {
+        throw Exception('Failed to verify code: ${responseBody.toString()}');
+      }
+    } catch (e) {
+      throw Exception('Error verifying code: $e');
     }
   }
 }
