@@ -157,39 +157,6 @@ class _StudentHomeScreenState extends ConsumerState<StudentHomeScreen> with Sign
     );
   }
 
-  PreferredSizeWidget appBar() {
-    return AppBar(
-      title: const Text(
-        'QLDT',
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 20,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-      centerTitle: true,
-      backgroundColor: Colors.red,
-      elevation: 0.0,
-      actions: [
-        Builder(
-          // Wrap the Padding with Builder
-          builder: (context) => Padding(
-            padding: const EdgeInsets.only(right: 16.0),
-            child: GestureDetector(
-              onTap: () {
-                Scaffold.of(context).openEndDrawer();
-              },
-              child: const CircleAvatar(
-                backgroundColor: Colors.white,
-                child: Icon(Icons.person, color: Colors.red),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildDrawer() {
     final userState = ref.watch(authProvider);
 

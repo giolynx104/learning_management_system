@@ -69,7 +69,6 @@ class _TeacherHomeScreenState extends ConsumerState<TeacherHomeScreen> with Sign
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-     // appBar: appBar(),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
