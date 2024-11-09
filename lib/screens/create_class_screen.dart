@@ -5,7 +5,6 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:learning_management_system/services/class_service.dart';
 import 'package:learning_management_system/providers/auth_provider.dart';
-import 'package:learning_management_system/services/storage_service.dart';
 
 class CreateClassScreen extends HookConsumerWidget {
   const CreateClassScreen({super.key});
@@ -27,18 +26,11 @@ class CreateClassScreen extends HookConsumerWidget {
       if (formKey.currentState?.validate() ?? false) {
         try {
           final classService = ref.read(classServiceProvider.notifier);
-          
-          final token = await StorageService().getToken();
-          print('Debug - Stored token: $token');
-          
           final authState = await ref.read(authProvider.future);
-          print('Debug - Auth state: $authState');
           
           if (authState == null) {
             throw Exception('Not authenticated');
           }
-          
-          print('Debug - Auth token: ${authState.token}');
           
           await classService.createClass(
             token: authState.token,
@@ -53,18 +45,15 @@ class CreateClassScreen extends HookConsumerWidget {
               : null,
           );
 
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Class created successfully')),
-            );
-            context.pop();
-          }
+          if (!context.mounted) return;
+          context.pop();
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Class created successfully')),
+          );
         } catch (e) {
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Failed to create class: ${e.toString()}')),
-            );
-          }
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(e.toString())),
+          );
         }
       }
     }
@@ -103,9 +92,8 @@ class CreateClassScreen extends HookConsumerWidget {
               const SizedBox(height: 16),
               _buildTextField(
                 controller: associatedClassCodeController,
-                labelText: 'Associated Class Code',
-                validator: (value) =>
-                    value?.isEmpty ?? true ? 'Please enter an associated class code' : null,
+                labelText: 'Associated Class Code (Optional)',
+                validator: null,
                 theme: theme,
               ),
               const SizedBox(height: 16),

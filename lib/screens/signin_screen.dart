@@ -70,31 +70,31 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
         password: _passwordController.text,
       );
 
+      print('Debug - Sign in response: $result');
+
       if (!mounted) return;
 
       if (result['success'] == true) {
         final userData = result['user'] as Map<String, dynamic>;
+        print('Debug - User data: $userData');
+
         final user = User.fromJson(userData);
-        final token = user.token;
+        print('Debug - Parsed user: $user');
+
+        final token = userData['token'] as String;
+        print('Debug - Token from response: $token');
 
         // Save token and update user state
         await ref.read(authProvider.notifier).login(user, token);
+        print('Debug - After login call');
 
         if (!mounted) return;
         _redirectBasedOnRole(user.role);
-      } else if (result['needs_verification'] == true) {
-        if (!mounted) return;
-        context.go(
-          Routes.signin,
-          extra: {
-            'email': _emailController.text,
-            'password': _passwordController.text,
-          },
-        );
       } else {
         throw Exception('Login failed');
       }
     } catch (e) {
+      print('Debug - Sign in error: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.toString())),
