@@ -4,6 +4,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:learning_management_system/providers/auth_provider.dart';
 import 'package:learning_management_system/routes/destinations.dart';
 import 'package:learning_management_system/routes/routes.dart';
+import 'package:learning_management_system/screens/screen_chat.dart';
 import 'package:learning_management_system/screens/signin_screen.dart';
 import 'package:learning_management_system/screens/signup_screen.dart';
 import 'package:learning_management_system/screens/class_management_screen.dart';
@@ -180,6 +181,15 @@ final appRouter = GoRouter(
                     ? const ClassRegistrationScreen()
                     : const ClassManagementScreen();
               },
+            ),
+          ],
+        ),
+        // Chat Branch
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/chat',
+              builder: (context, state) => const ChatScreen(),
             ),
           ],
         ),
