@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:learning_management_system/routes/app_routes.dart';
-import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
 import 'package:learning_management_system/routes/routes.dart';
-import 'package:learning_management_system/screens/create_survey_screen.dart';
-import 'package:learning_management_system/screens/edit_survey_screen.dart';
+import 'package:intl/intl.dart';
+import 'package:learning_management_system/models/survey.dart';
 
 class TeacherSurveyListScreen extends StatefulWidget {
   const TeacherSurveyListScreen({super.key});
@@ -36,32 +34,31 @@ class TeacherSurveyListScreenState extends State<TeacherSurveyListScreen> {
   ];
 
   List<TeacherSurvey> getUpcomingSurveys() {
-    return surveys.where((survey) => survey.endTime.isAfter(DateTime.now())).toList()
+    return surveys
+        .where((survey) => survey.endTime.isAfter(DateTime.now()))
+        .toList()
       ..sort((a, b) => a.endTime.compareTo(b.endTime));
   }
 
   List<TeacherSurvey> getOverdueSurveys() {
-    return surveys.where((survey) => survey.endTime.isBefore(DateTime.now())).toList()
+    return surveys
+        .where((survey) => survey.endTime.isBefore(DateTime.now()))
+        .toList()
       ..sort((a, b) => a.endTime.compareTo(b.endTime));
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
     return DefaultTabController(
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-          backgroundColor: Colors.red[900],
           title: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'SURVEY LIST',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontFamily: 'Times New Roman',
-                ),
-              ),
+              const Text('Survey Management'),
               Image.asset(
                 'assets/images/HUST_white.png',
                 height: 30,
@@ -70,35 +67,33 @@ class TeacherSurveyListScreenState extends State<TeacherSurveyListScreen> {
             ],
           ),
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () => Navigator.pop(context),
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => context.pop(),
           ),
-          bottom: const TabBar(
-            labelColor: Colors.white,
-            unselectedLabelColor: Colors.white70,
-            tabs: [
-              Tab(text: 'Sắp tới'),
-              Tab(text: 'Quá hạn'),
+          bottom: TabBar(
+            labelColor: theme.colorScheme.onPrimary,
+            unselectedLabelColor: theme.colorScheme.onPrimary.withOpacity(0.7),
+            tabs: const [
+              Tab(text: 'Active'),
+              Tab(text: 'Expired'),
             ],
-            isScrollable: true,
           ),
         ),
         body: TabBarView(
           children: [
-            SurveyTabContent(title: 'Sắp tới', surveys: getUpcomingSurveys()),
-            SurveyTabContent(title: 'Quá hạn', surveys: getOverdueSurveys()),
+            SurveyTabContent(
+              title: 'Active',
+              surveys: getUpcomingSurveys(),
+            ),
+            SurveyTabContent(
+              title: 'Expired',
+              surveys: getOverdueSurveys(),
+            ),
           ],
         ),
         floatingActionButton: FloatingActionButton(
-          onPressed: () {
-            context.push(Routes.nestedCreateSurvey); // Use context.push for navigation
-          },
-          backgroundColor: Colors.red[900],
-          child: const Icon(
-            Icons.add,
-            color: Colors.white,
-            size: 28,
-          ),
+          onPressed: () => context.push(Routes.nestedCreateSurvey),
+          child: const Icon(Icons.add),
         ),
       ),
     );
@@ -109,99 +104,130 @@ class SurveyTabContent extends StatelessWidget {
   final String title;
   final List<TeacherSurvey> surveys;
 
-  const SurveyTabContent({super.key, required this.title, required this.surveys});
+  const SurveyTabContent({
+    super.key,
+    required this.title,
+    required this.surveys,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
     return ListView.builder(
       itemCount: surveys.length,
+      padding: const EdgeInsets.all(16),
       itemBuilder: (context, index) {
         final survey = surveys[index];
         final startTimeFormatted = DateFormat('HH:mm dd-MM-yyyy').format(survey.startTime);
         final endTimeFormatted = DateFormat('HH:mm dd-MM-yyyy').format(survey.endTime);
 
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(12.0, 10.0, 12.0, 4.0),
-          child: Container(
-            padding: const EdgeInsets.all(10.0),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              border: Border.all(color: Colors.grey),
-              borderRadius: BorderRadius.circular(5.0),
-            ),
-            child: Stack(
+        return Card(
+          margin: const EdgeInsets.only(bottom: 12),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                Row(
                   children: [
-                    Text(
-                      '$startTimeFormatted đến $endTimeFormatted',
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            survey.name,
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'From: $startTimeFormatted',
+                            style: theme.textTheme.bodyMedium,
+                          ),
+                          Text(
+                            'To: $endTimeFormatted',
+                            style: theme.textTheme.bodyMedium,
+                          ),
+                        ],
+                      ),
                     ),
-                    const SizedBox(height: 8.0),
-                    Text(survey.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
-                    const SizedBox(height: 8.0),
-                    Text('Số phản hồi: ${survey.responseCount}'),
-                    Text('Lớp: ${survey.className}'),
+                    PopupMenuButton<String>(
+                      itemBuilder: (context) => [
+                        const PopupMenuItem(
+                          value: 'edit',
+                          child: Row(
+                            children: [
+                              Icon(Icons.edit),
+                              SizedBox(width: 8),
+                              Text('Edit'),
+                            ],
+                          ),
+                        ),
+                        const PopupMenuItem(
+                          value: 'delete',
+                          child: Row(
+                            children: [
+                              Icon(Icons.delete, color: Colors.red),
+                              SizedBox(width: 8),
+                              Text('Delete', style: TextStyle(color: Colors.red)),
+                            ],
+                          ),
+                        ),
+                        const PopupMenuItem(
+                          value: 'responses',
+                          child: Row(
+                            children: [
+                              Icon(Icons.assessment),
+                              SizedBox(width: 8),
+                              Text('View Responses'),
+                            ],
+                          ),
+                        ),
+                      ],
+                      onSelected: (value) {
+                        switch (value) {
+                          case 'edit':
+                            context.push(
+                              Routes.nestedEditSurvey,
+                              extra: TeacherSmallSurvey(
+                                name: survey.name,
+                                description: survey.description,
+                                file: survey.file,
+                                startTime: survey.startTime,
+                                endTime: survey.endTime,
+                              ),
+                            );
+                            break;
+                          case 'delete':
+                            // TODO: Implement delete
+                            break;
+                          case 'responses':
+                            // TODO: Implement view responses
+                            break;
+                        }
+                      },
+                    ),
                   ],
                 ),
-                Positioned(
-                  top: 0,
-                  right: 0,
-                  child: PopupMenuButton<int>(
-                    icon: const Icon(Icons.more_vert, color: Colors.black),
-                    onSelected: (value) {
-                      if (value == 0) {
-                        // Use context.push for navigation to EditSurveyScreen
-                        context.push(
-                          Routes.nestedEditSurvey, // Pass the survey ID or name to identify it
-                          extra: TeacherSmallSurvey(
-                            name: survey.name,
-                            description: survey.description,
-                            file: survey.file,
-                            startTime: survey.startTime,
-                            endTime: survey.endTime,
-                          ),
-                        );
-                      } else if (value == 1) {
-                        // Implement delete functionality later
-                      } else if (value == 2) {
-                        // Implement get response functionality later
-                      }
-                    },
-                    itemBuilder: (context) => [
-                      PopupMenuItem(
-                        value: 0,
-                        child: Row(
-                          children: const [
-                            Icon(Icons.edit, color: Colors.blue),
-                            SizedBox(width: 8),
-                            Text('Edit'),
-                          ],
-                        ),
-                      ),
-                      PopupMenuItem(
-                        value: 1,
-                        child: Row(
-                          children: const [
-                            Icon(Icons.delete, color: Colors.red),
-                            SizedBox(width: 8),
-                            Text('Delete'),
-                          ],
-                        ),
-                      ),
-                      PopupMenuItem(
-                        value: 2,
-                        child: Row(
-                          children: const [
-                            Icon(Icons.receipt_long, color: Colors.green),
-                            SizedBox(width: 8),
-                            Text('Get Response'),
-                          ],
-                        ),
-                      ),
-                    ],
+                if (survey.description != null) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    survey.description!,
+                    style: theme.textTheme.bodyMedium,
                   ),
+                ],
+                const SizedBox(height: 8),
+                Text(
+                  'Responses: ${survey.responseCount}',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+                Text(
+                  'Class: ${survey.className}',
+                  style: theme.textTheme.bodyMedium,
                 ),
               ],
             ),

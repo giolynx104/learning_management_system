@@ -3,8 +3,6 @@ import 'package:go_router/go_router.dart';
 import 'package:learning_management_system/routes/routes.dart';
 import 'package:intl/intl.dart';
 import 'package:learning_management_system/screens/submit_survey_screen.dart';
-import 'package:go_router/go_router.dart';
-import 'package:learning_management_system/routes/routes.dart';
 
 class SurveyListScreen extends StatefulWidget {
   const SurveyListScreen({super.key});
@@ -48,17 +46,27 @@ class SurveyListScreenState extends State<SurveyListScreen> {
   ];
 
   List<Survey> getUpcomingSurveys() {
-    return surveys.where((survey) => survey.endTime.isAfter(DateTime.now()) && survey.turnInTime == null).toList()
+    return surveys
+        .where((survey) => 
+            survey.endTime.isAfter(DateTime.now()) && 
+            survey.turnInTime == null)
+        .toList()
       ..sort((a, b) => a.endTime.compareTo(b.endTime));
   }
 
   List<Survey> getOverdueSurveys() {
-    return surveys.where((survey) => survey.endTime.isBefore(DateTime.now()) && survey.turnInTime == null).toList()
+    return surveys
+        .where((survey) => 
+            survey.endTime.isBefore(DateTime.now()) && 
+            survey.turnInTime == null)
+        .toList()
       ..sort((a, b) => a.endTime.compareTo(b.endTime));
   }
 
   List<Survey> getCompletedSurveys() {
-    return surveys.where((survey) => survey.turnInTime != null).toList()
+    return surveys
+        .where((survey) => survey.turnInTime != null)
+        .toList()
       ..sort((a, b) => a.turnInTime!.compareTo(b.turnInTime!));
   }
 
@@ -78,13 +86,13 @@ class SurveyListScreenState extends State<SurveyListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
     return DefaultTabController(
       length: 3,
       child: Scaffold(
         appBar: AppBar(
-          backgroundColor: Colors.red[900],
           title: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text(
@@ -94,11 +102,7 @@ class SurveyListScreenState extends State<SurveyListScreen> {
                   fontFamily: 'Times New Roman',
                 ),
               ),
-              const SizedBox(height: 5.0),
               Image.asset(
-                'assets/images/HUST_white.png',
-                height: 30,
-                fit: BoxFit.contain,
                 'assets/images/HUST_white.png',
                 height: 30,
                 fit: BoxFit.contain,
@@ -109,31 +113,30 @@ class SurveyListScreenState extends State<SurveyListScreen> {
             icon: const Icon(Icons.arrow_back, color: Colors.white),
             onPressed: () => context.pop(),
           ),
-          bottom: const TabBar(
-            labelColor: Colors.white,
-            unselectedLabelColor: Colors.white70,
-            tabs: [
-              Tab(text: 'Sắp tới'),
-              Tab(text: 'Quá hạn'),
-              Tab(text: 'Đã hoàn thành'),
+          bottom: TabBar(
+            labelColor: theme.colorScheme.onPrimary,
+            unselectedLabelColor: theme.colorScheme.onPrimary.withOpacity(0.7),
+            tabs: const [
+              Tab(text: 'Upcoming'),
+              Tab(text: 'Overdue'),
+              Tab(text: 'Completed'),
             ],
-            isScrollable: true,
           ),
         ),
         body: TabBarView(
           children: [
             SurveyTabContent(
-              title: 'Sắp tới',
+              title: 'Upcoming',
               surveys: getUpcomingSurveys(),
               onSurveyTap: _navigateToSubmitSurvey,
             ),
             SurveyTabContent(
-              title: 'Quá hạn',
+              title: 'Overdue',
               surveys: getOverdueSurveys(),
               onSurveyTap: _navigateToSubmitSurvey,
             ),
             SurveyTabContent(
-              title: 'Đã hoàn thành',
+              title: 'Completed',
               surveys: getCompletedSurveys(),
               onSurveyTap: _navigateToSubmitSurvey,
             ),
@@ -180,61 +183,66 @@ class SurveyTabContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: Colors.white,
-      color: Colors.white,
-      child: ListView.builder(
-        itemCount: surveys.length,
-        itemCount: surveys.length,
-        itemBuilder: (context, index) {
-          final survey = surveys[index];
-          final endTimeFormatted = DateFormat('HH:mm dd-MM-yyyy').format(survey.endTime);
-          final survey = surveys[index];
-          final endTimeFormatted = DateFormat('HH:mm dd-MM-yyyy').format(survey.endTime);
-          final turnInTimeFormatted = survey.turnInTime != null
-              ? DateFormat('HH:mm dd-MM-yyyy').format(survey.turnInTime!)
-              : null;
-              ? DateFormat('HH:mm dd-MM-yyyy').format(survey.turnInTime!)
-              : null;
+    final theme = Theme.of(context);
+    
+    return ListView.builder(
+      itemCount: surveys.length,
+      padding: const EdgeInsets.all(16),
+      itemBuilder: (context, index) {
+        final survey = surveys[index];
+        final endTimeFormatted = DateFormat('HH:mm dd-MM-yyyy').format(survey.endTime);
+        final turnInTimeFormatted = survey.turnInTime != null
+            ? DateFormat('HH:mm dd-MM-yyyy').format(survey.turnInTime!)
+            : null;
 
-          return Padding(
-            padding: const EdgeInsets.fromLTRB(12.0, 10.0, 12.0, 4.0),
-            child: InkWell(
-              onTap: () => onSurveyTap(survey),
-              child: Container(
-                padding: const EdgeInsets.all(10.0),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  border: Border.all(color: Colors.grey),
-                  borderRadius: BorderRadius.circular(5.0),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+        return Card(
+          margin: const EdgeInsets.only(bottom: 12),
+          child: InkWell(
+            onTap: () => onSurveyTap(survey),
+            borderRadius: BorderRadius.circular(12),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    endTimeFormatted,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    survey.name,
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  if (survey.description != null) ...[
+                    const SizedBox(height: 4),
                     Text(
-                      endTimeFormatted,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                        fontSize: 16,
+                      survey.description!,
+                      style: theme.textTheme.bodyMedium,
+                    ),
+                  ],
+                  const SizedBox(height: 8),
+                  if (survey.turnInTime != null)
+                    Text(
+                      'Submitted at: $turnInTimeFormatted',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.primary,
                       ),
                     ),
-                    const SizedBox(height: 8.0),
-                    const SizedBox(height: 8.0),
-                    Text(survey.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
-                    if (survey.description != null)
-                      Text(survey.description!, style: const TextStyle(color: Colors.black)),
-                    const SizedBox(height: 8.0),
-                    if (survey.turnInTime != null)
-                      Text('Đã nộp vào lúc $turnInTimeFormatted'),
-                    Text('Lớp: ${survey.className}'),
-                  ],
-                ),
+                  Text(
+                    'Class: ${survey.className}',
+                    style: theme.textTheme.bodyMedium,
+                  ),
+                ],
               ),
             ),
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 }

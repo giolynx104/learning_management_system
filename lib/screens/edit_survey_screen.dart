@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:learning_management_system/models/survey.dart';
 
 class EditSurveyScreen extends StatefulWidget {
   final TeacherSmallSurvey survey;
@@ -12,22 +13,6 @@ class EditSurveyScreen extends StatefulWidget {
 
   @override
   EditSurveyScreenState createState() => EditSurveyScreenState();
-}
-
-class TeacherSmallSurvey {
-  final String name;
-  final String? description;
-  final String? file;
-  DateTime startTime;
-  DateTime endTime;
-
-  TeacherSmallSurvey({
-    required this.name,
-    this.description,
-    this.file,
-    required this.startTime,
-    required this.endTime,
-  });
 }
 
 class EditSurveyScreenState extends State<EditSurveyScreen> {
