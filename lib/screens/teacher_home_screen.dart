@@ -7,8 +7,9 @@ import 'package:learning_management_system/models/pinnedChannel.dart';
 import 'package:learning_management_system/models/teams.dart';
 import 'package:go_router/go_router.dart';
 import 'package:learning_management_system/routes/routes.dart';
+
 class TeacherHomeScreen extends ConsumerStatefulWidget {
-   const TeacherHomeScreen({super.key});
+  const TeacherHomeScreen({super.key});
 
   @override
   ConsumerState<TeacherHomeScreen> createState() => _TeacherHomeScreenState();
@@ -48,162 +49,100 @@ class _TeacherHomeScreenState extends ConsumerState<TeacherHomeScreen> with Sign
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
     return Scaffold(
-      appBar: appBar(),
-      endDrawer: _buildDrawer(),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _searchField(),
-            const SizedBox(height: 40),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _pinnedChannels(),
-                const SizedBox(height: 20),
-                _teams(),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  AppBar appBar() {
-    return AppBar(
-      title: const Text(
-        'QLDT',
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 20,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-      centerTitle: true,
-      backgroundColor: Colors.red,
-      elevation: 0.0,
-      actions: [
-        Builder(
-          builder: (context) => Padding(
-            padding: const EdgeInsets.only(right: 16.0),
-            child: GestureDetector(
-              onTap: () {
-                Scaffold.of(context).openEndDrawer();
-              },
-              child: const CircleAvatar(
-                backgroundColor: Colors.white,
-                child: Icon(Icons.person, color: Colors.red),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildDrawer() {
-    return Drawer(
-      child: ListView(
-        padding: EdgeInsets.zero,
-        children: [
-          UserAccountsDrawerHeader(
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            accountName: const Text('Teacher Name'),
-            accountEmail: const Text('teacher@example.com'),
-            currentAccountPicture: const CircleAvatar(
-              backgroundColor: Colors.white,
-              child: Icon(Icons.person, color: Colors.red),
-            ),
-          ),
-          ListTile(
-            leading: const Icon(Icons.person),
-            title: const Text('Profile'),
-            onTap: () {
-              context.pop();
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.settings),
-            title: const Text('Settings'),
-            onTap: () {
-              context.pop();
-            },
-          ),
-          const Divider(),
-          ListTile(
-            leading: const Icon(Icons.logout, color: Colors.red),
-            title: const Text('Sign Out', style: TextStyle(color: Colors.red)),
-            onTap: () {
-              context.pop();
-              handleSignOut();
-            },
+      backgroundColor: theme.colorScheme.background,
+      appBar: AppBar(
+        title: Text('Teacher Home', style: TextStyle(color: theme.colorScheme.onPrimary)),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.logout, color: theme.colorScheme.onPrimary),
+            onPressed: () => handleSignOut(),
           ),
         ],
       ),
-    );
-  }
-
-  Widget _pinnedChannels() {
-    return ExpansionTile(
-      title: const Text("Pinned Channels"),
-      leading: Icon(
-        isPinnedChannelExpanded ? Icons.arrow_drop_down : Icons.arrow_right,
-      ),
-      trailing: const SizedBox.shrink(),
-      onExpansionChanged: (bool expanded) {
-        setState(() => isPinnedChannelExpanded = expanded);
-      },
-      children: [
-        ListView.builder(
-          shrinkWrap: true,
-          padding: EdgeInsets.zero,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: pinnedChannels.length,
-          itemBuilder: (context, index) {
-            var channel = pinnedChannels[index];
-            return PinnedItem(
-              channel: channel,
-              onUnpinPressed: () => _unpinChannel(channel),
-            );
-          },
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Card(
+                child: ExpansionTile(
+                  title: Text(
+                    'Pinned Channels',
+                    style: TextStyle(
+                      color: theme.colorScheme.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  leading: Icon(
+                    isPinnedChannelExpanded ? Icons.arrow_drop_down : Icons.arrow_right,
+                  ),
+                  trailing: const SizedBox.shrink(),
+                  onExpansionChanged: (bool expanded) {
+                    setState(() => isPinnedChannelExpanded = expanded);
+                  },
+                  children: [
+                    ListView.builder(
+                      shrinkWrap: true,
+                      padding: EdgeInsets.zero,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: pinnedChannels.length,
+                      itemBuilder: (context, index) {
+                        var channel = pinnedChannels[index];
+                        return PinnedItem(
+                          channel: channel,
+                          onUnpinPressed: () => _unpinChannel(channel),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              Card(
+                child: ExpansionTile(
+                  title: Text(
+                    'Classes',
+                    style: TextStyle(
+                      color: theme.colorScheme.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  leading: Icon(
+                    isClassesExpanded ? Icons.arrow_drop_down : Icons.arrow_right,
+                  ),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.add),
+                    onPressed: () => context.push(Routes.nestedCreateClass),
+                  ),
+                  onExpansionChanged: (bool expanded) {
+                    setState(() => isClassesExpanded = expanded);
+                  },
+                  children: [
+                    ListView.builder(
+                      shrinkWrap: true,
+                      padding: EdgeInsets.zero,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: teams.length,
+                      itemBuilder: (context, index) {
+                        var team = teams[index];
+                        return TeamsExpansionItem(
+                          name: team.name,
+                          color: team.color,
+                          onMorePressed: () => _showTeamOptions(context, team),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
-      ],
-    );
-  }
-
-  Widget _teams() {
-    return ExpansionTile(
-      title: const Text("Classes"),
-      leading: Icon(
-        isClassesExpanded ? Icons.arrow_drop_down : Icons.arrow_right,
       ),
-      trailing: IconButton(
-        icon: const Icon(Icons.add),
-        onPressed: () => context.push(Routes.nestedCreateClass),
-      ),
-      onExpansionChanged: (bool expanded) {
-        setState(() => isClassesExpanded = expanded);
-      },
-      children: [
-        ListView.builder(
-          shrinkWrap: true,
-          padding: EdgeInsets.zero,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: teams.length,
-          itemBuilder: (context, index) {
-            var team = teams[index];
-            return TeamsExpansionItem(
-              name: team.name,
-              color: team.color,
-              onMorePressed: () => _showTeamOptions(context, team),
-            );
-          },
-        ),
-      ],
     );
   }
 
