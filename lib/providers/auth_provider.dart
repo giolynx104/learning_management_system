@@ -1,8 +1,10 @@
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../models/user.dart';
 import '../services/user_service.dart';
 import '../services/storage_service.dart';
 import '../services/api_service.dart';
+import 'dart:developer' as dev;
 
 part 'auth_provider.g.dart';
 
@@ -11,50 +13,50 @@ class Auth extends _$Auth {
   @override
   Future<User?> build() async {
     final token = await StorageService().getToken();
-    print('Debug - Auth build - Token from storage: $token');
+    dev.log('Auth build - Token from storage: $token');
 
     if (token == null) {
-      print('Debug - Auth build - No token found in storage');
+      dev.log('Auth build - No token found in storage');
       return null;
     }
 
     try {
       final user = await ref.read(userServiceProvider).getUserInfo(token);
-      print('Debug - Auth build - Got user: $user');
+      dev.log('Auth build - Got user: $user');
       final userWithToken = user.copyWith(token: token);
-      print('Debug - Auth build - User with token: $userWithToken');
+      dev.log('Auth build - User with token: $userWithToken');
       return userWithToken;
     } catch (e) {
-      print('Debug - Auth build - Error: $e');
+      dev.log('Auth build - Error: $e');
       await StorageService().clearToken();
       return null;
     }
   }
 
   Future<void> login(User user, String token) async {
-    print('Debug - Auth login - Starting login');
-    print('Debug - Auth login - Token: $token');
-    print('Debug - Auth login - User: $user');
+    dev.log('Auth login - Starting login');
+    dev.log('Auth login - Token: $token');
+    dev.log('Auth login - User: $user');
 
     await StorageService().saveToken(token);
     final savedToken = await StorageService().getToken();
-    print('Debug - Auth login - Saved token verification: $savedToken');
+    dev.log('Auth login - Saved token verification: $savedToken');
 
     state = AsyncValue.data(user.copyWith(token: token));
-    print('Debug - Auth login - State updated');
+    dev.log('Auth login - State updated');
   }
 
   Future<void> logout() async {
-    print('Debug - Auth logout - Starting logout');
+    dev.log('Auth logout - Starting logout');
     await StorageService().clearToken();
     state = const AsyncValue.data(null);
-    print('Debug - Auth logout - Completed logout');
+    dev.log('Auth logout - Completed logout');
   }
 }
 
 @riverpod
-ApiService apiService(ApiServiceRef ref) => ApiService();
+ApiService apiService(Ref ref) => ApiService();
 
 @riverpod
-UserService userService(UserServiceRef ref) =>
+UserService userService(Ref ref) =>
     UserService(ref.watch(apiServiceProvider));

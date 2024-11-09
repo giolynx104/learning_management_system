@@ -50,7 +50,7 @@ class TeacherSurveyListScreenState extends State<TeacherSurveyListScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return DefaultTabController(
       length: 2,
       child: Scaffold(
@@ -113,14 +113,16 @@ class SurveyTabContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return ListView.builder(
       itemCount: surveys.length,
       padding: const EdgeInsets.all(16),
       itemBuilder: (context, index) {
         final survey = surveys[index];
-        final startTimeFormatted = DateFormat('HH:mm dd-MM-yyyy').format(survey.startTime);
-        final endTimeFormatted = DateFormat('HH:mm dd-MM-yyyy').format(survey.endTime);
+        final startTimeFormatted =
+            DateFormat('HH:mm dd-MM-yyyy').format(survey.startTime);
+        final endTimeFormatted =
+            DateFormat('HH:mm dd-MM-yyyy').format(survey.endTime);
 
         return Card(
           margin: const EdgeInsets.only(bottom: 12),
@@ -171,7 +173,8 @@ class SurveyTabContent extends StatelessWidget {
                             children: [
                               Icon(Icons.delete, color: Colors.red),
                               SizedBox(width: 8),
-                              Text('Delete', style: TextStyle(color: Colors.red)),
+                              Text('Delete',
+                                  style: TextStyle(color: Colors.red)),
                             ],
                           ),
                         ),

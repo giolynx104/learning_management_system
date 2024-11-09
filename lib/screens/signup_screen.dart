@@ -43,12 +43,6 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
       setState(() => _isLoading = true);
 
       try {
-        final signUpData = {
-          'email': _emailController.text,
-          'password': _passwordController.text,
-          'uuid': 11111,
-          'role': _selectedRole.toUpperCase(),
-        };
 
         final signUpResponse = await ref.read(signUpProvider(
           email: _emailController.text,

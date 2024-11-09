@@ -43,13 +43,15 @@ class _AbsenceRequestScreenState extends State<AbsenceRequestScreen> {
   Future<void> _submit() async {
     if (_selectedDate == null || _selectedFile == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a date and upload proof file')),
+        const SnackBar(
+            content: Text('Please select a date and upload proof file')),
       );
       return;
     }
 
     final String reason = _reasonController.text;
-    final String formattedDate = DateFormat('yyyy-MM-dd').format(_selectedDate!);
+    final String formattedDate =
+        DateFormat('yyyy-MM-dd').format(_selectedDate!);
 
     try {
       final response = await http.post(
@@ -58,8 +60,8 @@ class _AbsenceRequestScreenState extends State<AbsenceRequestScreen> {
           'Content-Type': 'application/json; charset=UTF-8',
         },
         body: jsonEncode({
-          'token': 'ZeLxSs',  // TODO: Get from auth provider
-          'class_id': '783226',  // TODO: Get from class context
+          'token': 'ZeLxSs', // TODO: Get from auth provider
+          'class_id': '783226', // TODO: Get from class context
           'date': formattedDate,
           'reason': reason,
         }),
@@ -68,7 +70,8 @@ class _AbsenceRequestScreenState extends State<AbsenceRequestScreen> {
       if (response.statusCode == 200) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Absence request submitted successfully')),
+          const SnackBar(
+              content: Text('Absence request submitted successfully')),
         );
       } else {
         throw Exception('Failed to submit request');
@@ -82,8 +85,8 @@ class _AbsenceRequestScreenState extends State<AbsenceRequestScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    
+    Theme.of(context);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Absence Request'),

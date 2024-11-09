@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:learning_management_system/mixins/sign_out_mixin.dart';
-import 'package:learning_management_system/models/class_list_model.dart';
 import 'package:learning_management_system/models/pinnedChannel.dart';
 import 'package:learning_management_system/models/teams.dart';
-import 'package:learning_management_system/routes/routes.dart';
 
 class TeacherHomeScreen extends ConsumerStatefulWidget {
   const TeacherHomeScreen({super.key});
@@ -91,102 +88,6 @@ class _TeacherHomeScreenState extends ConsumerState<TeacherHomeScreen> with Sign
           ),
         ),
       ),
-    );
-  }
-
-  void _unpinChannel(PinnedChannelModel channel) {
-    setState(() {
-      PinnedChannelModel.removePinnedChannel(channel);
-      pinnedChannels.removeWhere((pinned) => !pinned.isPinned);
-    });
-  }
-
-  void _showTeamOptions(BuildContext context, TeamsModel team) {
-    showModalBottomSheet(
-      context: context,
-      builder: (BuildContext context) {
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              Text(
-                team.name,
-                style:
-                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 10),
-              ListTile(
-                leading: const Icon(Icons.class_rounded),
-                title: const Text('Chỉnh sửa lớp'),
-                onTap: () {
-                  context.pop();
-                  context.push(Routes.nestedModifyClass);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.assignment),
-                title: const Text('Giao bài tập'),
-                onTap: () => context.push(Routes.nestedTeacherSurveyList),
-              ),
-              ListTile(
-                leading: const Icon(Icons.description),
-                title: const Text('Tài liệu'),
-                onTap: () {
-                  context.pop();
-                  context.push(Routes.nestedUploadFile);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.check_circle_outline),
-                title: const Text('Điểm danh'),
-                onTap: () {
-                  context.pop();
-                  context.push(Routes.nestedRollCallAction);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.poll),
-                title: const Text('Tạo khảo sát'),
-                onTap: () {
-                  context.pop();
-                  context.push(Routes.nestedCreateSurvey);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.exit_to_app),
-                title: const Text('Rời khỏi nhóm'),
-                onTap: () {
-                  context.pop();
-                  _showConfirmationDialog(context, team);
-                },
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  void _showConfirmationDialog(BuildContext context, TeamsModel team) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Xác nhận'),
-          content: Text('Bạn có chắc chắn muốn rời khỏi nhóm "${team.name}"?'),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () => context.pop(),
-              child: const Text('Hủy'),
-            ),
-            TextButton(
-              onPressed: () => context.pop(),
-              child: const Text('Xác nhận'),
-            ),
-          ],
-        );
-      },
     );
   }
 }
