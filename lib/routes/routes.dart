@@ -15,7 +15,7 @@ class Routes {
   static const String classManagement = '/class_management';
   static const String createClass = 'create_class';
   static const String nestedCreateClass = '/teacher_home/create_class';
-  static const String modifyClass = 'modify_class';
+  static const String modifyClass = 'modify/:classId';
   static const String nestedModifyClass = '/teacher_home/modify_class';
   static const String rollCall = 'roll_call';
   static const String nestedRollCall = '/teacher_home/roll_call';

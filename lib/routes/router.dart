@@ -119,7 +119,28 @@ final appRouter = GoRouter(
                 ),
                 GoRoute(
                   path: Routes.modifyClass,
-                  builder: (context, state) => const ModifyClassScreen(),
+                  builder: (context, state) {
+                    final classId = state.extra as String?;
+                    if (classId == null) {
+                      // Handle the error case by showing an error screen or redirecting
+                      return Scaffold(
+                        body: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Text('Error: No class ID provided'),
+                              const SizedBox(height: 16),
+                              ElevatedButton(
+                                onPressed: () => context.pop(),
+                                child: const Text('Go Back'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }
+                    return ModifyClassScreen(classId: classId);
+                  },
                 ),
                 GoRoute(
                   path: Routes.rollCall,
@@ -181,6 +202,33 @@ final appRouter = GoRouter(
                     ? const ClassRegistrationScreen()
                     : const ClassManagementScreen();
               },
+              routes: [
+                GoRoute(
+                  path: 'modify/:classId',
+                  name: Routes.modifyClass,
+                  builder: (context, state) {
+                    final classId = state.pathParameters['classId'];
+                    if (classId == null) {
+                      return Scaffold(
+                        body: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Text('Error: No class ID provided'),
+                              const SizedBox(height: 16),
+                              ElevatedButton(
+                                onPressed: () => context.pop(),
+                                child: const Text('Go Back'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }
+                    return ModifyClassScreen(classId: classId);
+                  },
+                ),
+              ],
             ),
           ],
         ),

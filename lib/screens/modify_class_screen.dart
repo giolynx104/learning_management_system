@@ -2,22 +2,116 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:go_router/go_router.dart';
+import 'package:learning_management_system/models/class_model.dart';
+import 'package:learning_management_system/services/class_service.dart';
+import 'package:learning_management_system/providers/auth_provider.dart';
 
 class ModifyClassScreen extends HookConsumerWidget {
-  const ModifyClassScreen({super.key});
+  final String classId;
+  
+  const ModifyClassScreen({
+    super.key,
+    required this.classId,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    debugPrint('ModifyClassScreen - Received ClassId: $classId, Type: ${classId.runtimeType}');
+    
     final theme = Theme.of(context);
     final formKey = useMemoized(() => GlobalKey<FormState>());
-    final classCodeController = useTextEditingController();
-    final associatedClassCodeController = useTextEditingController();
-    final classNameController = useTextEditingController();
-    final courseCodeController = useTextEditingController();
-    final maxStudentsController = useTextEditingController();
-    final classType = useState<String?>(null);
-    final startDate = useState<DateTime?>(null);
-    final endDate = useState<DateTime?>(null);
+    final isLoading = useState(false);
+    final classData = useState<ClassModel?>(null);
+
+    // Load class data when screen opens
+    useEffect(() {
+      Future<void> loadClassData() async {
+        try {
+          isLoading.value = true;
+          final authState = await ref.read(authProvider.future);
+          if (authState == null) {
+            throw Exception('Not authenticated');
+            return;
+          }
+
+          debugPrint('ModifyClassScreen - Fetching data for ClassId: $classId');
+          final response = await ref.read(classServiceProvider.notifier).getClassInfo(
+            token: authState.token,
+            classId: classId,
+          );
+          
+          debugPrint('ModifyClassScreen - Received response: ${response.toString()}');
+          classData.value = response;
+        } catch (e) {
+          debugPrint('ModifyClassScreen - Error: $e');
+          if (!context.mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error: ${e.toString()}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+          // Navigate back if we can't load the class data
+          context.pop();
+        } finally {
+          if (context.mounted) {
+            isLoading.value = false;
+          }
+        }
+      }
+
+      loadClassData();
+      return null;
+    }, []);
+
+    // Show loading indicator while fetching data
+    if (classData.value == null) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    final classNameController = useTextEditingController(text: classData.value!.className);
+    final status = useState<String>(classData.value!.status);
+    final startDate = useState<DateTime>(DateTime.parse(classData.value!.startDate));
+    final endDate = useState<DateTime>(DateTime.parse(classData.value!.endDate));
+
+    Future<void> handleEditClass() async {
+      if (formKey.currentState?.validate() ?? false) {
+        try {
+          isLoading.value = true;
+          
+          final authState = await ref.read(authProvider.future);
+          if (authState == null) {
+            throw Exception('Not authenticated');
+          }
+
+          await ref.read(classServiceProvider.notifier).editClass(
+            token: authState.token,
+            classId: classId,
+            className: classNameController.text,
+            status: status.value,
+            startDate: startDate.value,
+            endDate: endDate.value,
+          );
+
+          if (!context.mounted) return;
+          context.pop();
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Class modified successfully')),
+          );
+        } catch (e) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(e.toString())),
+          );
+        } finally {
+          isLoading.value = false;
+        }
+      }
+    }
 
     return Scaffold(
       backgroundColor: theme.colorScheme.onPrimary,
@@ -43,22 +137,13 @@ class ModifyClassScreen extends HookConsumerWidget {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
-              _buildTextField(
-                controller: classCodeController,
-                labelText: 'Class Code',
-                validator: (value) =>
-                    value?.isEmpty ?? true ? 'Please enter a class code' : null,
-                theme: theme,
+              Text('Class Code: ${classData.value!.classId}', 
+                style: TextStyle(
+                  fontSize: 18.0,
+                  color: theme.colorScheme.primary,
+                ),
               ),
-              const SizedBox(height: 16),
-              _buildTextField(
-                controller: associatedClassCodeController,
-                labelText: 'Associated Class Code',
-                validator: (value) =>
-                    value?.isEmpty ?? true ? 'Please enter an associated class code' : null,
-                theme: theme,
-              ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 24),
               _buildTextField(
                 controller: classNameController,
                 labelText: 'Class Name',
@@ -67,25 +152,17 @@ class ModifyClassScreen extends HookConsumerWidget {
                 theme: theme,
               ),
               const SizedBox(height: 16),
-              _buildTextField(
-                controller: courseCodeController,
-                labelText: 'Course Code',
-                validator: (value) =>
-                    value?.isEmpty ?? true ? 'Please enter a course code' : null,
-                theme: theme,
-              ),
-              const SizedBox(height: 16),
               _buildDropdownField(
-                value: classType.value,
-                labelText: 'Class Type',
+                value: status.value,
+                labelText: 'Status',
                 items: const [
-                  DropdownMenuItem(value: 'theory', child: Text('Theory')),
-                  DropdownMenuItem(value: 'exercise', child: Text('Exercise')),
-                  DropdownMenuItem(value: 'both', child: Text('Both')),
+                  DropdownMenuItem(value: 'ACTIVE', child: Text('Active')),
+                  DropdownMenuItem(value: 'COMPLETED', child: Text('Completed')),
+                  DropdownMenuItem(value: 'UPCOMING', child: Text('Upcoming')),
                 ],
-                onChanged: (value) => classType.value = value,
+                onChanged: (value) => status.value = value ?? status.value,
                 validator: (value) =>
-                    value == null ? 'Please select a class type' : null,
+                    value == null ? 'Please select a status' : null,
                 theme: theme,
               ),
               const SizedBox(height: 16),
@@ -102,94 +179,23 @@ class ModifyClassScreen extends HookConsumerWidget {
                 onDateSelected: (date) => endDate.value = date,
                 theme: theme,
               ),
-              const SizedBox(height: 16),
-              _buildTextField(
-                controller: maxStudentsController,
-                labelText: 'Maximum Number of Students',
-                keyboardType: TextInputType.number,
-                validator: (value) => value?.isEmpty ?? true
-                    ? 'Please enter the maximum number of students'
-                    : null,
-                theme: theme,
-              ),
               const SizedBox(height: 32),
-              Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        _showConfirmationDialog(
-                          context,
-                          'Delete Class',
-                          'Are you sure you want to delete this class?',
-                          () {
-                            // TODO: Implement class deletion logic
-                            Navigator.of(context).pop();
-                          },
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: theme.colorScheme.error,
-                        foregroundColor: theme.colorScheme.onError,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      child: const Text(
-                        'Delete class',
-                        style: TextStyle(fontSize: 18.0),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        if (formKey.currentState?.validate() ?? false) {
-                          _showConfirmationDialog(
-                            context,
-                            'Confirm Modification',
-                            'Are you sure you want to modify this class?',
-                            () {
-                              // TODO: Implement class modification logic
-                              Navigator.of(context).pop();
-                            },
-                          );
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: theme.colorScheme.primary,
-                        foregroundColor: theme.colorScheme.onPrimary,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      child: const Text(
-                        'Confirm modification',
-                        style: TextStyle(fontSize: 18.0),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Center(
-                child: GestureDetector(
-                  onTap: () {
-                    // TODO: Implement navigation to available classes list
-                  },
-                  child: Text(
-                    'List of currently available classes',
-                    style: TextStyle(
-                      color: theme.colorScheme.primary,
-                      decoration: TextDecoration.underline,
-                    ),
+              ElevatedButton(
+                onPressed: isLoading.value ? null : handleEditClass,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: theme.colorScheme.primary,
+                  foregroundColor: theme.colorScheme.onPrimary,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
                   ),
                 ),
+                child: isLoading.value
+                  ? const CircularProgressIndicator(color: Colors.white)
+                  : const Text(
+                      'Save Changes',
+                      style: TextStyle(fontSize: 18.0),
+                    ),
               ),
             ],
           ),

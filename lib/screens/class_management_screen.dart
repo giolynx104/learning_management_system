@@ -69,7 +69,11 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
   void _handleClassAction(String action, ClassListItem classItem) {
     switch (action) {
       case 'edit':
-        context.push(Routes.nestedModifyClass);
+        debugPrint('ClassManagementScreen - ClassId: ${classItem.classId}, Type: ${classItem.classId.runtimeType}');
+        context.goNamed(
+          Routes.modifyClass,
+          pathParameters: {'classId': classItem.classId.toString()},
+        );
         break;
       case 'assignment':
         context.push(Routes.nestedTeacherSurveyList);

@@ -50,7 +50,11 @@ class _TeacherHomeScreenState extends ConsumerState<TeacherHomeScreen> with Sign
             title: const Text('Edit'),
             onTap: () {
               context.pop();
-              context.push(Routes.modifyClass, extra: team);
+              debugPrint('TeacherHomeScreen - ClassId: ${team.classId}, Type: ${team.classId.runtimeType}');
+              context.goNamed(
+                Routes.modifyClass,
+                pathParameters: {'classId': team.classId.toString()},
+              );
             },
           ),
           ListTile(

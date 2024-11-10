@@ -22,6 +22,10 @@ class CreateClassScreen extends HookConsumerWidget {
     final startDate = useState<DateTime?>(null);
     final endDate = useState<DateTime?>(null);
 
+    /// Status is set to 'ACTIVE' by default in the backend
+    /// This is handled server-side and doesn't need to be sent
+    /// in the create class request
+
     Future<void> handleCreateClass() async {
       if (formKey.currentState?.validate() ?? false) {
         try {
@@ -43,16 +47,29 @@ class CreateClassScreen extends HookConsumerWidget {
             attachedCode: associatedClassCodeController.text.isNotEmpty 
               ? associatedClassCodeController.text 
               : null,
+            // Status is handled server-side and defaults to 'ACTIVE'
           );
 
           if (!context.mounted) return;
           context.pop();
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Class created successfully')),
+            const SnackBar(
+              content: Text(
+                'Class created successfully (Status: Active)',
+                style: TextStyle(color: Colors.white),
+              ),
+              backgroundColor: Colors.green,
+            ),
           );
         } catch (e) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(e.toString())),
+            SnackBar(
+              content: Text(
+                'Error: ${e.toString()}',
+                style: const TextStyle(color: Colors.white),
+              ),
+              backgroundColor: Colors.red,
+            ),
           );
         }
       }
