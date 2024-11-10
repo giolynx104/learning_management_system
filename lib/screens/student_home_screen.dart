@@ -20,16 +20,9 @@ class _StudentHomeScreenState extends ConsumerState<StudentHomeScreen> with Sign
   List<TeamsModel> teams = [];
   bool isClassesExpanded = false;
   bool isPinnedChannelExpanded = false;
-  int _selectedIndex = 2;
   List<PinnedChannelModel> pinnedChannels = [];
 
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-  }
-
-  void _getPinnedChanel() {
+  void _getPinnedChanel(){
     setState(() {
       pinnedChannels = PinnedChannelModel.getPinnedChannels();
     });
@@ -51,8 +44,6 @@ class _StudentHomeScreenState extends ConsumerState<StudentHomeScreen> with Sign
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: appBar(),
-      endDrawer: _buildDrawer(),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -62,9 +53,7 @@ class _StudentHomeScreenState extends ConsumerState<StudentHomeScreen> with Sign
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _pinnedChannels(),
-                const SizedBox(height: 20),
-                _teams(),
+                _teams(), 
               ],
             ),
           ],
@@ -103,6 +92,7 @@ class _StudentHomeScreenState extends ConsumerState<StudentHomeScreen> with Sign
 
   Widget _teams() {
     return ExpansionTile(
+      initiallyExpanded: true,
       title: const Text("Classes"),
       leading: Icon(
         isClassesExpanded ? Icons.arrow_drop_down : Icons.arrow_right,
@@ -121,7 +111,7 @@ class _StudentHomeScreenState extends ConsumerState<StudentHomeScreen> with Sign
           itemCount: teams.length,
           itemBuilder: (context, index) {
             var team = teams[index];
-            return TeamsExpansionItem(
+            return TeamsItem(
               name: team.name,
               color: team.color,
               onMorePressed: () => _showTeamOptions(context, team),
@@ -164,39 +154,6 @@ class _StudentHomeScreenState extends ConsumerState<StudentHomeScreen> with Sign
           ),
         ),
       ),
-    );
-  }
-
-  PreferredSizeWidget appBar() {
-    return AppBar(
-      title: const Text(
-        'QLDT',
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 20,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-      centerTitle: true,
-      backgroundColor: Colors.red,
-      elevation: 0.0,
-      actions: [
-        Builder(
-          // Wrap the Padding with Builder
-          builder: (context) => Padding(
-            padding: const EdgeInsets.only(right: 16.0),
-            child: GestureDetector(
-              onTap: () {
-                Scaffold.of(context).openEndDrawer();
-              },
-              child: const CircleAvatar(
-                backgroundColor: Colors.white,
-                child: Icon(Icons.person, color: Colors.red),
-              ),
-            ),
-          ),
-        ),
-      ],
     );
   }
 

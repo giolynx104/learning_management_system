@@ -88,19 +88,6 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text('Class Management'),
-            Image.asset(
-              'assets/images/HUST_white.png',
-              height: 30,
-              fit: BoxFit.contain,
-            ),
-          ],
-        ),
-      ),
       body: Column(
         children: [
           // Search Class Card
