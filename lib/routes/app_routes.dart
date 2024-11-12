@@ -88,7 +88,6 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => const UploadFileScreen());
       case screenChatStudent:
         return MaterialPageRoute(builder: (_) => const ChatScreen());
-
       default:
       return MaterialPageRoute(builder: (_) =>  const absenceRequestScreenNew());
         // return MaterialPageRoute(builder: (_) => const ChatScreen());
