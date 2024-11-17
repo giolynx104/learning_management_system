@@ -106,6 +106,9 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
           }
         });
         break;
+      case 'delete':
+        _showDeleteConfirmationDialog(classItem);
+        break;
       case 'assignment':
         context.push(Routes.nestedTeacherSurveyList);
         break;
@@ -116,6 +119,79 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
         context.push(Routes.nestedRollCallAction);
         break;
     }
+  }
+
+  Future<void> _showDeleteConfirmationDialog(ClassListItem classItem) async {
+    bool isDeleting = false;
+
+    return showDialog(
+      context: context,
+      barrierDismissible: false, // Prevent dismissing by tapping outside
+      builder: (BuildContext dialogContext) {
+        return StatefulBuilder( // Use StatefulBuilder to update dialog state
+          builder: (context, setState) {
+            return Stack(
+              children: [
+                AlertDialog(
+                  title: const Text('Delete Class'),
+                  content: Text('Are you sure you want to delete ${classItem.className}?'),
+                  actions: [
+                    TextButton(
+                      onPressed: isDeleting ? null : () => Navigator.of(dialogContext).pop(),
+                      child: const Text('Cancel'),
+                    ),
+                    TextButton(
+                      onPressed: isDeleting
+                          ? null
+                          : () async {
+                              setState(() => isDeleting = true);
+                              try {
+                                final authState = await ref.read(authProvider.future);
+                                if (authState == null) {
+                                  throw Exception('Not authenticated');
+                                }
+
+                                await ref.read(classServiceProvider.notifier).deleteClass(
+                                  token: authState.token,
+                                  classId: classItem.classId,
+                                );
+
+                                if (!mounted) return;
+                                Navigator.of(dialogContext).pop(); // Close the dialog
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Class deleted successfully'),
+                                    backgroundColor: Colors.green,
+                                  ),
+                                );
+                                _refreshClassList();
+                              } catch (e) {
+                                setState(() => isDeleting = false); // Reset loading state on error
+                                if (!mounted) return;
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Error deleting class: $e'),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                              }
+                            },
+                      child: const Text('Delete', style: TextStyle(color: Colors.red)),
+                    ),
+                  ],
+                ),
+                if (isDeleting)
+                  const Positioned.fill(
+                    child: Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                  ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 
   // Add method to handle refresh
@@ -229,6 +305,10 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
                                 const PopupMenuItem(
                                   value: 'edit',
                                   child: Text('Edit Class'),
+                                ),
+                                const PopupMenuItem(
+                                  value: 'delete',
+                                  child: Text('Delete Class', style: TextStyle(color: Colors.red)),
                                 ),
                                 const PopupMenuItem(
                                   value: 'assignment',

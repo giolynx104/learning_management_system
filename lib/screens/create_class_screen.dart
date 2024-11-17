@@ -75,11 +75,6 @@ class CreateClassScreen extends HookConsumerWidget {
 
     return Scaffold(
       backgroundColor: theme.colorScheme.onPrimary,
-      appBar: AppBar(
-        backgroundColor: theme.colorScheme.primary,
-        title: Text('Create Class', style: TextStyle(color: theme.colorScheme.onPrimary)),
-        iconTheme: const IconThemeData(color: Colors.white),
-      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -87,16 +82,6 @@ class CreateClassScreen extends HookConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
-                'Create a New Class',
-                style: TextStyle(
-                  fontSize: 24.0,
-                  fontWeight: FontWeight.bold,
-                  color: theme.colorScheme.primary,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
               _buildTextField(
                 controller: classCodeController,
                 labelText: 'Class Code',

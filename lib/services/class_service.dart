@@ -223,4 +223,44 @@ class ClassService extends _$ClassService {
         throw Exception('Invalid class type');
     }
   }
+
+  Future<void> deleteClass({
+    required String token,
+    required String classId,
+  }) async {
+    try {
+      final data = {
+        'token': token,
+        'role': 'LECTURER', // Hardcoded as per endpoint example
+        'class_id': classId,
+      };
+
+      final response = await ref.read(apiClientProvider).post(
+        '/it5023e/delete_class',
+        data: data,
+      );
+
+      final responseData = response.data as Map<String, dynamic>;
+      final meta = responseData['meta'] as Map<String, dynamic>;
+      
+      if (meta['code'] == 9998) { // Token invalid code
+        ref.read(authProvider.notifier).logout();
+        throw const UnauthorizedException('Session expired. Please sign in again.');
+      }
+      
+      if (meta['code'] != 1000) {
+        throw Exception(meta['message'] ?? 'Failed to delete class');
+      }
+    } on DioException catch (e) {
+      final responseData = e.response?.data as Map<String, dynamic>?;
+      final meta = responseData?['meta'] as Map<String, dynamic>?;
+      
+      if (meta?['code'] == 9998) { // Token invalid code
+        ref.read(authProvider.notifier).logout();
+        throw const UnauthorizedException('Session expired. Please sign in again.');
+      }
+      
+      throw Exception(meta?['message'] ?? 'Failed to delete class');
+    }
+  }
 }
