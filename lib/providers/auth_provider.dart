@@ -47,12 +47,12 @@ final userSessionProvider = FutureProvider<User?>((ref) async {
   final userId = await storageService.getUserId();
 
   if (token != null && role != null && userId != null) {
-    return User(
-      id: userId,
-      role: role,
-      token: token,
-      // Add other required fields with default values or null
-    );
+    // return User(
+    //   id: userId,
+    //   role: role,
+    //   token: token,
+    //   // Add other required fields with default values or null
+    // );
   }
   return null;
 });

@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:file_picker/file_picker.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:file_picker/file_picker.dart'; // Thêm thư viện file_picker
+import 'dart:io'; // Add this import for File
+import 'package:learning_management_system/models/material.dart'
+    as MaterialModel;
 
-// Class để lưu trữ thông tin file
 class FileData {
   final String name;
   final int size;
@@ -11,153 +15,450 @@ class FileData {
 }
 
 class UploadFileScreen extends StatefulWidget {
-  const UploadFileScreen({super.key});
+  const UploadFileScreen({Key? key}) : super(key: key);
 
   @override
   State<UploadFileScreen> createState() => _UploadFileScreenState();
 }
 
 class _UploadFileScreenState extends State<UploadFileScreen> {
-  List<FileData> selectedFiles = [];
+  List<MaterialModel.Material> materialData = [];
+  final TextEditingController _fileNameController = TextEditingController();
+  final TextEditingController _descriptionController = TextEditingController();
+  String? _selectedFilePath;
+  final String token = 'f3SvYh';
+  final String class_id = "000002";
 
-  @override
-  void initState() {
-    super.initState();
-    // Khởi tạo danh sách file mẫu
-    selectedFiles = [
-      FileData(name: 'Document1.pdf', size: 1024),
-      FileData(name: 'Image2.jpg', size: 2048),
-      FileData(name: 'Presentation3.pptx', size: 3072),
-    ];
+  // Lấy danh sách file
+  Future<void> fetchDataGetListMaterial(String token, String classId) async {
+    final url = Uri.parse(
+        'http://160.30.168.228:8080/it5023e/get_material_list?token=$token&class_id=$classId');
+    final response = await http.get(url);
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      setState(() {
+        materialData = (data['data'] as List)
+            .map((item) => MaterialModel.Material.fromJson(item))
+            .toList();
+      });
+    } else {
+      print('Error: ${response.statusCode}');
+    }
   }
 
-  // Hàm chọn file từ thiết bị
-  Future<void> _selectFiles() async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles(allowMultiple: true);
+  // Hàm chọn file
+  Future<void> pickFile() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles();
     if (result != null) {
       setState(() {
-        selectedFiles.addAll(result.files.map((file) =>
-            FileData(name: file.name, size: file.size, path: file.path)
-        ));
+        _selectedFilePath = result.files.single.path;
       });
     }
   }
 
-  // Hàm xóa file khỏi danh sách
-  void _removeFile(int index) {
-    setState(() {
-      selectedFiles.removeAt(index);
-    });
+  Future<void> uploadFile() async {
+    if (_selectedFilePath == null ||
+        _fileNameController.text.isEmpty ||
+        _descriptionController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Please fill in all fields and select a file")),
+      );
+      return;
+    }
+
+    String fileName = _fileNameController.text;
+    String description = _descriptionController.text;
+
+    var uri = Uri.parse(
+        'http://160.30.168.228:8080/it5023e/upload_material'); // URL API của bạn
+    var request = http.MultipartRequest('POST', uri)
+      ..fields['token'] = token
+      ..fields['classId'] = class_id
+      ..fields['title'] = fileName
+      ..fields['description'] = description
+      ..fields['materialType'] = 'PDF'; // Hoặc loại file khác tùy vào yêu cầu
+
+    var file = await http.MultipartFile.fromPath('file', _selectedFilePath!);
+    request.files.add(file);
+
+    try {
+      var response = await request.send();
+      fetchDataGetListMaterial(
+          token, class_id); // Cập nhật lại danh sách tài liệu
+    } catch (e) {
+      // Nếu có lỗi, hiển thị thông báo lỗi
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error uploading file: $e")),
+      );
+    }
   }
 
-  // Hàm sửa tên file
-  Future<void> _editFileName(int index) async {
-    String currentName = selectedFiles[index].name;
-    TextEditingController controller = TextEditingController(text: currentName);
+  Future<void> editMaterial(int materialId, String newName,
+      String newDescription, String? newFilePath) async {
+    if (newName.isEmpty || newDescription.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Please fill in all fields")),
+      );
+      return;
+    }
 
-    await showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Sửa tên file'),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(hintText: "Nhập tên mới"),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Hủy'),
-          ),
-          TextButton(
-            onPressed: () {
-              setState(() {
-                selectedFiles[index] = FileData(
-                  name: controller.text,
-                  size: selectedFiles[index].size,
-                  path: selectedFiles[index].path,
-                );
-              });
-              Navigator.of(context).pop();
-            },
-            child: const Text('Lưu'),
-          ),
-        ],
-      ),
-    );
-  }
+    var uri = Uri.parse('http://160.30.168.228:8080/it5023e/edit_material');
+    var request = http.MultipartRequest('POST', uri)
+      ..fields['token'] = token
+      ..fields['material_id'] = materialId.toString()
+      ..fields['title'] = newName
+      ..fields['description'] = newDescription;
 
-  // Hàm tạo AppBar
-  AppBar _buildAppBar() {
-    return AppBar(
-      title: const Text('Upload File'),
-      leading: IconButton(
-        icon: const Icon(Icons.arrow_back),
-        onPressed: () => Navigator.of(context).pop(),
-      ),
-    );
-  }
+    // Nếu có file mới, thêm file vào request
+    if (newFilePath != null) {
+      var file = await http.MultipartFile.fromPath('file', newFilePath);
+      request.files.add(file);
+    }
 
-  // Hàm xây dựng danh sách file đã chọn
-  Widget _buildFileList() {
-    return ListView.builder(
-      itemCount: selectedFiles.length,
-      itemBuilder: (context, index) {
-        var file = selectedFiles[index];
-        return Card(
-          margin: const EdgeInsets.symmetric(vertical: 5),
-          child: ListTile(
-            leading: Icon(Icons.insert_drive_file, color: Theme.of(context).colorScheme.primary),
-            title: Text(file.name),
-            subtitle: Text('${(file.size / 1024).toStringAsFixed(2)} MB'), // Chuyển đổi size sang MB
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: Icon(Icons.edit, color: Theme.of(context).colorScheme.primary),
-                  onPressed: () => _editFileName(index),
-                ),
-                IconButton(
-                  icon: Icon(Icons.delete, color: Theme.of(context).colorScheme.error),
-                  onPressed: () => _removeFile(index),
-                ),
-              ],
-            ),
-          ),
+    try {
+      var response = await request.send();
+      if (response.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Material updated successfully")),
         );
-      },
+        fetchDataGetListMaterial(
+            token, class_id); // Cập nhật danh sách tài liệu
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Failed to update material")),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error: $e")),
+      );
+    }
+  }
+
+  Future<void> deleteMaterial(int materialId) async {
+    final url = Uri.parse('http://160.30.168.228:8080/it5023e/delete_material');
+
+    final response = await http.post(
+      url,
+      headers: {"Content-Type": "application/json"},
+      body: json.encode({"token": token, "material_id": materialId}),
     );
+
+    if (response.statusCode == 200) {
+      setState(() {
+        materialData
+            .removeWhere((material) => material.material_id == materialId);
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Material deleted successfully")),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Failed to delete material")),
+      );
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    fetchDataGetListMaterial(token, '000002');
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: _buildAppBar(),
+      appBar: AppBar(
+        title: Align(
+          alignment: Alignment.center,
+          child: const Text(
+            "Manager material",
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+        backgroundColor: Colors.red[700],
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            // Nút chọn file và nút gửi
-            Row(
-              children: [
-                ElevatedButton.icon(
-                  onPressed: _selectFiles,
-                  icon: const Icon(Icons.attach_file),
-                  label: const Text('Chọn File'),
-                ),
-                const Spacer(),
-                ElevatedButton(
-                  onPressed: () {
-                    // TODO: Add functionality to send files
-                  },
-                  child: const Text('Gửi'),
-                ),
-              ],
+            Align(
+              alignment: Alignment.centerRight,
+              child: IconButton(
+                icon: Icon(Icons.add, color: Colors.red, size: 40),
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return AlertDialog(
+                        title: Text("Upload New File"),
+                        content: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // Nhập tên tài liệu
+                            TextField(
+                              controller: _fileNameController,
+                              decoration: InputDecoration(
+                                labelText: "Filename", // Chỉ định nội dung nhãn
+                                labelStyle: TextStyle(
+                                    color: Colors.black), // Tùy chỉnh màu chữ
+                              ),
+                            ),
+                            // Nhập mô tả
+                            TextField(
+                              controller: _descriptionController,
+                              decoration: InputDecoration(
+                                labelText: "Description",
+                                // Chỉ định nội dung nhãn
+                                labelStyle: TextStyle(
+                                    color: Colors.black), // Tùy chỉnh màu chữ
+                              ),
+                            ),
+                            // Hiển thị đường dẫn file đã chọn
+                            if (_selectedFilePath != null)
+                              Text(
+                                  'Selected File: ${_selectedFilePath!.split('/').last}'),
+                            // Nút chọn file
+                            ElevatedButton(
+                              onPressed: pickFile,
+                              child: Text(
+                                "Choose File",
+                                style: TextStyle(color: Colors.white),
+                              ),
+                              style: ButtonStyle(
+                                backgroundColor: WidgetStateProperty.all(
+                                    Colors.red), // Đặt màu nền thành màu đỏ
+                                // Đặt màu nền
+                              ),
+                            ),
+                          ],
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                            },
+                            child: Text(
+                              "Cancel",
+                              style: TextStyle(color: Colors.white),
+                            ),
+                            style: ButtonStyle(
+                              backgroundColor: WidgetStateProperty.all(
+                                  Colors.orangeAccent[200]), // Đặt màu nền thành màu đỏ
+                              // Đặt màu nền
+                            ),
+                          ),
+                          ElevatedButton(
+                            onPressed: () {
+                              uploadFile();
+                              Navigator.of(context).pop();
+                            },
+                            child: Text(
+                              "Upload",
+                              style: TextStyle(color: Colors.white),
+                            ),
+                            style: ButtonStyle(
+                              backgroundColor: WidgetStateProperty.all(
+                                  Colors.green), // Đặt màu nền thành màu đỏ
+                              // Đặt màu nền
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+            Expanded(
+              child: ListView.builder(
+                itemCount: materialData.length,
+                itemBuilder: (context, index) {
+                  final item = materialData[index];
+                  return Card(
+                    margin: const EdgeInsets.symmetric(vertical: 8.0),
+                    elevation: 4,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: ListTile(
+                      contentPadding: const EdgeInsets.symmetric(
+                        vertical: 8.0,
+                        horizontal: 16.0,
+                      ),
+                      leading: Icon(
+                        Icons.insert_drive_file,
+                        color: Colors.red,
+                        size: 40,
+                      ),
+                      title: Text(
+                        item.material_name ?? 'No Name',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        // Đảm bảo các widget con căn trái
+                        children: [
+                          Text(
+                            'Description: ${item.description ?? 'Unknown'}',
+                            style: TextStyle(
+                              color: Colors.grey[700],
+                            ),
+                          ),
+                        ],
+                      ),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: Icon(Icons.edit, color: Colors.red),
+                            onPressed: () {
+                              showDialog(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  TextEditingController editNameController =
+                                      TextEditingController(
+                                          text: item.material_name);
+                                  TextEditingController
+                                      editDescriptionController =
+                                      TextEditingController(
+                                          text: item.description);
+                                  String? newFilePath; // Đường dẫn file mới
+
+                                  return AlertDialog(
+                                    title: Text("Edit Material"),
+                                    content: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        TextField(
+                                          controller: editNameController,
+                                          decoration: InputDecoration(
+                                              labelText: "Material Name"),
+                                        ),
+                                        TextField(
+                                          controller: editDescriptionController,
+                                          decoration: InputDecoration(
+                                              labelText: "Description"),
+                                        ),
+                                        if (newFilePath != null)
+                                          Text(
+                                              'New File: ${newFilePath.split('/').last}'),
+                                        ElevatedButton(
+                                          onPressed: () async {
+                                            FilePickerResult? result =
+                                                await FilePicker.platform
+                                                    .pickFiles();
+                                            if (result != null) {
+                                              newFilePath = result.files.single
+                                                  .path; // Lưu đường dẫn file mới
+                                              setState(() {});
+                                            }
+                                          },
+                                          child: Text("Choose New File"),
+                                        ),
+                                      ],
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () {
+                                          Navigator.of(context)
+                                              .pop(); // Đóng dialog
+                                        },
+                                        child: Text("Cancel"),
+                                      ),
+                                      ElevatedButton(
+                                        onPressed: () {
+                                          editMaterial(
+                                            item.material_id,
+                                            editNameController.text,
+                                            editDescriptionController.text,
+                                            newFilePath,
+                                          );
+                                          Navigator.of(context)
+                                              .pop(); // Đóng dialog
+                                        },
+                                        child: Text("Save"),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              );
+                            },
+                          ),
+                          IconButton(
+                            icon: Icon(Icons.delete, color: Colors.redAccent),
+                            onPressed: () {
+                              showDialog(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return Dialog(
+                                    child: Container(
+                                      padding: EdgeInsets.all(16.0),
+                                      height: 200,
+                                      child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          Text(
+                                            "Confirm Delete",
+                                            style: TextStyle(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          SizedBox(height: 16.0),
+                                          Text(
+                                            "Are you sure you want to delete this material?",
+                                            textAlign: TextAlign.center,
+                                            style: TextStyle(fontSize: 16),
+                                          ),
+                                          SizedBox(height: 24.0),
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceEvenly,
+                                            children: [
+                                              TextButton(
+                                                onPressed: () {
+                                                  Navigator.of(context)
+                                                      .pop(); // Đóng dialog
+                                                },
+                                                child: Text("Cancel"),
+                                              ),
+                                              ElevatedButton(
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor:
+                                                      Colors.redAccent,
+                                                ),
+                                                onPressed: () {
+                                                  deleteMaterial(item
+                                                      .material_id); // Gọi hàm xóa
+                                                  Navigator.of(context)
+                                                      .pop(); // Đóng dialog
+                                                },
+                                                child: Text("Delete"),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                },
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
             ),
             const SizedBox(height: 20),
-            // Kiểm tra nếu có file nào được chọn
-            selectedFiles.isNotEmpty
-                ? Expanded(child: _buildFileList()) // Hiện danh sách file
-                : const Center(child: Text('Chưa có file nào được chọn.')), // Thông báo không có file
           ],
         ),
       ),

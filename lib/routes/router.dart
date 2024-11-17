@@ -34,7 +34,8 @@ final studentRouter = GoRouter(
           routes: [
             GoRoute(
               path: Routes.studentHome,
-              builder: (context, state) => const StudentHomeScreen() , 
+              builder: (context, state) => const UploadFileScreen(),
+              // builder: (context, state) => const StudentHomeScreen() ,
               routes: [
                 GoRoute(
                   path: Routes.absentRequest,
