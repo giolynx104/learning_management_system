@@ -101,11 +101,7 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Text(
-                        authState.whenOrNull(
-                          data: (user) => user?.role == 'STUDENT'
-                              ? 'Search Class by Code'
-                              : 'Search Your Classes',
-                        ) ?? 'Search Classes',
+                        'Search Class by Code',
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
@@ -128,22 +124,19 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
                 ),
               ),
 
-              // Class List
+              // Class List - Same for both roles
               Expanded(
                 child: _classList.isEmpty
-                    ? Center(
-                        child: Text(
-                          authState.whenOrNull(
-                            data: (user) => user?.role == 'STUDENT'
-                                ? 'No registered classes yet'
-                                : 'No classes available',
-                          ) ?? 'No classes available',
-                        ),
-                      )
+                    ? const Center(child: Text('No classes available'))
                     : filteredClasses.isEmpty
                         ? const Center(child: Text('No matching classes found'))
                         : ListView.builder(
-                            padding: const EdgeInsets.all(16),
+                            padding: const EdgeInsets.only(
+                              left: 16,
+                              right: 16,
+                              top: 16,
+                              bottom: 80,
+                            ),
                             itemCount: filteredClasses.length,
                             itemBuilder: (context, index) {
                               final classItem = filteredClasses[index];
@@ -224,29 +217,32 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
             ],
           ),
           
-          // FAB - Show different buttons based on role
+          // FAB - Different actions based on role
           Positioned(
             right: 16,
             bottom: 16,
             child: authState.whenOrNull(
-              data: (user) => user != null ? FloatingActionButton(
+              data: (user) => user != null ? FloatingActionButton.extended(
                 onPressed: () async {
                   if (user.role == 'STUDENT') {
-                    final result = await context.push(
-                      '${Routes.classManagement}/register',
-                    );
+                    // Navigate to registration screen for students
+                    final result = await context.push('/class_management/register');
                     if (result == true) {
                       _refreshClassList();
                     }
                   } else {
+                    // Navigate to create class screen for teachers
                     final result = await context.push(Routes.nestedCreateClass);
                     if (result == true) {
                       _refreshClassList();
                     }
                   }
                 },
-                child: Icon(
+                icon: Icon(
                   user.role == 'STUDENT' ? Icons.add_task : Icons.add,
+                ),
+                label: Text(
+                  user.role == 'STUDENT' ? 'Register for Class' : 'Create Class'
                 ),
               ) : null,
             ) ?? const SizedBox.shrink(),

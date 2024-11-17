@@ -241,7 +241,7 @@ final appRouter = GoRouter(
     // Add this route configuration
     GoRoute(
       path: Routes.nestedClassRegistration,
-      name: Routes.classRegistration,  // if you're using named routes
+      name: Routes.classRegistration, // if you're using named routes
       builder: (context, state) => const ClassRegistrationScreen(),
     ),
   ],
