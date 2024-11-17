@@ -32,7 +32,6 @@ class ModifyClassScreen extends HookConsumerWidget {
           final authState = await ref.read(authProvider.future);
           if (authState == null) {
             throw Exception('Not authenticated');
-            return;
           }
 
           debugPrint('ModifyClassScreen - Fetching data for ClassId: $classId');

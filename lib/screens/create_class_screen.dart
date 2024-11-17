@@ -148,7 +148,7 @@ class CreateClassScreen extends HookConsumerWidget {
                   DropdownMenuItem(value: 'Exercise', child: Text('Exercise')),
                   DropdownMenuItem(value: 'Both', child: Text('Both')),
                 ],
-                onChanged: (value) => classType.value = value as String?,
+                onChanged: (value) => classType.value = value,
                 validator: (value) =>
                     value == null ? 'Please select a class type' : null,
                 theme: theme,
