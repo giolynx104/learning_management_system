@@ -83,29 +83,37 @@ class ModifyClassScreen extends HookConsumerWidget {
       if (formKey.currentState?.validate() ?? false) {
         try {
           isLoading.value = true;
-          
+          final classService = ref.read(classServiceProvider.notifier);
           final authState = await ref.read(authProvider.future);
+          
           if (authState == null) {
             throw Exception('Not authenticated');
           }
 
-          await ref.read(classServiceProvider.notifier).editClass(
+          await classService.editClass(
             token: authState.token,
             classId: classId,
             className: classNameController.text,
             status: status.value,
-            startDate: startDate.value,
-            endDate: endDate.value,
+            startDate: startDate.value!,
+            endDate: endDate.value!,
           );
 
           if (!context.mounted) return;
-          context.pop();
+          context.pop(true); // Return true to indicate successful edit
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Class modified successfully')),
+            const SnackBar(
+              content: Text('Class updated successfully'),
+              backgroundColor: Colors.green,
+            ),
           );
         } catch (e) {
+          if (!context.mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(e.toString())),
+            SnackBar(
+              content: Text('Error updating class: $e'),
+              backgroundColor: Colors.red,
+            ),
           );
         } finally {
           isLoading.value = false;

@@ -146,6 +146,11 @@ class ClassService extends _$ClassService {
       final responseData = response.data as Map<String, dynamic>;
       final meta = responseData['meta'] as Map<String, dynamic>;
       
+      if (meta['code'] == 9998) { // Token invalid code
+        ref.read(authProvider.notifier).logout();
+        throw const UnauthorizedException('Session expired. Please sign in again.');
+      }
+      
       if (meta['code'] != 1000) {
         throw Exception(meta['message'] ?? 'Failed to edit class');
       }
@@ -154,6 +159,12 @@ class ClassService extends _$ClassService {
     } on DioException catch (e) {
       final responseData = e.response?.data as Map<String, dynamic>?;
       final meta = responseData?['meta'] as Map<String, dynamic>?;
+      
+      if (meta?['code'] == 9998) { // Token invalid code
+        ref.read(authProvider.notifier).logout();
+        throw const UnauthorizedException('Session expired. Please sign in again.');
+      }
+      
       throw Exception(meta?['message'] ?? 'Failed to edit class');
     }
   }
