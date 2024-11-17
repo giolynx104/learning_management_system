@@ -263,4 +263,39 @@ class ClassService extends _$ClassService {
       throw Exception(meta?['message'] ?? 'Failed to delete class');
     }
   }
+
+  Future<ClassModel?> searchClass({
+    required String token,
+    required String classId,
+  }) async {
+    try {
+      final response = await ref.read(apiClientProvider).post(
+        '/it5023e/get_class_info',
+        data: {
+          'token': token,
+          'class_id': classId,
+        },
+      );
+
+      final responseData = response.data as Map<String, dynamic>;
+      final meta = responseData['meta'] as Map<String, dynamic>;
+      
+      if (meta['code'] != 1000) {
+        return null; // Return null if class not found
+      }
+
+      final data = responseData['data'] as Map<String, dynamic>;
+      return ClassModel.fromJson(data);
+    } on DioException catch (e) {
+      final responseData = e.response?.data as Map<String, dynamic>?;
+      final meta = responseData?['meta'] as Map<String, dynamic>?;
+      
+      if (meta?['code'] == 9998) {
+        ref.read(authProvider.notifier).logout();
+        throw const UnauthorizedException('Session expired. Please sign in again.');
+      }
+      
+      return null; // Return null for any other error
+    }
+  }
 }

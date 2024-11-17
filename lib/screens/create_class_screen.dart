@@ -113,6 +113,26 @@ class CreateClassScreen extends HookConsumerWidget {
               ),
               const SizedBox(height: 16),
               _buildTextField(
+                controller: associatedClassCodeController,
+                labelText: 'Associated Class Code (Optional)',
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return null; // Optional field
+                  }
+                  if (value.length != 6) {
+                    return 'Associated class code must be exactly 6 digits';
+                  }
+                  if (!RegExp(r'^[0-9]+$').hasMatch(value)) {
+                    return 'Associated class code must contain only digits';
+                  }
+                  return null;
+                },
+                maxLength: 6,
+                keyboardType: TextInputType.number,
+                theme: theme,
+              ),
+              const SizedBox(height: 16),
+              _buildTextField(
                 controller: classNameController,
                 labelText: 'Class Name',
                 validator: (value) =>
