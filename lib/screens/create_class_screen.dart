@@ -51,7 +51,7 @@ class CreateClassScreen extends HookConsumerWidget {
           );
 
           if (!context.mounted) return;
-          context.pop();
+          context.pop(true);
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text(
@@ -62,12 +62,10 @@ class CreateClassScreen extends HookConsumerWidget {
             ),
           );
         } catch (e) {
+          if (!context.mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(
-                'Error: ${e.toString()}',
-                style: const TextStyle(color: Colors.white),
-              ),
+              content: Text('Error creating class: $e'),
               backgroundColor: Colors.red,
             ),
           );

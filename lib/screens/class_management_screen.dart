@@ -5,6 +5,8 @@ import 'package:learning_management_system/routes/routes.dart';
 import 'package:learning_management_system/models/class_list_model.dart';
 import 'package:learning_management_system/services/class_service.dart';
 import 'package:learning_management_system/providers/auth_provider.dart';
+import 'package:learning_management_system/exceptions/unauthorized_exception.dart';
+import 'dart:async';
 
 class ClassManagementScreen extends ConsumerStatefulWidget {
   const ClassManagementScreen({super.key});
@@ -17,11 +19,22 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
   final TextEditingController _classCodeController = TextEditingController();
   final FocusNode _classCodeFocusNode = FocusNode();
   bool _isSearchButtonEnabled = false;
+  late Timer _refreshTimer;
+
+  // Add a key to force refresh the FutureBuilder
+  final _refreshKey = GlobalKey();
 
   @override
   void initState() {
     super.initState();
     _classCodeController.addListener(_updateSearchButtonState);
+    
+    // Set up periodic refresh every 30 seconds
+    _refreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (mounted) {
+        setState(() {}); // This will trigger a rebuild and refresh the class list
+      }
+    });
   }
 
   @override
@@ -29,6 +42,7 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
     _classCodeController.removeListener(_updateSearchButtonState);
     _classCodeController.dispose();
     _classCodeFocusNode.dispose();
+    _refreshTimer.cancel(); // Cancel timer when disposing
     super.dispose();
   }
 
@@ -56,6 +70,18 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
         throw Exception('Not authenticated');
       }
       return await ref.read(classServiceProvider.notifier).getClassList(authState.token);
+    } on UnauthorizedException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.message),
+            backgroundColor: Colors.red,
+          ),
+        );
+        // Navigate to login screen
+        context.go(Routes.signin);
+      }
+      return [];
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -85,6 +111,13 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
         context.push(Routes.nestedRollCallAction);
         break;
     }
+  }
+
+  // Add method to handle refresh
+  void _refreshClassList() {
+    setState(() {
+      _refreshKey.currentState?.setState(() {});
+    });
   }
 
   @override
@@ -148,6 +181,7 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
           // Class List
           Expanded(
             child: FutureBuilder<List<ClassListItem>>(
+              key: _refreshKey, // Add the key here
               future: _getClassList(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
@@ -213,7 +247,13 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
                       right: 16,
                       bottom: 16,
                       child: FloatingActionButton(
-                        onPressed: () => context.push(Routes.nestedCreateClass),
+                        onPressed: () async {
+                          final result = await context.push(Routes.nestedCreateClass);
+                          if (result == true) {
+                            // Class was created successfully
+                            _refreshClassList();
+                          }
+                        },
                         child: const Icon(Icons.add),
                       ),
                     ),
