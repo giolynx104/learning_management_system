@@ -5,7 +5,6 @@ import 'package:learning_management_system/routes/routes.dart';
 import 'package:learning_management_system/models/class_list_model.dart';
 import 'package:learning_management_system/services/class_service.dart';
 import 'package:learning_management_system/providers/auth_provider.dart';
-import 'package:learning_management_system/exceptions/unauthorized_exception.dart';
 import 'dart:async';
 
 class ClassManagementScreen extends ConsumerStatefulWidget {
@@ -86,61 +85,64 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final filteredClasses = _getFilteredClasses();
+    final authState = ref.watch(authProvider);
 
-    return Scaffold(
-      body: Column(
+    return Material(
+      child: Stack(
         children: [
-          // Search Class Card
-          Card(
-            margin: const EdgeInsets.all(16),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    'Search Class by Code',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    height: 40,
-                    child: TextField(
-                      controller: _classCodeController,
-                      focusNode: _classCodeFocusNode,
-                      decoration: const InputDecoration(
-                        labelText: 'Class Code',
-                        hintText: 'Enter class code',
-                        contentPadding: EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 8,
+          Column(
+            children: [
+              // Search Class Card
+              Card(
+                margin: const EdgeInsets.all(16),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        authState.whenOrNull(
+                          data: (user) => user?.role == 'STUDENT'
+                              ? 'Search Class by Code'
+                              : 'Search Your Classes',
+                        ) ?? 'Search Classes',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                      onChanged: (value) {
-                        setState(() {});
-                      },
-                    ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: _classCodeController,
+                        focusNode: _classCodeFocusNode,
+                        decoration: const InputDecoration(
+                          labelText: 'Class Code',
+                          hintText: 'Enter class code',
+                          border: OutlineInputBorder(),
+                        ),
+                        onChanged: (value) {
+                          setState(() {});
+                        },
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
-            ),
-          ),
 
-          // Class List
-          Expanded(
-            child: _classList.isEmpty
-                ? const Center(
-                    child: Text('No classes available'),  // Changed message for empty class list
-                  )
-                : filteredClasses.isEmpty
-                    ? const Center(
-                        child: Text('No matching classes found'),  // Changed message for no search results
+              // Class List
+              Expanded(
+                child: _classList.isEmpty
+                    ? Center(
+                        child: Text(
+                          authState.whenOrNull(
+                            data: (user) => user?.role == 'STUDENT'
+                                ? 'No registered classes yet'
+                                : 'No classes available',
+                          ) ?? 'No classes available',
+                        ),
                       )
-                    : Stack(
-                        children: [
-                          ListView.builder(
+                    : filteredClasses.isEmpty
+                        ? const Center(child: Text('No matching classes found'))
+                        : ListView.builder(
                             padding: const EdgeInsets.all(16),
                             itemCount: filteredClasses.length,
                             itemBuilder: (context, index) {
@@ -151,6 +153,7 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
                                   padding: const EdgeInsets.all(16.0),
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
+                                    mainAxisSize: MainAxisSize.min,
                                     children: [
                                       Row(
                                         mainAxisAlignment:
@@ -217,22 +220,36 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
                               );
                             },
                           ),
-                          Positioned(
-                            right: 16,
-                            bottom: 16,
-                            child: FloatingActionButton(
-                              onPressed: () async {
-                                final result =
-                                    await context.push(Routes.nestedCreateClass);
-                                if (result == true) {
-                                  _refreshClassList();
-                                }
-                              },
-                              child: const Icon(Icons.add),
-                            ),
-                          ),
-                        ],
-                      ),
+              ),
+            ],
+          ),
+          
+          // FAB - Show different buttons based on role
+          Positioned(
+            right: 16,
+            bottom: 16,
+            child: authState.whenOrNull(
+              data: (user) => user != null ? FloatingActionButton(
+                onPressed: () async {
+                  if (user.role == 'STUDENT') {
+                    final result = await context.push(
+                      '${Routes.classManagement}/register',
+                    );
+                    if (result == true) {
+                      _refreshClassList();
+                    }
+                  } else {
+                    final result = await context.push(Routes.nestedCreateClass);
+                    if (result == true) {
+                      _refreshClassList();
+                    }
+                  }
+                },
+                child: Icon(
+                  user.role == 'STUDENT' ? Icons.add_task : Icons.add,
+                ),
+              ) : null,
+            ) ?? const SizedBox.shrink(),
           ),
         ],
       ),
@@ -354,28 +371,30 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
   Widget _buildInfoRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 120,
-            child: Text(
-              '$label:',
-              style: const TextStyle(
-                fontWeight: FontWeight.w500,
-                color: Colors.grey,
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              width: 120,
+              child: Text(
+                label,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(
-                fontWeight: FontWeight.w500,
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                value,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

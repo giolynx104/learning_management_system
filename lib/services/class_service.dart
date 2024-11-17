@@ -298,4 +298,46 @@ class ClassService extends _$ClassService {
       return null; // Return null for any other error
     }
   }
+
+  Future<List<Map<String, String>>> registerClasses({
+    required String token,
+    required List<String> classIds,
+  }) async {
+    try {
+      final response = await ref.read(apiClientProvider).post(
+        '/it5023e/register_class',
+        data: {
+          'token': token,
+          'class_ids': classIds,
+        },
+      );
+
+      final responseData = response.data as Map<String, dynamic>;
+      final meta = responseData['meta'] as Map<String, dynamic>;
+      
+      if (meta['code'] == 1009) {
+        throw const UnauthorizedException('Your role is not allowed to register for classes');
+      }
+      
+      if (meta['code'] != 1000) {
+        throw Exception(meta['message'] ?? 'Failed to register classes');
+      }
+
+      final data = responseData['data'] as List<dynamic>;
+      return data.map((item) => {
+        'status': item['status'] as String,
+        'class_id': item['class_id'] as String,
+      }).toList();
+    } on DioException catch (e) {
+      final responseData = e.response?.data as Map<String, dynamic>?;
+      final meta = responseData?['meta'] as Map<String, dynamic>?;
+      
+      if (meta?['code'] == 9998) {
+        ref.read(authProvider.notifier).logout();
+        throw const UnauthorizedException('Session expired. Please sign in again.');
+      }
+      
+      throw Exception(meta?['message'] ?? 'Failed to register classes');
+    }
+  }
 }

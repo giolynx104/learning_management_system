@@ -19,7 +19,8 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _fullNameController = TextEditingController();
+  final TextEditingController _firstNameController = TextEditingController();
+  final TextEditingController _lastNameController = TextEditingController();
   bool _obscureText = true;
   String _selectedRole = 'Student';
   bool _isLoading = false;
@@ -28,7 +29,8 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
-    _fullNameController.dispose();
+    _firstNameController.dispose();
+    _lastNameController.dispose();
     super.dispose();
   }
 
@@ -45,9 +47,10 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
       try {
 
         final signUpResponse = await ref.read(signUpProvider(
+          firstName: _firstNameController.text,
+          lastName: _lastNameController.text,
           email: _emailController.text,
           password: _passwordController.text,
-          uuid: 11111,
           role: _selectedRole.toUpperCase(),
         ).future);
 
@@ -161,8 +164,25 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
     return Column(
       children: [
         AuthTextField(
-          controller: _fullNameController,
-          labelText: 'Full Name (Optional)',
+          controller: _firstNameController,
+          labelText: 'First Name',
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'Please enter your first name';
+            }
+            return null;
+          },
+        ),
+        const SizedBox(height: 16.0),
+        AuthTextField(
+          controller: _lastNameController,
+          labelText: 'Last Name',
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'Please enter your last name';
+            }
+            return null;
+          },
         ),
         const SizedBox(height: 16.0),
         AuthTextField(

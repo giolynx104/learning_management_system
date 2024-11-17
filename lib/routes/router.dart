@@ -192,17 +192,12 @@ final appRouter = GoRouter(
           routes: [
             GoRoute(
               path: Routes.classManagement,
-              builder: (context, state) {
-                final container = ProviderScope.containerOf(context);
-                final isStudent =
-                    container.read(authProvider).value?.role.toUpperCase() ==
-                        'STUDENT';
-
-                return isStudent
-                    ? const ClassRegistrationScreen()
-                    : const ClassManagementScreen();
-              },
+              builder: (context, state) => const ClassManagementScreen(),
               routes: [
+                GoRoute(
+                  path: 'register',
+                  builder: (context, state) => const ClassRegistrationScreen(),
+                ),
                 GoRoute(
                   path: 'modify/:classId',
                   name: Routes.modifyClass,
@@ -242,6 +237,12 @@ final appRouter = GoRouter(
           ],
         ),
       ],
+    ),
+    // Add this route configuration
+    GoRoute(
+      path: Routes.nestedClassRegistration,
+      name: Routes.classRegistration,  // if you're using named routes
+      builder: (context, state) => const ClassRegistrationScreen(),
     ),
   ],
 );

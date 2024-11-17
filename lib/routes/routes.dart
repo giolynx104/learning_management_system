@@ -4,7 +4,7 @@ class Routes {
   static const String signin = '/signin';
   static const String notification = '/notification_screen';
   static const String studentHome = '/student_home';
-  static const String classRegistration = '/class_registration';
+  static const String classRegistration = 'register';
   static const String absentRequest = 'absent_request';
   static const String nestedAbsentRequest = '/student_home/absent_request';
   static const String surveyList = 'survey_list';
@@ -33,5 +33,5 @@ class Routes {
   static const String nestedCreateSurvey = '/teacher_home/teacher_survey_list/create_survey';
   static const String editSurvey = 'edit_survey';
   static const String nestedEditSurvey = '/teacher_home/teacher_survey_list/edit_survey';
- 
+  static const String nestedClassRegistration = '/class_management/register';
 }

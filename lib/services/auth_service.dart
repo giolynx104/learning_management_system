@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:learning_management_system/models/user.dart';
@@ -6,9 +7,10 @@ class AuthService {
   static const String _baseUrl = 'http://160.30.168.228:8080/it4788';
 
   Future<Map<String, dynamic>> signUp({
+    required String firstName,
+    required String lastName,
     required String email,
     required String password,
-    required int uuid,
     required String role,
   }) async {
     try {
@@ -19,9 +21,10 @@ class AuthService {
           'User-Agent': 'PostmanRuntime/7.42.0',
         },
         body: jsonEncode({
+          'ho': firstName,
+          'ten': lastName,
           'email': email,
           'password': password,
-          'uuid': uuid,
           'role': role,
         }),
       );
@@ -29,7 +32,7 @@ class AuthService {
       final responseBody = jsonDecode(response.body);
 
       if (response.statusCode == 200) {
-        if (responseBody['status_code'] == 1000) {
+        if (responseBody['code'] == 1000) {
           return {
             'success': true,
             'verify_code': responseBody['verify_code'],
@@ -126,6 +129,8 @@ class AuthService {
     required String verifyCode,
   }) async {
     try {
+      debugPrint('Sending verification request with email: $email, code: $verifyCode');
+      
       final response = await http.post(
         Uri.parse('$_baseUrl/check_verify_code'),
         headers: {
@@ -138,21 +143,19 @@ class AuthService {
         }),
       );
 
+      debugPrint('Verification response status: ${response.statusCode}');
+      debugPrint('Verification response body: ${response.body}');
+
       final responseBody = jsonDecode(response.body);
       
       if (response.statusCode == 200) {
-        // Success case: message contains "1000 | OK"
-        return responseBody['message']?.contains('1000 | OK') ?? false;
-      } else if (response.statusCode == 409) {
-        // Email already verified case
-        if (responseBody.toString().contains('Email already verified')) {
-          return true; // Consider already verified as success
-        }
-        throw Exception('Email verification failed: ${responseBody.toString()}');
-      } else {
-        throw Exception('Failed to verify code: ${responseBody.toString()}');
+        // Simply check if code is 1000
+        return responseBody['code'] == 1000;
       }
+      
+      return false;
     } catch (e) {
+      debugPrint('Verification error: $e');
       throw Exception('Error verifying code: $e');
     }
   }

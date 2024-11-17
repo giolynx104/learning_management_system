@@ -6,22 +6,20 @@ part 'signup_provider.g.dart';
 
 @riverpod
 Future<Map<String, dynamic>> signUp(
-  Ref ref,
-  {
-    required String email,
-    required String password,
-    required int uuid,
-    required String role,
-  }
-) async {
-  final authService = AuthService();
-  final response = await authService.signUp(
+  SignUpRef ref, {
+  required String firstName,
+  required String lastName,
+  required String email,
+  required String password,
+  required String role,
+}) {
+  return ref.watch(authServiceProvider).signUp(
+    firstName: firstName,
+    lastName: lastName,
     email: email,
     password: password,
-    uuid: uuid,
     role: role,
   );
-  return response;
 }
 
 @riverpod
