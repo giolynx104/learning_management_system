@@ -67,21 +67,27 @@ class AuthService {
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
-        final user = User.fromJson(responseData);
+        print('Debug - Raw response data: $responseData');
         
-        return {
-          'success': true,
-          'user': responseData,
-          'token': user.token,
-          'needs_verification': false,
-        };
-      } else if (response.statusCode == 401) {
-        throw Exception('User not found or wrong password');
+        if (responseData['code'] == 1000) {
+          final userData = responseData['data'];
+          final user = User.fromJson(userData);
+          
+          return {
+            'success': true,
+            'user': userData,
+            'token': userData['token'],
+            'needs_verification': false,
+          };
+        } else {
+          throw Exception('Login failed: ${responseData['message'] ?? 'Unknown error'}');
+        }
       } else {
-        throw Exception('Failed to login: ${response.body}');
+        throw Exception('Failed to sign in: ${response.body}');
       }
     } catch (e) {
-      rethrow;
+      print('Debug - Sign in error: $e');
+      throw Exception('Error during sign in: $e');
     }
   }
 

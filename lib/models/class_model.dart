@@ -17,6 +17,10 @@ class ClassModel with _$ClassModel {
     @JsonKey(name: 'start_date') required String startDate,
     @JsonKey(name: 'end_date') required String endDate,
     required String status,
+    String? description,
+    @JsonKey(name: 'student_list') List<String>? studentIds,
+    @JsonKey(name: 'assignment_list') List<String>? assignmentIds,
+    @JsonKey(name: 'attendance_list') List<String>? attendanceIds,
   }) = _ClassModel;
 
   factory ClassModel.fromJson(Map<String, dynamic> json) => _$ClassModelFromJson(json);

@@ -21,6 +21,10 @@ class ClassService extends _$ClassService {
     required DateTime endDate,
     required int maxStudentAmount,
     String? attachedCode,
+    String? description,
+    List<String>? studentIds,
+    List<String>? assignmentIds,
+    List<String>? attendanceIds,
   }) async {
     try {
       final data = {
@@ -36,6 +40,18 @@ class ClassService extends _$ClassService {
       if (attachedCode != null && attachedCode.isNotEmpty) {
         data['attached_code'] = attachedCode;
       }
+      if (description != null) {
+        data['description'] = description;
+      }
+      if (studentIds != null) {
+        data['student_list'] = studentIds;
+      }
+      if (assignmentIds != null) {
+        data['assignment_list'] = assignmentIds;
+      }
+      if (attendanceIds != null) {
+        data['attendance_list'] = attendanceIds;
+      }
 
       final response = await ref.read(apiClientProvider).post(
         '/it5023e/create_class',
@@ -49,7 +65,15 @@ class ClassService extends _$ClassService {
         throw Exception(meta['message'] ?? 'Failed to create class');
       }
 
-      return ClassModel.fromJson(responseData['data']);
+      final classData = responseData['data'] as Map<String, dynamic>;
+      return ClassModel.fromJson({
+        ...classData,
+        'student_list': classData['student_list'] ?? [],
+        'assignment_list': classData['assignment_list'] ?? [],
+        'attendance_list': classData['attendance_list'] ?? [],
+        'description': classData['description'] ?? '',
+        'schedule': classData['schedule'] ?? '',
+      });
     } on DioException catch (e) {
       final responseData = e.response?.data as Map<String, dynamic>?;
       final meta = responseData?['meta'] as Map<String, dynamic>?;

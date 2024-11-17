@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:learning_management_system/routes/destinations.dart';
+import 'package:learning_management_system/mixins/sign_out_mixin.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:learning_management_system/providers/auth_provider.dart';
 
-class LayoutScaffold extends StatefulWidget {
+class LayoutScaffold extends ConsumerStatefulWidget {
   final StatefulNavigationShell navigationShell;
   final List<Destination> destinations;
   const LayoutScaffold({
@@ -12,10 +15,10 @@ class LayoutScaffold extends StatefulWidget {
   }) : super(key: key ?? const ValueKey<String>('LayoutScaffold'));
 
   @override
-  State<LayoutScaffold> createState() => _LayoutScaffoldState();
+  ConsumerState<LayoutScaffold> createState() => _LayoutScaffoldState();
 }
 
-class _LayoutScaffoldState extends State<LayoutScaffold> {
+class _LayoutScaffoldState extends ConsumerState<LayoutScaffold> with SignOutMixin {
   String appBarTitle = "Microsoft Teams";
 
   @override
@@ -60,62 +63,97 @@ class _LayoutScaffoldState extends State<LayoutScaffold> {
 
   @override
   Widget build(BuildContext context) {
+    final userState = ref.watch(authProvider);
+
     return Scaffold(
       appBar: _buildAppBar(context, appBarTitle),
       drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            UserAccountsDrawerHeader(
-              accountName: Text(
-                "Do Minh Tuan 20210901",
-                style: TextStyle(color: Theme.of(context).colorScheme.onPrimary),
+        child: userState.when(
+          data: (user) {
+            if (user == null) return const SizedBox.shrink();
+            
+            return Container(
+              color: Theme.of(context).colorScheme.surface,
+              child: ListView(
+                padding: EdgeInsets.zero,
+                children: [
+                  UserAccountsDrawerHeader(
+                    accountName: Text(
+                      "${user.firstName} ${user.lastName}",
+                      style: TextStyle(color: Theme.of(context).colorScheme.onPrimary),
+                    ),
+                    accountEmail: Text(
+                      user.email,
+                      style: TextStyle(color: Theme.of(context).colorScheme.onPrimary),
+                    ),
+                    currentAccountPicture: user.avatar != null
+                        ? CircleAvatar(
+                            backgroundImage: NetworkImage(user.avatar!),
+                            backgroundColor: Theme.of(context).colorScheme.surface,
+                          )
+                        : CircleAvatar(
+                            backgroundColor: Theme.of(context).colorScheme.surface,
+                            child: const Icon(Icons.person),
+                          ),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.check_circle, color: Colors.green),
+                    title: const Text("Trực tuyến"),
+                    onTap: () {
+                      // Handle online status click
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.notifications),
+                    title: const Text("Cài đặt trạng thái thông báo"),
+                    onTap: () {},
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.settings),
+                    title: const Text("Cài đặt"),
+                    onTap: () {},
+                  ),
+                  const Divider(),
+                  const ListTile(
+                    title: Text("Tài khoản và tổ chức"),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.business),
+                    title: const Text("Hanoi University of Science and Technology"),
+                    subtitle: Text(user.email),
+                    onTap: () {},
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.add),
+                    title: const Text("Thêm tài khoản"),
+                    onTap: () {},
+                  ),
+                  const Divider(),
+                  ListTile(
+                    leading: const Icon(Icons.logout, color: Colors.red),
+                    title: const Text("Sign Out", style: TextStyle(color: Colors.red)),
+                    onTap: () {
+                      Navigator.pop(context); // Close drawer
+                      handleSignOut(); // This comes from SignOutMixin
+                    },
+                  ),
+                ],
               ),
-              accountEmail: Text(
-                "tuan.dm210901@sis.hust.edu.vn",
-                style: TextStyle(color: Theme.of(context).colorScheme.onPrimary),
-              ),
-              currentAccountPicture: CircleAvatar(
-                backgroundImage: const NetworkImage('https://i.ibb.co/y562zHM/poroys.jpg'),
-                backgroundColor: Theme.of(context).colorScheme.surface,
-              ),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary,
-              ),
+            );
+          },
+          loading: () => Container(
+            color: Theme.of(context).colorScheme.surface,
+            child: const Center(child: CircularProgressIndicator()),
+          ),
+          error: (error, stack) => Container(
+            color: Theme.of(context).colorScheme.surface,
+            child: Center(
+              child: Text('Error loading user data: $error'),
             ),
-            ListTile(
-              leading: const Icon(Icons.check_circle, color: Colors.green),
-              title: const Text("Trực tuyến"),
-              onTap: () {
-                // Handle online status click
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.notifications),
-              title: const Text("Cài đặt trạng thái thông báo"),
-              onTap: () {},
-            ),
-            ListTile(
-              leading: const Icon(Icons.settings),
-              title: const Text("Cài đặt"),
-              onTap: () => _showOptions(context),
-            ),
-            const Divider(),
-            const ListTile(
-              title: Text("Tài khoản và tổ chức"),
-            ),
-            ListTile(
-              leading: const Icon(Icons.business),
-              title: const Text("Hanoi University of Science and Technology"),
-              subtitle: const Text("tuan.dm210901@sis.hust.edu.vn"),
-              onTap: () {},
-            ),
-            ListTile(
-              leading: const Icon(Icons.add),
-              title: const Text("Thêm tài khoản"),
-              onTap: () {},
-            ),
-          ],
+          ),
         ),
       ),
       body: widget.navigationShell,
@@ -134,61 +172,6 @@ class _LayoutScaffoldState extends State<LayoutScaffold> {
                 ))
             .toList(),
       ),
-    );
-  }
-
-  void _showOptions(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      builder: (BuildContext context) {
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              ListTile(
-                leading: const Icon(Icons.key_off),
-                title: const Text('Đổi mật khẩu'),
-                onTap: () {},
-              ),
-              ListTile(
-                leading: const Icon(Icons.exit_to_app),
-                title: const Text('Đăng xuất'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _showConfirmationDialog(context);
-                },
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  void _showConfirmationDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Xác nhận'),
-          content: const Text('Bạn có chắc chắn muốn đăng xuất?'),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text('Hủy'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text('Xác nhận'),
-            ),
-          ],
-        );
-      },
     );
   }
 }

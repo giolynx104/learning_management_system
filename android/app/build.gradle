@@ -8,8 +8,9 @@ plugins {
 android {
     namespace = "com.example.learning_management_system"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    ndkVersion "27.0.12077973"
 
+    //TODO: Update compileOptions to newer version
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
