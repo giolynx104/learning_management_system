@@ -5,71 +5,269 @@ import 'package:learning_management_system/routes/routes.dart';
 import 'package:learning_management_system/models/class_list_model.dart';
 import 'package:learning_management_system/services/class_service.dart';
 import 'package:learning_management_system/providers/auth_provider.dart';
+import 'dart:async';
 
 class ClassManagementScreen extends ConsumerStatefulWidget {
   const ClassManagementScreen({super.key});
 
   @override
-  ConsumerState<ClassManagementScreen> createState() => ClassManagementScreenState();
+  ConsumerState<ClassManagementScreen> createState() =>
+      ClassManagementScreenState();
 }
 
 class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
   final TextEditingController _classCodeController = TextEditingController();
   final FocusNode _classCodeFocusNode = FocusNode();
-  bool _isSearchButtonEnabled = false;
+  late Timer _refreshTimer;
+  List<ClassListItem> _classList = [];
 
   @override
   void initState() {
     super.initState();
-    _classCodeController.addListener(_updateSearchButtonState);
+    _refreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (mounted) {
+        _refreshClassList();
+      }
+    });
+    _loadClassList();
   }
 
   @override
   void dispose() {
-    _classCodeController.removeListener(_updateSearchButtonState);
     _classCodeController.dispose();
     _classCodeFocusNode.dispose();
+    _refreshTimer.cancel();
     super.dispose();
   }
 
-  void _updateSearchButtonState() {
-    setState(() {
-      _isSearchButtonEnabled = _classCodeController.text.trim().length == 6;
-    });
-  }
-
-  Future<void> _searchClass() async {
-    final classCode = _classCodeController.text.trim();
-    if (classCode.length == 6) {
-      // TODO: Implement class search by code
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Class search to be implemented')),
-      );
-      _classCodeController.clear();
-    }
-  }
-
-  Future<List<ClassListItem>> _getClassList() async {
+  Future<void> _loadClassList() async {
     try {
       final authState = await ref.read(authProvider.future);
       if (authState == null) {
         throw Exception('Not authenticated');
       }
-      return await ref.read(classServiceProvider.notifier).getClassList(authState.token);
+      final classes = await ref
+          .read(classServiceProvider.notifier)
+          .getClassList(authState.token);
+      if (mounted) {
+        setState(() {
+          _classList = classes;
+        });
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(e.toString())),
         );
       }
-      return [];
     }
+  }
+
+  void _refreshClassList() {
+    _loadClassList();
+  }
+
+  List<ClassListItem> _getFilteredClasses() {
+    if (_classList.isEmpty) {
+      return []; // Return empty list if there are no classes at all
+    }
+    
+    final searchTerm = _classCodeController.text.trim().toLowerCase();
+    if (searchTerm.isEmpty) {
+      return _classList; // Return all classes when search is empty
+    }
+    return _classList.where((classItem) => 
+      classItem.classId.toLowerCase().contains(searchTerm)
+    ).toList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final filteredClasses = _getFilteredClasses();
+    final authState = ref.watch(authProvider);
+
+    return Material(
+      child: Stack(
+        children: [
+          Column(
+            children: [
+              // Search Class Card
+              Card(
+                margin: const EdgeInsets.all(16),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        'Search Class by Code',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: _classCodeController,
+                        focusNode: _classCodeFocusNode,
+                        decoration: const InputDecoration(
+                          labelText: 'Class Code',
+                          hintText: 'Enter class code',
+                          border: OutlineInputBorder(),
+                        ),
+                        onChanged: (value) {
+                          setState(() {});
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              // Class List - Same for both roles
+              Expanded(
+                child: _classList.isEmpty
+                    ? const Center(child: Text('No classes available'))
+                    : filteredClasses.isEmpty
+                        ? const Center(child: Text('No matching classes found'))
+                        : ListView.builder(
+                            padding: const EdgeInsets.only(
+                              left: 16,
+                              right: 16,
+                              top: 16,
+                              bottom: 80,
+                            ),
+                            itemCount: filteredClasses.length,
+                            itemBuilder: (context, index) {
+                              final classItem = filteredClasses[index];
+                              return Card(
+                                margin: const EdgeInsets.only(bottom: 12),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(16.0),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              classItem.className,
+                                              style: theme.textTheme.titleMedium
+                                                  ?.copyWith(
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                          PopupMenuButton<String>(
+                                            onSelected: (value) =>
+                                                _handleClassAction(value, classItem),
+                                            itemBuilder: (BuildContext context) => [
+                                              const PopupMenuItem(
+                                                value: 'edit',
+                                                child: Text('Edit Class'),
+                                              ),
+                                              const PopupMenuItem(
+                                                value: 'delete',
+                                                child: Text('Delete Class',
+                                                    style:
+                                                        TextStyle(color: Colors.red)),
+                                              ),
+                                              const PopupMenuItem(
+                                                value: 'assignment',
+                                                child: Text('Assignments'),
+                                              ),
+                                              const PopupMenuItem(
+                                                value: 'files',
+                                                child: Text('Files'),
+                                              ),
+                                              const PopupMenuItem(
+                                                value: 'attendance',
+                                                child: Text('Attendance'),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 8),
+                                      _buildInfoRow('Class Code', classItem.classId),
+                                      if (classItem.attachedCode != null &&
+                                          classItem.attachedCode!.isNotEmpty)
+                                        _buildInfoRow('Associated Code',
+                                            classItem.attachedCode!),
+                                      _buildInfoRow('Type', classItem.classType),
+                                      _buildInfoRow('Status', classItem.status),
+                                      _buildInfoRow(
+                                          'Students', '${classItem.studentCount}'),
+                                      _buildInfoRow('Period',
+                                          '${classItem.startDate} - ${classItem.endDate}'),
+                                      if (classItem.lecturerName != null &&
+                                          classItem.lecturerName!.isNotEmpty)
+                                        _buildInfoRow(
+                                            'Lecturer', classItem.lecturerName!),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+              ),
+            ],
+          ),
+          
+          // FAB - Different actions based on role
+          Positioned(
+            right: 16,
+            bottom: 16,
+            child: authState.whenOrNull(
+              data: (user) => user != null ? FloatingActionButton.extended(
+                onPressed: () async {
+                  if (user.role == 'STUDENT') {
+                    // Navigate to registration screen for students
+                    final result = await context.push('/class_management/register');
+                    if (result == true) {
+                      _refreshClassList();
+                    }
+                  } else {
+                    // Navigate to create class screen for teachers
+                    final result = await context.push(Routes.nestedCreateClass);
+                    if (result == true) {
+                      _refreshClassList();
+                    }
+                  }
+                },
+                icon: Icon(
+                  user.role == 'STUDENT' ? Icons.add_task : Icons.add,
+                ),
+                label: Text(
+                  user.role == 'STUDENT' ? 'Register for Class' : 'Create Class'
+                ),
+              ) : null,
+            ) ?? const SizedBox.shrink(),
+          ),
+        ],
+      ),
+    );
   }
 
   void _handleClassAction(String action, ClassListItem classItem) {
     switch (action) {
       case 'edit':
-        context.push(Routes.nestedModifyClass);
+        debugPrint(
+            'ClassManagementScreen - ClassId: ${classItem.classId}, Type: ${classItem.classId.runtimeType}');
+        context.pushNamed(
+          Routes.modifyClass,
+          pathParameters: {'classId': classItem.classId.toString()},
+        ).then((result) {
+          if (result == true) {
+            _refreshClassList();
+          }
+        });
+        break;
+      case 'delete':
+        _showDeleteConfirmationDialog(classItem);
         break;
       case 'assignment':
         context.push(Routes.nestedTeacherSurveyList);
@@ -83,142 +281,116 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+  Future<void> _showDeleteConfirmationDialog(ClassListItem classItem) async {
+    bool isDeleting = false;
 
-    return Scaffold(
-      body: Column(
-        children: [
-          // Search Class Card
-          Card(
-            margin: const EdgeInsets.all(16),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    'Search Class by Code',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
+    return showDialog(
+      context: context,
+      barrierDismissible: false, // Prevent dismissing by tapping outside
+      builder: (BuildContext dialogContext) {
+        return StatefulBuilder(
+          // Use StatefulBuilder to update dialog state
+          builder: (context, setState) {
+            return Stack(
+              children: [
+                AlertDialog(
+                  title: const Text('Delete Class'),
+                  content: Text(
+                      'Are you sure you want to delete ${classItem.className}?'),
+                  actions: [
+                    TextButton(
+                      onPressed: isDeleting
+                          ? null
+                          : () => Navigator.of(dialogContext).pop(),
+                      child: const Text('Cancel'),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  IntrinsicHeight(
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Expanded(
-                          child: SizedBox(
-                            height: 40, // Match button height
-                            child: TextField(
-                              controller: _classCodeController,
-                              focusNode: _classCodeFocusNode,
-                              decoration: const InputDecoration(
-                                labelText: 'Class Code',
-                                hintText: 'Enter 6-digit code',
-                                contentPadding: EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 8,
-                                ),
-                              ),
-                              maxLength: 6,
-                              buildCounter: (context, {required currentLength, required isFocused, maxLength}) => null,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        FilledButton(
-                          onPressed: _isSearchButtonEnabled ? _searchClass : null,
-                          child: const Text('Search'),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
+                    TextButton(
+                      onPressed: isDeleting
+                          ? null
+                          : () async {
+                              setState(() => isDeleting = true);
+                              try {
+                                final authState =
+                                    await ref.read(authProvider.future);
+                                if (authState == null) {
+                                  throw Exception('Not authenticated');
+                                }
 
-          // Class List
-          Expanded(
-            child: FutureBuilder<List<ClassListItem>>(
-              future: _getClassList(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
+                                await ref
+                                    .read(classServiceProvider.notifier)
+                                    .deleteClass(
+                                      token: authState.token,
+                                      classId: classItem.classId,
+                                    );
 
-                if (snapshot.hasError) {
-                  return Center(child: Text('Error: ${snapshot.error}'));
-                }
-
-                final classes = snapshot.data ?? [];
-
-                return Stack(
-                  children: [
-                    ListView.builder(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: classes.length,
-                      itemBuilder: (context, index) {
-                        final classItem = classes[index];
-                        return Card(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          child: ListTile(
-                            title: Text(
-                              classItem.className,
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            subtitle: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('Type: ${classItem.classType}'),
-                                Text('Students: ${classItem.studentCount}'),
-                                Text('Period: ${classItem.startDate} - ${classItem.endDate}'),
-                              ],
-                            ),
-                            trailing: PopupMenuButton<String>(
-                              onSelected: (value) => _handleClassAction(value, classItem),
-                              itemBuilder: (BuildContext context) => [
-                                const PopupMenuItem(
-                                  value: 'edit',
-                                  child: Text('Edit Class'),
-                                ),
-                                const PopupMenuItem(
-                                  value: 'assignment',
-                                  child: Text('Assignments'),
-                                ),
-                                const PopupMenuItem(
-                                  value: 'files',
-                                  child: Text('Files'),
-                                ),
-                                const PopupMenuItem(
-                                  value: 'attendance',
-                                  child: Text('Attendance'),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                    Positioned(
-                      right: 16,
-                      bottom: 16,
-                      child: FloatingActionButton(
-                        onPressed: () => context.push(Routes.nestedCreateClass),
-                        child: const Icon(Icons.add),
-                      ),
+                                if (!mounted) return;
+                                Navigator.of(dialogContext)
+                                    .pop(); // Close the dialog
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Class deleted successfully'),
+                                    backgroundColor: Colors.green,
+                                  ),
+                                );
+                                _refreshClassList();
+                              } catch (e) {
+                                setState(() => isDeleting =
+                                    false); // Reset loading state on error
+                                if (!mounted) return;
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Error deleting class: $e'),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                              }
+                            },
+                      child: const Text('Delete',
+                          style: TextStyle(color: Colors.red)),
                     ),
                   ],
-                );
-              },
+                ),
+                if (isDeleting)
+                  const Positioned.fill(
+                    child: Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                  ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              width: 120,
+              child: Text(
+                label,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
-          ),
-        ],
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                value,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

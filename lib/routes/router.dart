@@ -119,7 +119,28 @@ final appRouter = GoRouter(
                 ),
                 GoRoute(
                   path: Routes.modifyClass,
-                  builder: (context, state) => const ModifyClassScreen(),
+                  builder: (context, state) {
+                    final classId = state.extra as String?;
+                    if (classId == null) {
+                      // Handle the error case by showing an error screen or redirecting
+                      return Scaffold(
+                        body: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Text('Error: No class ID provided'),
+                              const SizedBox(height: 16),
+                              ElevatedButton(
+                                onPressed: () => context.pop(),
+                                child: const Text('Go Back'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }
+                    return ModifyClassScreen(classId: classId);
+                  },
                 ),
                 GoRoute(
                   path: Routes.rollCall,
@@ -171,16 +192,38 @@ final appRouter = GoRouter(
           routes: [
             GoRoute(
               path: Routes.classManagement,
-              builder: (context, state) {
-                final container = ProviderScope.containerOf(context);
-                final isStudent =
-                    container.read(authProvider).value?.role.toUpperCase() ==
-                        'STUDENT';
-
-                return isStudent
-                    ? const ClassRegistrationScreen()
-                    : const ClassManagementScreen();
-              },
+              builder: (context, state) => const ClassManagementScreen(),
+              routes: [
+                GoRoute(
+                  path: 'register',
+                  builder: (context, state) => const ClassRegistrationScreen(),
+                ),
+                GoRoute(
+                  path: 'modify/:classId',
+                  name: Routes.modifyClass,
+                  builder: (context, state) {
+                    final classId = state.pathParameters['classId'];
+                    if (classId == null) {
+                      return Scaffold(
+                        body: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Text('Error: No class ID provided'),
+                              const SizedBox(height: 16),
+                              ElevatedButton(
+                                onPressed: () => context.pop(),
+                                child: const Text('Go Back'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }
+                    return ModifyClassScreen(classId: classId);
+                  },
+                ),
+              ],
             ),
           ],
         ),
@@ -194,6 +237,12 @@ final appRouter = GoRouter(
           ],
         ),
       ],
+    ),
+    // Add this route configuration
+    GoRoute(
+      path: Routes.nestedClassRegistration,
+      name: Routes.classRegistration, // if you're using named routes
+      builder: (context, state) => const ClassRegistrationScreen(),
     ),
   ],
 );
