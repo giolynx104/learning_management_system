@@ -4,12 +4,13 @@ import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
-class absenceRequestScreenNew extends StatefulWidget{
-  const absenceRequestScreenNew({super.key});
+class AbsenceRequestScreen extends StatefulWidget {
+  const AbsenceRequestScreen({super.key});
   @override
-  State<absenceRequestScreenNew> createState()=>_AbsenceRequestScreenNewState();
+  State<AbsenceRequestScreen> createState() => _AbsenceRequestScreenState();
 }
-class _AbsenceRequestScreenNewState extends State<absenceRequestScreenNew>{
+
+class _AbsenceRequestScreenState extends State<AbsenceRequestScreen> {
   DateTime? _selectedDate;
   String? _selectedFile;
   final TextEditingController _reasonController = TextEditingController(); // Khai báo controller cho lý do
