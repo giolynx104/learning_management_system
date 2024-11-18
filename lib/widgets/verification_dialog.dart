@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:learning_management_system/services/verification_service.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:learning_management_system/providers/signup_provider.dart';
 
 class VerificationDialog extends ConsumerStatefulWidget {
   final String email;
@@ -17,7 +17,7 @@ class VerificationDialog extends ConsumerStatefulWidget {
 }
 
 class _VerificationDialogState extends ConsumerState<VerificationDialog> {
-  final _codeController = TextEditingController();
+  final TextEditingController _codeController = TextEditingController();
   bool _isLoading = false;
   String? _errorMessage;
 
@@ -39,46 +39,54 @@ class _VerificationDialogState extends ConsumerState<VerificationDialog> {
     });
 
     try {
-      final userId = await ref.read(verificationServiceProvider).verifyCode(
-        email: widget.email,
-        code: _codeController.text,
-      );
+      debugPrint('Attempting verification with code: ${_codeController.text}');
       
+      final authService = ref.read(authServiceProvider);
+      final success = await authService.checkVerifyCode(
+        email: widget.email,
+        verifyCode: _codeController.text.trim(), // Ensure no whitespace
+      );
+
+      debugPrint('Verification result: $success');
+
       if (!mounted) return;
-      Navigator.of(context).pop(userId);
+
+      if (success) {
+        Navigator.of(context).pop(true);
+      } else {
+        setState(() => _errorMessage = 'Invalid verification code');
+      }
     } catch (e) {
+      debugPrint('Verification error: $e');
       setState(() => _errorMessage = e.toString());
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    
     return AlertDialog(
       title: const Text('Email Verification'),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            'Your verification code is:',
-            style: theme.textTheme.bodyLarge,
-          ),
+          const Text('Please enter the verification code:'),
           const SizedBox(height: 8),
-          SelectableText(
-            widget.verificationCode,
-            style: theme.textTheme.headlineSmall?.copyWith(
-              color: theme.colorScheme.primary,
+          Text(
+            'Your verification code is: ${widget.verificationCode}',
+            style: const TextStyle(
               fontWeight: FontWeight.bold,
+              color: Colors.blue,
             ),
           ),
           const SizedBox(height: 16),
           TextField(
             controller: _codeController,
             decoration: InputDecoration(
-              labelText: 'Enter verification code',
+              labelText: 'Verification Code',
               errorText: _errorMessage,
               border: const OutlineInputBorder(),
             ),
@@ -87,7 +95,7 @@ class _VerificationDialogState extends ConsumerState<VerificationDialog> {
       ),
       actions: [
         TextButton(
-          onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
+          onPressed: _isLoading ? null : () => Navigator.of(context).pop(false),
           child: const Text('Cancel'),
         ),
         ElevatedButton(

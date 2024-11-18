@@ -1,442 +1,463 @@
 import 'package:flutter/material.dart';
-import 'dart:developer';
+import 'package:flutter/services.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:learning_management_system/models/class_model.dart';
+import 'package:learning_management_system/providers/auth_provider.dart';
+import 'package:learning_management_system/services/class_service.dart';
+import 'package:go_router/go_router.dart';
 
-//TODO: Make the table first column fixed position when scrolling
-
-class ClassRegistrationScreen extends StatefulWidget {
+class ClassRegistrationScreen extends ConsumerStatefulWidget {
   const ClassRegistrationScreen({super.key});
 
   @override
-  ClassRegistrationScreenState createState() => ClassRegistrationScreenState();
+  ConsumerState<ClassRegistrationScreen> createState() => ClassRegistrationScreenState();
 }
 
-class ClassRegistrationScreenState extends State<ClassRegistrationScreen> {
+class ClassRegistrationScreenState extends ConsumerState<ClassRegistrationScreen> {
   final TextEditingController _classCodeController = TextEditingController();
-  final FocusNode _classCodeFocusNode = FocusNode();
-  final List<String> _enteredClassCodes = [];
-  final Set<int> _selectedRowIndices = {};
-  final ScrollController _scrollController = ScrollController();
-  final ScrollController _horizontalScrollController = ScrollController();
-  bool _isRegisterButtonEnabled = false;
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _classCodeFocusNode.requestFocus();
-    });
-    _classCodeController.addListener(_updateRegisterButtonState);
-  }
+  final List<String> _selectedClassCodes = [];
+  bool _isLoading = false;
 
   @override
   void dispose() {
-    _classCodeController.removeListener(_updateRegisterButtonState);
     _classCodeController.dispose();
-    _classCodeFocusNode.dispose();
-    _scrollController.dispose();
-    _horizontalScrollController.dispose();
     super.dispose();
   }
 
-  void _updateRegisterButtonState() {
-    setState(() {
-      _isRegisterButtonEnabled = _classCodeController.text.trim().length == 6;
-    });
-  }
-
-  void _registerClass() {
+  Future<void> _searchClass() async {
     final classCode = _classCodeController.text.trim();
-    if (classCode.length == 6 && !_enteredClassCodes.contains(classCode)) {
-      setState(() {
-        _enteredClassCodes.add(classCode);
-        _classCodeController.clear();
-      });
-      log('Registered class code: $classCode');
-    } else if (_enteredClassCodes.contains(classCode)) {
+    
+    // Validate class code format
+    if (classCode.length != 6 || !RegExp(r'^[0-9]+$').hasMatch(classCode)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('This class code has already been registered.'),
-          duration: Duration(seconds: 2),
+          content: Text('Class code must be exactly 6 digits'),
+          backgroundColor: Colors.orange,
         ),
       );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final authState = await ref.read(authProvider.future);
+      if (authState == null) {
+        throw Exception('Not authenticated');
+      }
+
+      final classInfo = await ref.read(classServiceProvider.notifier).getBasicClassInfo(
+        token: authState.token,
+        classId: classCode,
+      );
+
+      if (!mounted) return;
+
+      if (classInfo != null) {
+        _showClassInfoDialog(classInfo);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Class not found'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString()),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      setState(() => _isLoading = false);
     }
   }
 
-  void _removeSelectedClasses() {
-    setState(() {
-      _enteredClassCodes.removeWhere((classCode) =>
-          _selectedRowIndices.contains(_enteredClassCodes.indexOf(classCode)));
-      _selectedRowIndices.clear();
-    });
+  Future<void> _registerClasses() async {
+    if (_selectedClassCodes.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please add at least one class')),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final authState = await ref.read(authProvider.future);
+      if (authState == null) {
+        throw Exception('Not authenticated');
+      }
+
+      final results = await ref.read(classServiceProvider.notifier).registerClasses(
+        token: authState.token,
+        classIds: _selectedClassCodes,
+      );
+
+      if (!mounted) return;
+
+      // Show results dialog
+      await showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Registration Results'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: results.map((result) => ListTile(
+              leading: Icon(
+                result['status'] == 'SUCCESS' ? Icons.check_circle : Icons.error,
+                color: result['status'] == 'SUCCESS' ? Colors.green : Colors.red,
+              ),
+              title: Text('Class ${result['class_id']}'),
+              subtitle: Text(result['status'] ?? ''),
+            )).toList(),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                context.pop(true); // Return to class list
+              },
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString())),
+      );
+    } finally {
+      setState(() => _isLoading = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    Theme.of(context);
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Class Registration'),
-      ),
-      body: Column(
-        children: [
-          _ClassRegistrationForm(
-            classCodeController: _classCodeController,
-            classCodeFocusNode: _classCodeFocusNode,
-            isRegisterButtonEnabled: _isRegisterButtonEnabled,
-            onRegister: _registerClass,
-          ),
-          Expanded(
-            child: _ClassRegistrationTable(
-              enteredClassCodes: _enteredClassCodes,
-              selectedRowIndices: _selectedRowIndices,
-              scrollController: _scrollController,
-              horizontalScrollController: _horizontalScrollController,
-              onSelectChanged: (int index, bool? isSelected) {
-                setState(() {
-                  if (isSelected!) {
-                    _selectedRowIndices.add(index);
-                  } else {
-                    _selectedRowIndices.remove(index);
-                  }
-                });
-              },
+    final theme = Theme.of(context);
+    
+    return Column(
+      children: [
+        // Search section with elegant design
+        Container(
+          padding: const EdgeInsets.all(24.0),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.primary,
+            borderRadius: const BorderRadius.only(
+              bottomLeft: Radius.circular(32),
+              bottomRight: Radius.circular(32),
             ),
           ),
-          if (_enteredClassCodes.isNotEmpty)
-            _RegistrationActions(
-              onSubmit: () {
-                // TODO: Implement submit registration functionality
-              },
-              onRemoveSelected: _removeSelectedClasses,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Enter Class Code',
+                style: theme.textTheme.titleLarge?.copyWith(
+                  color: theme.colorScheme.onPrimary,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 16),
+              IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.onPrimary,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: TextField(
+                          controller: _classCodeController,
+                          decoration: InputDecoration(
+                            hintText: 'Enter 6-digit code',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
+                            filled: true,
+                            fillColor: theme.colorScheme.onPrimary,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 14,
+                            ),
+                            counterText: '', // Remove the digit counter
+                          ),
+                          maxLength: 6,
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: ElevatedButton(
+                        onPressed: _isLoading ? null : _searchClass,
+                        style: ElevatedButton.styleFrom(
+                          padding: EdgeInsets.zero,
+                          backgroundColor: theme.colorScheme.secondary,
+                          foregroundColor: theme.colorScheme.onSecondary,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          minimumSize: const Size(48, 48),
+                        ),
+                        child: _isLoading
+                            ? const SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Icon(Icons.search),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // Selected classes list with elegant cards
+        Expanded(
+          child: _selectedClassCodes.isEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.school_outlined,
+                        size: 64,
+                        color: theme.colorScheme.primary.withOpacity(0.5),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'No classes selected',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          color: theme.colorScheme.primary.withOpacity(0.5),
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: _selectedClassCodes.length,
+                  itemBuilder: (context, index) {
+                    final classCode = _selectedClassCodes[index];
+                    return Card(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      elevation: 2,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        leading: CircleAvatar(
+                          backgroundColor: theme.colorScheme.primary,
+                          child: Text(
+                            classCode.substring(0, 2),
+                            style: TextStyle(
+                              color: theme.colorScheme.onPrimary,
+                            ),
+                          ),
+                        ),
+                        title: Text(
+                          'Class Code: $classCode',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.remove_circle_outline),
+                          color: Colors.red,
+                          onPressed: () {
+                            setState(() {
+                              _selectedClassCodes.removeAt(index);
+                            });
+                          },
+                        ),
+                      ),
+                    );
+                  },
+                ),
+        ),
+
+        // Register button with elegant design
+        if (_selectedClassCodes.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: ElevatedButton(
+              onPressed: _isLoading ? null : _registerClasses,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: theme.colorScheme.primary,
+                foregroundColor: theme.colorScheme.onPrimary,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 0,
+                minimumSize: const Size(double.infinity, 50),
+              ),
+              child: _isLoading
+                  ? const SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text(
+                      'Register Selected Classes',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
             ),
-          const SizedBox(height: 16),
-          const _AvailableClassesLink(),
-          const SizedBox(height: 16),
-        ],
-      ),
+          ),
+      ],
     );
   }
-}
 
-class _ClassRegistrationForm extends StatelessWidget {
-  final TextEditingController classCodeController;
-  final FocusNode classCodeFocusNode;
-  final bool isRegisterButtonEnabled;
-  final VoidCallback onRegister;
-
-  const _ClassRegistrationForm({
-    required this.classCodeController,
-    required this.classCodeFocusNode,
-    required this.isRegisterButtonEnabled,
-    required this.onRegister,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          IntrinsicHeight(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+  // Beautiful class info dialog
+  void _showClassInfoDialog(ClassModel classInfo) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        title: Row(
+          children: [
+            CircleAvatar(
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              child: const Icon(Icons.school, color: Colors.white),
+            ),
+            const SizedBox(width: 16),
+            const Text('Class Information'),
+          ],
+        ),
+        content: SizedBox(  // Added fixed width container
+          width: 400,
+          child: SingleChildScrollView(  // Make content scrollable
+            child: Column(
+              mainAxisSize: MainAxisSize.min,  // Important!
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: _ClassCodeTextField(
-                    controller: classCodeController,
-                    focusNode: classCodeFocusNode,
+                Text(
+                  classInfo.className,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(width: 10),
-                _RegisterButton(
-                  isEnabled: isRegisterButtonEnabled,
-                  onPressed: onRegister,
+                const SizedBox(height: 16),
+                _buildDialogInfoRow(
+                  icon: Icons.numbers,
+                  label: 'Class Code',
+                  value: classInfo.classId,
+                ),
+                _buildDialogInfoRow(
+                  icon: Icons.category,
+                  label: 'Type',
+                  value: classInfo.classType,
+                ),
+                _buildDialogInfoRow(
+                  icon: Icons.people,
+                  label: 'Capacity',
+                  value: '${classInfo.studentCount}/${classInfo.maxStudentAmount ?? "∞"}',
+                ),
+                _buildDialogInfoRow(
+                  icon: Icons.calendar_today,
+                  label: 'Period',
+                  value: '${classInfo.startDate} - ${classInfo.endDate}',
+                ),
+                _buildDialogInfoRow(
+                  icon: Icons.check_circle,
+                  label: 'Status',
+                  value: classInfo.status,
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 20),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(  // Using FilledButton for better emphasis
+            onPressed: () {
+              Navigator.pop(context);
+              setState(() {
+                if (!_selectedClassCodes.contains(classInfo.classId)) {
+                  _selectedClassCodes.add(classInfo.classId);
+                }
+              });
+              _classCodeController.clear();
+            },
+            child: const Text('Add to List'),
+          ),
         ],
       ),
     );
   }
-}
 
-class _ClassCodeTextField extends StatelessWidget {
-  final TextEditingController controller;
-  final FocusNode focusNode;
-
-  const _ClassCodeTextField({
-    required this.controller,
-    required this.focusNode,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return TextField(
-      controller: controller,
-      focusNode: focusNode,
-      keyboardType: TextInputType.number,
-      maxLength: 6,
-      decoration: InputDecoration(
-        labelText: 'Class Code',
-        labelStyle: TextStyle(color: theme.colorScheme.primary),
-        border: OutlineInputBorder(
-          borderSide: BorderSide(color: theme.colorScheme.primary),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: theme.colorScheme.primary),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: theme.colorScheme.primary),
-        ),
-        counterText: '',
-        suffixIcon: controller.text.isNotEmpty
-            ? IconButton(
-                icon: const Icon(Icons.clear),
-                onPressed: controller.clear,
-              )
-            : null,
-      ),
-    );
-  }
-}
-
-class _RegisterButton extends StatelessWidget {
-  final bool isEnabled;
-  final VoidCallback onPressed;
-
-  const _RegisterButton({
-    required this.isEnabled,
-    required this.onPressed,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return ElevatedButton(
-      onPressed: isEnabled ? onPressed : null,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: theme.colorScheme.primary,
-        foregroundColor: theme.colorScheme.onPrimary,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(4),
-        ),
-        disabledBackgroundColor: Colors.grey,
-      ),
-      child: const Text('Register'),
-    );
-  }
-}
-
-class _ClassRegistrationTable extends StatelessWidget {
-  final List<String> enteredClassCodes;
-  final Set<int> selectedRowIndices;
-  final ScrollController scrollController;
-  final ScrollController horizontalScrollController;
-  final Function(int, bool?) onSelectChanged;
-
-  const _ClassRegistrationTable({
-    required this.enteredClassCodes,
-    required this.selectedRowIndices,
-    required this.scrollController,
-    required this.horizontalScrollController,
-    required this.onSelectChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return enteredClassCodes.isEmpty
-        ? const Center(
-            child: Text('No classes registered yet'),
-          )
-        : LayoutBuilder(
-            builder: (context, constraints) {
-              return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: Container(
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      color: theme.colorScheme.primary,
-                      width: 2,
-                    ),
-                  ),
-                  child: Theme(
-                    data: Theme.of(context).copyWith(
-                      dataTableTheme: DataTableThemeData(
-                        headingRowColor: WidgetStateProperty.all(
-                          theme.colorScheme.primary,
-                        ),
-                        headingTextStyle: TextStyle(
-                          color: theme.colorScheme.onPrimary,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    child: SingleChildScrollView(
-                      controller: scrollController,
-                      child: SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        controller: horizontalScrollController,
-                        child: DataTable(
-                          columnSpacing: 16,
-                          horizontalMargin: 16,
-                          columns: [
-                            DataColumn(
-                              label: Text(
-                                'Class Code',
-                                style: TextStyle(
-                                  color: theme.colorScheme.onPrimary,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                            DataColumn(
-                              label: Text(
-                                'Associated Code',
-                                style: TextStyle(
-                                  color: theme.colorScheme.onPrimary,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                            DataColumn(
-                              label: Text(
-                                'Class Name',
-                                style: TextStyle(
-                                  color: theme.colorScheme.onPrimary,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                            DataColumn(
-                              label: Text(
-                                'Registration Status',
-                                style: TextStyle(
-                                  color: theme.colorScheme.onPrimary,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ],
-                          rows: enteredClassCodes
-                              .asMap()
-                              .entries
-                              .map((entry) => DataRow(
-                                    selected: selectedRowIndices.contains(entry.key),
-                                    onSelectChanged: (isSelected) =>
-                                        onSelectChanged(entry.key, isSelected),
-                                    cells: [
-                                      DataCell(
-                                        Text(
-                                          entry.value,
-                                          style: TextStyle(color: theme.colorScheme.primary),
-                                        ),
-                                      ),
-                                      DataCell(
-                                        Text(
-                                          'TBD',
-                                          style: TextStyle(color: theme.colorScheme.primary),
-                                        ),
-                                      ),
-                                      DataCell(
-                                        Text(
-                                          'TBD',
-                                          style: TextStyle(color: theme.colorScheme.primary),
-                                        ),
-                                      ),
-                                      DataCell(
-                                        Text(
-                                          'TBD',
-                                          style: TextStyle(color: theme.colorScheme.primary),
-                                        ),
-                                      ),
-                                    ],
-                                  ))
-                              .toList(),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            },
-          );
-  }
-}
-
-class _RegistrationActions extends StatelessWidget {
-  final VoidCallback onSubmit;
-  final VoidCallback onRemoveSelected;
-
-  const _RegistrationActions({
-    required this.onSubmit,
-    required this.onRemoveSelected,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+  Widget _buildDialogInfoRow({
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
     return Padding(
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         children: [
+          Icon(icon, size: 20, color: Theme.of(context).colorScheme.primary),
+          const SizedBox(width: 12),
           Expanded(
-            child: ElevatedButton(
-              onPressed: onSubmit,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: theme.colorScheme.primary,
-                foregroundColor: theme.colorScheme.onPrimary,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(4),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                    fontSize: 12,
+                  ),
                 ),
-              ),
-              child: const Text('Submit Registration'),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: ElevatedButton(
-              onPressed: onRemoveSelected,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: theme.colorScheme.primary,
-                foregroundColor: theme.colorScheme.onPrimary,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(4),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w500,
+                    fontSize: 14,
+                  ),
                 ),
-              ),
-              child: const Text(
-                'Remove Selected Classes',
-                textAlign: TextAlign.center,
-              ),
+              ],
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _AvailableClassesLink extends StatelessWidget {
-  const _AvailableClassesLink();
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return GestureDetector(
-      onTap: () {
-        // TODO: Implement navigation to available classes list
-      },
-      child: Text(
-        'List of currently available classes',
-        style: TextStyle(
-          color: theme.colorScheme.primary,
-          decoration: TextDecoration.underline,
-          decorationColor: theme.colorScheme.primary,
-        ),
       ),
     );
   }

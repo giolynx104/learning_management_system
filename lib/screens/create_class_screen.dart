@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:learning_management_system/services/class_service.dart';
+import 'package:learning_management_system/providers/auth_provider.dart';
 
 class CreateClassScreen extends HookConsumerWidget {
   const CreateClassScreen({super.key});
@@ -19,13 +22,59 @@ class CreateClassScreen extends HookConsumerWidget {
     final startDate = useState<DateTime?>(null);
     final endDate = useState<DateTime?>(null);
 
+    /// Status is set to 'ACTIVE' by default in the backend
+    /// This is handled server-side and doesn't need to be sent
+    /// in the create class request
+
+    Future<void> handleCreateClass() async {
+      if (formKey.currentState?.validate() ?? false) {
+        try {
+          final classService = ref.read(classServiceProvider.notifier);
+          final authState = await ref.read(authProvider.future);
+          
+          if (authState == null) {
+            throw Exception('Not authenticated');
+          }
+          
+          await classService.createClass(
+            token: authState.token,
+            classId: classCodeController.text,
+            className: classNameController.text,
+            classType: classType.value!,
+            startDate: startDate.value!,
+            endDate: endDate.value!,
+            maxStudentAmount: int.parse(maxStudentsController.text),
+            attachedCode: associatedClassCodeController.text.isNotEmpty 
+              ? associatedClassCodeController.text 
+              : null,
+            // Status is handled server-side and defaults to 'ACTIVE'
+          );
+
+          if (!context.mounted) return;
+          context.pop(true);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Class created successfully (Status: Active)',
+                style: TextStyle(color: Colors.white),
+              ),
+              backgroundColor: Colors.green,
+            ),
+          );
+        } catch (e) {
+          if (!context.mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error creating class: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
+
     return Scaffold(
       backgroundColor: theme.colorScheme.onPrimary,
-      appBar: AppBar(
-        backgroundColor: theme.colorScheme.primary,
-        title: Text('Create Class', style: TextStyle(color: theme.colorScheme.onPrimary)),
-        iconTheme: const IconThemeData(color: Colors.white),
-      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -34,7 +83,7 @@ class CreateClassScreen extends HookConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'Create a New Class',
+                'Create New Class',
                 style: TextStyle(
                   fontSize: 24.0,
                   fontWeight: FontWeight.bold,
@@ -46,16 +95,40 @@ class CreateClassScreen extends HookConsumerWidget {
               _buildTextField(
                 controller: classCodeController,
                 labelText: 'Class Code',
-                validator: (value) =>
-                    value?.isEmpty ?? true ? 'Please enter a class code' : null,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter a class code';
+                  }
+                  if (value.length != 6) {
+                    return 'Class code must be exactly 6 digits';
+                  }
+                  if (!RegExp(r'^[0-9]+$').hasMatch(value)) {
+                    return 'Class code must contain only digits';
+                  }
+                  return null;
+                },
+                maxLength: 6,
+                keyboardType: TextInputType.number,
                 theme: theme,
               ),
               const SizedBox(height: 16),
               _buildTextField(
                 controller: associatedClassCodeController,
-                labelText: 'Associated Class Code',
-                validator: (value) =>
-                    value?.isEmpty ?? true ? 'Please enter an associated class code' : null,
+                labelText: 'Associated Class Code (Optional)',
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return null; // Optional field
+                  }
+                  if (value.length != 6) {
+                    return 'Associated class code must be exactly 6 digits';
+                  }
+                  if (!RegExp(r'^[0-9]+$').hasMatch(value)) {
+                    return 'Associated class code must contain only digits';
+                  }
+                  return null;
+                },
+                maxLength: 6,
+                keyboardType: TextInputType.number,
                 theme: theme,
               ),
               const SizedBox(height: 16),
@@ -67,25 +140,34 @@ class CreateClassScreen extends HookConsumerWidget {
                 theme: theme,
               ),
               const SizedBox(height: 16),
-              _buildTextField(
-                controller: courseCodeController,
-                labelText: 'Course Code',
-                validator: (value) =>
-                    value?.isEmpty ?? true ? 'Please enter a course code' : null,
-                theme: theme,
-              ),
-              const SizedBox(height: 16),
               _buildDropdownField(
                 value: classType.value,
                 labelText: 'Class Type',
                 items: const [
-                  DropdownMenuItem(value: 'theory', child: Text('Theory')),
-                  DropdownMenuItem(value: 'exercise', child: Text('Exercise')),
-                  DropdownMenuItem(value: 'both', child: Text('Both')),
+                  DropdownMenuItem(value: 'Theory', child: Text('Theory')),
+                  DropdownMenuItem(value: 'Exercise', child: Text('Exercise')),
+                  DropdownMenuItem(value: 'Both', child: Text('Both')),
                 ],
                 onChanged: (value) => classType.value = value,
                 validator: (value) =>
                     value == null ? 'Please select a class type' : null,
+                theme: theme,
+              ),
+              const SizedBox(height: 16),
+              _buildTextField(
+                controller: maxStudentsController,
+                labelText: 'Maximum Students',
+                keyboardType: TextInputType.number,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter maximum number of students';
+                  }
+                  final number = int.tryParse(value);
+                  if (number == null || number <= 0) {
+                    return 'Please enter a valid number';
+                  }
+                  return null;
+                },
                 theme: theme,
               ),
               const SizedBox(height: 16),
@@ -102,51 +184,20 @@ class CreateClassScreen extends HookConsumerWidget {
                 onDateSelected: (date) => endDate.value = date,
                 theme: theme,
               ),
-              const SizedBox(height: 16),
-              _buildTextField(
-                controller: maxStudentsController,
-                labelText: 'Maximum Number of Students',
-                keyboardType: TextInputType.number,
-                validator: (value) => value?.isEmpty ?? true
-                    ? 'Please enter the maximum number of students'
-                    : null,
-                theme: theme,
-              ),
               const SizedBox(height: 32),
-              Center(
-                child: ElevatedButton(
-                  onPressed: () {
-                    if (formKey.currentState?.validate() ?? false) {
-                      // TODO: Implement class creation logic
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: theme.colorScheme.primary,
-                    foregroundColor: theme.colorScheme.onPrimary,
-                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: const Text(
-                    'CREATE CLASS',
-                    style: TextStyle(fontSize: 18.0),
+              ElevatedButton(
+                onPressed: handleCreateClass,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: theme.colorScheme.primary,
+                  foregroundColor: theme.colorScheme.onPrimary,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              Center(
-                child: GestureDetector(
-                  onTap: () {
-                    // TODO: Implement navigation to available classes list
-                  },
-                  child: Text(
-                    'List of currently available classes',
-                    style: TextStyle(
-                      color: theme.colorScheme.primary,
-                      decoration: TextDecoration.underline,
-                    ),
-                  ),
+                child: const Text(
+                  'Create Class',
+                  style: TextStyle(fontSize: 18.0),
                 ),
               ),
             ],
@@ -159,9 +210,10 @@ class CreateClassScreen extends HookConsumerWidget {
   Widget _buildTextField({
     required TextEditingController controller,
     required String labelText,
-    TextInputType? keyboardType,
-    String? Function(String?)? validator,
+    required FormFieldValidator<String> validator,
     required ThemeData theme,
+    TextInputType? keyboardType,
+    int? maxLength,
   }) {
     return TextFormField(
       controller: controller,
@@ -185,7 +237,9 @@ class CreateClassScreen extends HookConsumerWidget {
           borderSide: BorderSide(color: theme.colorScheme.error),
         ),
         errorStyle: TextStyle(color: theme.colorScheme.error),
+        counterText: '',
       ),
+      maxLength: maxLength,
       keyboardType: keyboardType,
       validator: validator,
     );

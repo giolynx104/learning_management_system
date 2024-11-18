@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:learning_management_system/components/pinned_item.dart';
 import 'package:learning_management_system/components/teams_item.dart';
 import 'package:learning_management_system/models/pinnedChannel.dart';
 import 'package:learning_management_system/models/teams.dart';
-import 'package:learning_management_system/services/storage_service.dart';
-import 'package:learning_management_system/providers/auth_provider.dart';
-import 'package:learning_management_system/routes/app_routes.dart';
-
+import 'package:learning_management_system/mixins/sign_out_mixin.dart';
 import 'package:go_router/go_router.dart';
+import 'package:learning_management_system/providers/auth_provider.dart';
 import 'package:learning_management_system/routes/routes.dart';
 
 class StudentHomeScreen extends ConsumerStatefulWidget {
@@ -18,20 +16,13 @@ class StudentHomeScreen extends ConsumerStatefulWidget {
   ConsumerState<StudentHomeScreen> createState() => _StudentHomeScreenState();
 }
 
-class _StudentHomeScreenState extends ConsumerState<StudentHomeScreen> {
+class _StudentHomeScreenState extends ConsumerState<StudentHomeScreen> with SignOutMixin {
   List<TeamsModel> teams = [];
   bool isClassesExpanded = false;
   bool isPinnedChannelExpanded = false;
-  int _selectedIndex = 2;
   List<PinnedChannelModel> pinnedChannels = [];
 
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-  }
-
-  void _getPinnedChanel() {
+  void _getPinnedChanel(){
     setState(() {
       pinnedChannels = PinnedChannelModel.getPinnedChannels();
     });
@@ -53,8 +44,6 @@ class _StudentHomeScreenState extends ConsumerState<StudentHomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: appBar(),
-      endDrawer: _buildDrawer(),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -64,9 +53,7 @@ class _StudentHomeScreenState extends ConsumerState<StudentHomeScreen> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _pinnedChannels(),
-                const SizedBox(height: 20),
-                _teams(),
+                _teams(), 
               ],
             ),
           ],
@@ -105,6 +92,7 @@ class _StudentHomeScreenState extends ConsumerState<StudentHomeScreen> {
 
   Widget _teams() {
     return ExpansionTile(
+      initiallyExpanded: true,
       title: const Text("Classes"),
       leading: Icon(
         isClassesExpanded ? Icons.arrow_drop_down : Icons.arrow_right,
@@ -123,7 +111,7 @@ class _StudentHomeScreenState extends ConsumerState<StudentHomeScreen> {
           itemCount: teams.length,
           itemBuilder: (context, index) {
             var team = teams[index];
-            return TeamsExpansionItem(
+            return TeamsItem(
               name: team.name,
               color: team.color,
               onMorePressed: () => _showTeamOptions(context, team),
@@ -169,131 +157,65 @@ class _StudentHomeScreenState extends ConsumerState<StudentHomeScreen> {
     );
   }
 
-  PreferredSizeWidget appBar() {
-    return AppBar(
-      title: const Text(
-        'QLDT',
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 20,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-      centerTitle: true,
-      backgroundColor: Colors.red,
-      elevation: 0.0,
-      actions: [
-        Builder(
-          // Wrap the Padding with Builder
-          builder: (context) => Padding(
-            padding: const EdgeInsets.only(right: 16.0),
-            child: GestureDetector(
-              onTap: () {
-                Scaffold.of(context).openEndDrawer();
-              },
-              child: const CircleAvatar(
-                backgroundColor: Colors.white,
-                child: Icon(Icons.person, color: Colors.red),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildDrawer() {
+    final userState = ref.watch(authProvider);
+
     return Drawer(
-      child: ListView(
-        padding: EdgeInsets.zero,
-        children: [
-          UserAccountsDrawerHeader(
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            accountName:
-                const Text('Student Name'), // Replace with actual user name
-            accountEmail:
-                const Text('student@example.com'), // Replace with actual email
-            currentAccountPicture: const CircleAvatar(
-              backgroundColor: Colors.white,
-              child: Icon(Icons.person, color: Colors.red),
-            ),
-          ),
-          ListTile(
-            leading: const Icon(Icons.person),
-            title: const Text('Profile'),
-            onTap: () {
-              // Handle profile tap
-              Navigator.pop(context);
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.settings),
-            title: const Text('Settings'),
-            onTap: () {
-              // Handle settings tap
-              Navigator.pop(context);
-            },
-          ),
-          const Divider(),
-          ListTile(
-            leading: const Icon(Icons.logout, color: Colors.red),
-            title: const Text('Sign Out', style: TextStyle(color: Colors.red)),
-            onTap: () => _handleSignOut(context),
-          ),
-        ],
+      child: userState.when(
+        data: (user) {
+          if (user == null) return const SizedBox.shrink();
+
+          return ListView(
+            padding: EdgeInsets.zero,
+            children: [
+              UserAccountsDrawerHeader(
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                accountName: Text('${user.firstName} ${user.lastName}'),
+                accountEmail: Text(user.email),
+                currentAccountPicture: user.avatar != null
+                    ? CircleAvatar(
+                        backgroundImage: NetworkImage(user.avatar!),
+                        backgroundColor: Colors.white,
+                      )
+                    : const CircleAvatar(
+                        backgroundColor: Colors.white,
+                        child: Icon(Icons.person, color: Colors.red),
+                      ),
+              ),
+              ListTile(
+                leading: const Icon(Icons.person),
+                title: const Text('Profile'),
+                onTap: () {
+                  context.pop();
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.settings),
+                title: const Text('Settings'),
+                onTap: () {
+                  context.pop();
+                },
+              ),
+              const Divider(),
+              ListTile(
+                leading: const Icon(Icons.logout, color: Colors.red),
+                title: const Text('Sign Out', style: TextStyle(color: Colors.red)),
+                onTap: () {
+                  context.pop();
+                  handleSignOut();
+                },
+              ),
+            ],
+          );
+        },
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, stack) => Center(
+          child: Text('Error loading user data: $error'),
+        ),
       ),
     );
-  }
-
-  void _handleSignOut(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Sign Out'),
-          content: const Text('Are you sure you want to sign out?'),
-          actions: [
-            TextButton(
-              child: const Text('Cancel'),
-              onPressed: () => Navigator.of(context).pop(),
-            ),
-            TextButton(
-              child:
-                  const Text('Sign Out', style: TextStyle(color: Colors.red)),
-              onPressed: () async {
-                Navigator.of(context).pop(); // Close dialog
-                await _signOut(context);
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Future<void> _signOut(BuildContext context) async {
-    try {
-      final storageService = StorageService();
-      await storageService.clearUserSession(); // Use the new method
-
-      if (!mounted) return;
-
-      // Clear user state
-      ref.read(userProvider.notifier).state = null;
-
-      // Navigate to sign in screen and remove all previous routes
-      Navigator.of(context).pushNamedAndRemoveUntil(
-        AppRoutes.signin,
-        (Route<dynamic> route) => false,
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to sign out. Please try again.')),
-      );
-    }
   }
 
   void _unpinChannel(PinnedChannelModel channel) {
@@ -314,39 +236,44 @@ class _StudentHomeScreenState extends ConsumerState<StudentHomeScreen> {
             children: <Widget>[
               Text(
                 team.name,
-                style:
-                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 10),
               ListTile(
                 leading: const Icon(Icons.description),
                 title: const Text('Tài liệu'),
                 onTap: () {
-                  Navigator.pop(context);
+                  context.pop(); // Use go_router
                 },
               ),
               ListTile(
                 leading: const Icon(Icons.event_busy),
                 title: const Text('Xin nghỉ'),
-                onTap: () => context.push(Routes.nestedAbsentRequest),
+                onTap: () {
+                  context.pop(); // Close bottom sheet first
+                  context.push(Routes.nestedAbsentRequest);
+                },
               ),
               ListTile(
                 leading: const Icon(Icons.assignment),
                 title: const Text('Bài tập'),
                 onTap: () {
-                  Navigator.pop(context);
+                  context.pop(); // Use go_router
                 },
               ),
               ListTile(
                 leading: const Icon(Icons.list_alt),
                 title: const Text('Danh sách khảo sát'),
-                onTap: () => context.push(Routes.nestedSurveyList),
+                onTap: () {
+                  context.pop(); // Close bottom sheet first
+                  context.push(Routes.nestedSurveyList);
+                },
               ),
               ListTile(
                 leading: const Icon(Icons.exit_to_app),
                 title: const Text('Rời khỏi nhóm'),
                 onTap: () {
-                  Navigator.pop(context);
+                  context.pop(); // Close bottom sheet using go_router
                   _showConfirmationDialog(context, team);
                 },
               ),
@@ -366,15 +293,11 @@ class _StudentHomeScreenState extends ConsumerState<StudentHomeScreen> {
           content: Text('Bạn có chắc chắn muốn rời khỏi nhóm "${team.name}"?'),
           actions: <Widget>[
             TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
+              onPressed: () => context.pop(), // Use go_router
               child: const Text('Hủy'),
             ),
             TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
+              onPressed: () => context.pop(), // Use go_router
               child: const Text('Xác nhận'),
             ),
           ],

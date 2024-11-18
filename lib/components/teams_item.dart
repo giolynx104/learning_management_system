@@ -1,54 +1,45 @@
 import 'package:flutter/material.dart';
 
-class TeamsExpansionItem extends StatefulWidget {
-  final String name;
+class TeamsItem extends StatelessWidget {
   final Color color;
   final IconData? icon;
-  final VoidCallback onMorePressed;
- 
-  const TeamsExpansionItem({super.key, 
-    required this.name,
+  final String name;
+  final VoidCallback? onMorePressed;
+
+  const TeamsItem({
     required this.color,
     this.icon,
-    required this.onMorePressed,
+    required this.name,
+    this.onMorePressed,
+    Key? key,
+  }) : super(key: key);
 
-  });
-
-  @override
-  State<TeamsExpansionItem> createState() => _TeamsExpansionItemState();
-}
-
-class _TeamsExpansionItemState extends State<TeamsExpansionItem> {
-  bool isExpanded = false;
   @override
   Widget build(BuildContext context) {
-    return ExpansionTile(
-      leading: Row(
-         mainAxisSize: MainAxisSize.min, 
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border(
+          bottom: BorderSide(color: Colors.grey.shade300),
+        ),
+      ),
+      child: Row(
         children: [
-          Icon(
-             isExpanded ? Icons.arrow_drop_down : Icons.arrow_right,
-          ),
           CircleAvatar(
-            backgroundColor: widget.color,
-            child: widget.icon != null ? Icon(widget.icon, color: Colors.white) : null,
+            backgroundColor: color,
+            child: icon != null ? Icon(icon, color: Colors.white) : null,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(name),
+          ),
+          IconButton(
+            icon: const Icon(Icons.more_horiz),
+            onPressed: onMorePressed,
           ),
         ],
       ),
-      title: Text(widget.name),
-      trailing:IconButton(
-            icon: const Icon(Icons.more_horiz),
-            onPressed: widget.onMorePressed, 
-          ),
-      onExpansionChanged: (bool expanded) {
-            setState(() => isExpanded = expanded); 
-          },
-      children: const [
-        ListTile(
-          title: Text('Chung'),
-          
-        ),
-      ],
     );
   }
 }

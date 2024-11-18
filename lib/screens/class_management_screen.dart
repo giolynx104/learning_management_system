@@ -1,420 +1,395 @@
 import 'package:flutter/material.dart';
-import 'dart:developer';
-import 'package:learning_management_system/routes/app_routes.dart';
+import 'package:go_router/go_router.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:learning_management_system/routes/routes.dart';
+import 'package:learning_management_system/models/class_list_model.dart';
+import 'package:learning_management_system/services/class_service.dart';
+import 'package:learning_management_system/providers/auth_provider.dart';
+import 'dart:async';
 
-class ClassManagementScreen extends StatefulWidget {
+class ClassManagementScreen extends ConsumerStatefulWidget {
   const ClassManagementScreen({super.key});
 
   @override
-  ClassManagementScreenState createState() => ClassManagementScreenState();
+  ConsumerState<ClassManagementScreen> createState() =>
+      ClassManagementScreenState();
 }
 
-class ClassManagementScreenState extends State<ClassManagementScreen> {
+class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
   final TextEditingController _classCodeController = TextEditingController();
   final FocusNode _classCodeFocusNode = FocusNode();
-  final List<String> _searchedClassCodes = [];
-  final Set<int> _selectedRowIndices = {};
-  final ScrollController _scrollController = ScrollController();
-  final ScrollController _horizontalScrollController = ScrollController();
-  bool _isSearchButtonEnabled = false;
+  late Timer _refreshTimer;
+  List<ClassListItem> _classList = [];
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _classCodeFocusNode.requestFocus();
+    _refreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (mounted) {
+        _refreshClassList();
+      }
     });
-    _classCodeController.addListener(_updateSearchButtonState);
+    _loadClassList();
   }
 
   @override
   void dispose() {
-    _classCodeController.removeListener(_updateSearchButtonState);
     _classCodeController.dispose();
     _classCodeFocusNode.dispose();
-    _scrollController.dispose();
-    _horizontalScrollController.dispose();
+    _refreshTimer.cancel();
     super.dispose();
   }
 
-  void _updateSearchButtonState() {
-    setState(() {
-      _isSearchButtonEnabled = _classCodeController.text.trim().length == 6;
-    });
-  }
-
-  void _searchClass() {
-    final classCode = _classCodeController.text.trim();
-    if (classCode.length == 6 && !_searchedClassCodes.contains(classCode)) {
-      setState(() {
-        _searchedClassCodes.add(classCode);
-        _classCodeController.clear();
-      });
-      log('Searched class code: $classCode');
-    } else if (_searchedClassCodes.contains(classCode)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('This class code has already been searched.'),
-          duration: Duration(seconds: 2),
-        ),
-      );
+  Future<void> _loadClassList() async {
+    try {
+      final authState = await ref.read(authProvider.future);
+      if (authState == null) {
+        throw Exception('Not authenticated');
+      }
+      final classes = await ref
+          .read(classServiceProvider.notifier)
+          .getClassList(authState.token);
+      if (mounted) {
+        setState(() {
+          _classList = classes;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString())),
+        );
+      }
     }
   }
 
+  void _refreshClassList() {
+    _loadClassList();
+  }
+
+  List<ClassListItem> _getFilteredClasses() {
+    if (_classList.isEmpty) {
+      return []; // Return empty list if there are no classes at all
+    }
+    
+    final searchTerm = _classCodeController.text.trim().toLowerCase();
+    if (searchTerm.isEmpty) {
+      return _classList; // Return all classes when search is empty
+    }
+    return _classList.where((classItem) => 
+      classItem.classId.toLowerCase().contains(searchTerm)
+    ).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Class Management'),
-      ),
-      body: Column(
+    final theme = Theme.of(context);
+    final filteredClasses = _getFilteredClasses();
+    final authState = ref.watch(authProvider);
+
+    return Material(
+      child: Stack(
         children: [
-          _ClassSearchForm(
-            classCodeController: _classCodeController,
-            classCodeFocusNode: _classCodeFocusNode,
-            isSearchButtonEnabled: _isSearchButtonEnabled,
-            onSearch: _searchClass,
-          ),
-          Expanded(
-            child: _ClassManagementTable(
-              searchedClassCodes: _searchedClassCodes,
-              selectedRowIndices: _selectedRowIndices,
-              scrollController: _scrollController,
-              horizontalScrollController: _horizontalScrollController,
-              onSelectChanged: (int index, bool? isSelected) {
-                setState(() {
-                  if (isSelected!) {
-                    _selectedRowIndices.add(index);
-                  } else {
-                    _selectedRowIndices.remove(index);
-                  }
-                });
-              },
-            ),
-          ),
-          _ManagementActions(
-            onCreateClass: () {
-              Navigator.pushNamed(context, AppRoutes.createClass);
-            },
-            onModifyClass: () {
-              Navigator.pushNamed(context, AppRoutes.modifyClass);
-            },
-          ),
-          const SizedBox(height: 16),
-          const _AvailableClassesLink(),
-          const SizedBox(height: 16),
-        ],
-      ),
-    );
-  }
-}
-
-class _ClassSearchForm extends StatelessWidget {
-  final TextEditingController classCodeController;
-  final FocusNode classCodeFocusNode;
-  final bool isSearchButtonEnabled;
-  final VoidCallback onSearch;
-
-  const _ClassSearchForm({
-    required this.classCodeController,
-    required this.classCodeFocusNode,
-    required this.isSearchButtonEnabled,
-    required this.onSearch,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          IntrinsicHeight(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Expanded(
-                  child: _ClassCodeTextField(
-                    controller: classCodeController,
-                    focusNode: classCodeFocusNode,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                _SearchButton(
-                  isEnabled: isSearchButtonEnabled,
-                  onPressed: onSearch,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 20),
-        ],
-      ),
-    );
-  }
-}
-
-class _ClassCodeTextField extends StatelessWidget {
-  final TextEditingController controller;
-  final FocusNode focusNode;
-
-  const _ClassCodeTextField({
-    required this.controller,
-    required this.focusNode,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return TextField(
-      controller: controller,
-      focusNode: focusNode,
-      keyboardType: TextInputType.number,
-      maxLength: 6,
-      decoration: InputDecoration(
-        labelText: 'Class Code',
-        labelStyle: TextStyle(color: theme.colorScheme.primary),
-        border: OutlineInputBorder(
-          borderSide: BorderSide(color: theme.colorScheme.primary),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: theme.colorScheme.primary),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: theme.colorScheme.primary),
-        ),
-        counterText: '',
-        suffixIcon: controller.text.isNotEmpty
-            ? IconButton(
-                icon: const Icon(Icons.clear),
-                onPressed: controller.clear,
-              )
-            : null,
-      ),
-    );
-  }
-}
-
-class _SearchButton extends StatelessWidget {
-  final bool isEnabled;
-  final VoidCallback onPressed;
-
-  const _SearchButton({
-    required this.isEnabled,
-    required this.onPressed,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return ElevatedButton(
-      onPressed: isEnabled ? onPressed : null,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: theme.colorScheme.primary,
-        foregroundColor: theme.colorScheme.onPrimary,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(4),
-        ),
-        disabledBackgroundColor: Colors.grey,
-      ),
-      child: const Text('Search'),
-    );
-  }
-}
-
-class _ClassManagementTable extends StatelessWidget {
-  final List<String> searchedClassCodes;
-  final Set<int> selectedRowIndices;
-  final ScrollController scrollController;
-  final ScrollController horizontalScrollController;
-  final Function(int, bool?) onSelectChanged;
-
-  const _ClassManagementTable({
-    required this.searchedClassCodes,
-    required this.selectedRowIndices,
-    required this.scrollController,
-    required this.horizontalScrollController,
-    required this.onSelectChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          child: Container(
-            decoration: BoxDecoration(
-              border: Border.all(
-                color: theme.colorScheme.primary,
-                width: 2,
-              ),
-            ),
-            child: Theme(
-              data: Theme.of(context).copyWith(
-                dataTableTheme: DataTableThemeData(
-                  headingRowColor: WidgetStateProperty.all(
-                    theme.colorScheme.primary,
-                  ),
-                  headingTextStyle: TextStyle(
-                    color: theme.colorScheme.onPrimary,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              child: SingleChildScrollView(
-                controller: scrollController,
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  controller: horizontalScrollController,
-                  child: DataTable(
-                    columnSpacing: 16,
-                    horizontalMargin: 16,
-                    columns: [
-                      DataColumn(
-                        label: Text(
-                          'Class Code',
-                          style: TextStyle(
-                            color: theme.colorScheme.onPrimary,
-                            fontWeight: FontWeight.bold,
-                          ),
+          Column(
+            children: [
+              // Search Class Card
+              Card(
+                margin: const EdgeInsets.all(16),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        'Search Class by Code',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                      DataColumn(
-                        label: Text(
-                          'Associated Code',
-                          style: TextStyle(
-                            color: theme.colorScheme.onPrimary,
-                            fontWeight: FontWeight.bold,
-                          ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: _classCodeController,
+                        focusNode: _classCodeFocusNode,
+                        decoration: const InputDecoration(
+                          labelText: 'Class Code',
+                          hintText: 'Enter class code',
+                          border: OutlineInputBorder(),
                         ),
-                      ),
-                      DataColumn(
-                        label: Text(
-                          'Class Name',
-                          style: TextStyle(
-                            color: theme.colorScheme.onPrimary,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                        onChanged: (value) {
+                          setState(() {});
+                        },
                       ),
                     ],
-                    rows: searchedClassCodes.isEmpty
-                        ? [
-                            DataRow(
-                              cells: [
-                                DataCell(Text('No data', style: TextStyle(color: theme.colorScheme.primary))),
-                                DataCell(Text('No data', style: TextStyle(color: theme.colorScheme.primary))),
-                                DataCell(Text('No data', style: TextStyle(color: theme.colorScheme.primary))),
-                              ],
-                            ),
-                          ]
-                        : searchedClassCodes
-                            .asMap()
-                            .entries
-                            .map((entry) => DataRow(
-                                  selected: selectedRowIndices.contains(entry.key),
-                                  onSelectChanged: (isSelected) =>
-                                      onSelectChanged(entry.key, isSelected),
-                                  cells: [
-                                    DataCell(
-                                      Text(
-                                        entry.value,
-                                        style: TextStyle(color: theme.colorScheme.primary),
-                                      ),
-                                    ),
-                                    DataCell(
-                                      Text(
-                                        'TBD',
-                                        style: TextStyle(color: theme.colorScheme.primary),
-                                      ),
-                                    ),
-                                    DataCell(
-                                      Text(
-                                        'TBD',
-                                        style: TextStyle(color: theme.colorScheme.primary),
-                                      ),
-                                    ),
-                                  ],
-                                ))
-                            .toList(),
                   ),
                 ),
               ),
-            ),
+
+              // Class List - Same for both roles
+              Expanded(
+                child: _classList.isEmpty
+                    ? const Center(child: Text('No classes available'))
+                    : filteredClasses.isEmpty
+                        ? const Center(child: Text('No matching classes found'))
+                        : ListView.builder(
+                            padding: const EdgeInsets.only(
+                              left: 16,
+                              right: 16,
+                              top: 16,
+                              bottom: 80,
+                            ),
+                            itemCount: filteredClasses.length,
+                            itemBuilder: (context, index) {
+                              final classItem = filteredClasses[index];
+                              return Card(
+                                margin: const EdgeInsets.only(bottom: 12),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(16.0),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              classItem.className,
+                                              style: theme.textTheme.titleMedium
+                                                  ?.copyWith(
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                          PopupMenuButton<String>(
+                                            onSelected: (value) =>
+                                                _handleClassAction(value, classItem),
+                                            itemBuilder: (BuildContext context) => [
+                                              const PopupMenuItem(
+                                                value: 'edit',
+                                                child: Text('Edit Class'),
+                                              ),
+                                              const PopupMenuItem(
+                                                value: 'delete',
+                                                child: Text('Delete Class',
+                                                    style:
+                                                        TextStyle(color: Colors.red)),
+                                              ),
+                                              const PopupMenuItem(
+                                                value: 'assignment',
+                                                child: Text('Assignments'),
+                                              ),
+                                              const PopupMenuItem(
+                                                value: 'files',
+                                                child: Text('Files'),
+                                              ),
+                                              const PopupMenuItem(
+                                                value: 'attendance',
+                                                child: Text('Attendance'),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 8),
+                                      _buildInfoRow('Class Code', classItem.classId),
+                                      if (classItem.attachedCode != null &&
+                                          classItem.attachedCode!.isNotEmpty)
+                                        _buildInfoRow('Associated Code',
+                                            classItem.attachedCode!),
+                                      _buildInfoRow('Type', classItem.classType),
+                                      _buildInfoRow('Status', classItem.status),
+                                      _buildInfoRow(
+                                          'Students', '${classItem.studentCount}'),
+                                      _buildInfoRow('Period',
+                                          '${classItem.startDate} - ${classItem.endDate}'),
+                                      if (classItem.lecturerName != null &&
+                                          classItem.lecturerName!.isNotEmpty)
+                                        _buildInfoRow(
+                                            'Lecturer', classItem.lecturerName!),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+              ),
+            ],
           ),
+          
+          // FAB - Different actions based on role
+          Positioned(
+            right: 16,
+            bottom: 16,
+            child: authState.whenOrNull(
+              data: (user) => user != null ? FloatingActionButton.extended(
+                onPressed: () async {
+                  if (user.role == 'STUDENT') {
+                    // Navigate to registration screen for students
+                    final result = await context.push('/class_management/register');
+                    if (result == true) {
+                      _refreshClassList();
+                    }
+                  } else {
+                    // Navigate to create class screen for teachers
+                    final result = await context.push(Routes.nestedCreateClass);
+                    if (result == true) {
+                      _refreshClassList();
+                    }
+                  }
+                },
+                icon: Icon(
+                  user.role == 'STUDENT' ? Icons.add_task : Icons.add,
+                ),
+                label: Text(
+                  user.role == 'STUDENT' ? 'Register for Class' : 'Create Class'
+                ),
+              ) : null,
+            ) ?? const SizedBox.shrink(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _handleClassAction(String action, ClassListItem classItem) {
+    switch (action) {
+      case 'edit':
+        debugPrint(
+            'ClassManagementScreen - ClassId: ${classItem.classId}, Type: ${classItem.classId.runtimeType}');
+        context.pushNamed(
+          Routes.modifyClass,
+          pathParameters: {'classId': classItem.classId.toString()},
+        ).then((result) {
+          if (result == true) {
+            _refreshClassList();
+          }
+        });
+        break;
+      case 'delete':
+        _showDeleteConfirmationDialog(classItem);
+        break;
+      case 'assignment':
+        context.push(Routes.nestedTeacherSurveyList);
+        break;
+      case 'files':
+        context.push(Routes.nestedUploadFile);
+        break;
+      case 'attendance':
+        context.push(Routes.nestedRollCallAction);
+        break;
+    }
+  }
+
+  Future<void> _showDeleteConfirmationDialog(ClassListItem classItem) async {
+    bool isDeleting = false;
+
+    return showDialog(
+      context: context,
+      barrierDismissible: false, // Prevent dismissing by tapping outside
+      builder: (BuildContext dialogContext) {
+        return StatefulBuilder(
+          // Use StatefulBuilder to update dialog state
+          builder: (context, setState) {
+            return Stack(
+              children: [
+                AlertDialog(
+                  title: const Text('Delete Class'),
+                  content: Text(
+                      'Are you sure you want to delete ${classItem.className}?'),
+                  actions: [
+                    TextButton(
+                      onPressed: isDeleting
+                          ? null
+                          : () => Navigator.of(dialogContext).pop(),
+                      child: const Text('Cancel'),
+                    ),
+                    TextButton(
+                      onPressed: isDeleting
+                          ? null
+                          : () async {
+                              setState(() => isDeleting = true);
+                              try {
+                                final authState =
+                                    await ref.read(authProvider.future);
+                                if (authState == null) {
+                                  throw Exception('Not authenticated');
+                                }
+
+                                await ref
+                                    .read(classServiceProvider.notifier)
+                                    .deleteClass(
+                                      token: authState.token,
+                                      classId: classItem.classId,
+                                    );
+
+                                if (!mounted) return;
+                                Navigator.of(dialogContext)
+                                    .pop(); // Close the dialog
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Class deleted successfully'),
+                                    backgroundColor: Colors.green,
+                                  ),
+                                );
+                                _refreshClassList();
+                              } catch (e) {
+                                setState(() => isDeleting =
+                                    false); // Reset loading state on error
+                                if (!mounted) return;
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Error deleting class: $e'),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                              }
+                            },
+                      child: const Text('Delete',
+                          style: TextStyle(color: Colors.red)),
+                    ),
+                  ],
+                ),
+                if (isDeleting)
+                  const Positioned.fill(
+                    child: Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                  ),
+              ],
+            );
+          },
         );
       },
     );
   }
-}
 
-class _ManagementActions extends StatelessWidget {
-  final VoidCallback onCreateClass;
-  final VoidCallback onModifyClass;
-
-  const _ManagementActions({
-    required this.onCreateClass,
-    required this.onModifyClass,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+  Widget _buildInfoRow(String label, String value) {
     return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Row(
-        children: [
-          Expanded(
-            child: ElevatedButton(
-              onPressed: onCreateClass,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: theme.colorScheme.primary,
-                foregroundColor: theme.colorScheme.onPrimary,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(4),
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              width: 120,
+              child: Text(
+                label,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-              child: const Text('Create Class'),
             ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: ElevatedButton(
-              onPressed: onModifyClass,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: theme.colorScheme.primary,
-                foregroundColor: theme.colorScheme.onPrimary,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(4),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                value,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w500,
                 ),
               ),
-              child: const Text('Modify Class'),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _AvailableClassesLink extends StatelessWidget {
-  const _AvailableClassesLink();
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return GestureDetector(
-      onTap: () {
-        // TODO: Implement navigation to available classes list
-      },
-      child: Text(
-        'List of currently available classes',
-        style: TextStyle(
-          color: theme.colorScheme.primary,
-          decoration: TextDecoration.underline,
-          decorationColor: theme.colorScheme.primary,
+          ],
         ),
       ),
     );
