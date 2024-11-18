@@ -92,7 +92,7 @@ final appRouter = GoRouter(
               routes: [
                 GoRoute(
                   path: Routes.absentRequest,
-                  builder: (context,state)=> const absenceRequestScreenNew(),
+                  builder: (context,state)=> const AbsenceRequestScreen(),
                   ),
                 GoRoute(
                   path: Routes.surveyList,

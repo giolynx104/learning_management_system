@@ -6,7 +6,7 @@ part 'signup_provider.g.dart';
 
 @riverpod
 Future<Map<String, dynamic>> signUp(
-  SignUpRef ref, {
+  Ref ref, {
   required String firstName,
   required String lastName,
   required String email,
