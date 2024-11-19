@@ -1,22 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:learning_management_system/services/survey_service.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:learning_management_system/providers/auth_provider.dart';
 
-class CreateSurveyScreen extends StatefulWidget {
-  const CreateSurveyScreen({super.key});
+class CreateSurveyScreen extends ConsumerStatefulWidget {
+  final String classId;
+  const CreateSurveyScreen({super.key, required this.classId});
 
   @override
   CreateSurveyScreenState createState() => CreateSurveyScreenState();
 }
 
-class CreateSurveyScreenState extends State<CreateSurveyScreen> {
+class CreateSurveyScreenState extends ConsumerState<CreateSurveyScreen> {
   final TextEditingController _surveyNameController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
 
-  DateTime? _startDateTime;
   DateTime? _endDateTime;
   String? _fileName;
-
+  PlatformFile? _selectedFile;
   bool _isSubmitEnabled = false;
 
   @override
@@ -106,7 +109,7 @@ class CreateSurveyScreenState extends State<CreateSurveyScreen> {
                 const SizedBox(height: 16.0),
                 _buildFilePickerButton(),
                 const SizedBox(height: 16.0),
-                _buildDateTimeSelectors(),
+                _buildDateTimeSelector(),
                 const SizedBox(height: 16.0),
                 _buildSubmitButton(),
               ],
@@ -152,13 +155,25 @@ class CreateSurveyScreenState extends State<CreateSurveyScreen> {
 
   Widget _buildFilePickerButton() {
     return ElevatedButton(
-      onPressed: _pickFile,
+      onPressed: () async {
+        FilePickerResult? result = await FilePicker.platform.pickFiles(
+          type: FileType.custom,
+          allowedExtensions: ['docx', 'png', 'pdf'],
+        );
+
+        if (result != null) {
+          setState(() {
+            _selectedFile = result.files.single;
+          });
+          _validateForm();
+        }
+      },
       style: ElevatedButton.styleFrom(
         backgroundColor: Colors.red[900],
         foregroundColor: Colors.white,
       ),
       child: Text(
-        _fileName ?? 'Tải tài liệu lên ▲',
+        _selectedFile?.name ?? 'Tải tài liệu lên    ▲',
         style: const TextStyle(
           fontSize: 16.0,
           fontStyle: FontStyle.italic,
@@ -168,22 +183,12 @@ class CreateSurveyScreenState extends State<CreateSurveyScreen> {
     );
   }
 
-  Widget _buildDateTimeSelectors() {
-    return Row(
-      children: [
-        Expanded(child: _buildDateTimeSelector(isStart: true)),
-        const SizedBox(width: 16.0),
-        Expanded(child: _buildDateTimeSelector(isStart: false)),
-      ],
-    );
-  }
-
-  Widget _buildDateTimeSelector({required bool isStart}) {
+  Widget _buildDateTimeSelector() {
     return InkWell(
-      onTap: () => _selectDateTime(context, isStart: isStart),
+      onTap: () => _selectDateTime(context),
       child: InputDecorator(
         decoration: InputDecoration(
-          labelText: isStart ? 'Bắt đầu' : 'Kết thúc',
+          labelText: 'Kết thúc',
           labelStyle: TextStyle(color: Colors.red[900]),
           filled: true,
           fillColor: Colors.white70,
@@ -202,7 +207,7 @@ class CreateSurveyScreenState extends State<CreateSurveyScreen> {
           suffixIcon: Icon(Icons.arrow_drop_down, color: Colors.red[900]),
         ),
         child: Text(
-          _formatDateTime(isStart ? _startDateTime : _endDateTime),
+          _formatDateTime(_endDateTime),
           style: TextStyle(color: Colors.red[900]),
         ),
       ),
@@ -217,7 +222,7 @@ class CreateSurveyScreenState extends State<CreateSurveyScreen> {
         foregroundColor: Colors.white,
       ),
       child: const Text(
-        'Submit',
+        'Create',
         style: TextStyle(
           fontSize: 16.0,
           fontStyle: FontStyle.italic,
@@ -227,22 +232,8 @@ class CreateSurveyScreenState extends State<CreateSurveyScreen> {
     );
   }
 
-  Future<void> _pickFile() async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['docx'],
-    );
 
-    if (result != null) {
-      setState(() {
-        _fileName = result.files.single.name;
-      });
-      _validateForm();
-    }
-  }
-
-  Future<void> _selectDateTime(BuildContext context,
-      {required bool isStart}) async {
+  Future<void> _selectDateTime(BuildContext context) async {
     final DateTime? pickedDate = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
@@ -258,18 +249,13 @@ class CreateSurveyScreenState extends State<CreateSurveyScreen> {
 
       if (context.mounted && pickedTime != null) {
         setState(() {
-          final selectedDateTime = DateTime(
+          _endDateTime = DateTime(
             pickedDate.year,
             pickedDate.month,
             pickedDate.day,
             pickedTime.hour,
             pickedTime.minute,
           );
-          if (isStart) {
-            _startDateTime = selectedDateTime;
-          } else {
-            _endDateTime = selectedDateTime;
-          }
         });
       }
     }
@@ -281,39 +267,56 @@ class CreateSurveyScreenState extends State<CreateSurveyScreen> {
         : DateFormat('hh:mm a - dd-MM-yyyy').format(dateTime);
   }
 
-  void _handleSubmit() {
-    final surveyName = _surveyNameController.text.trim();
+  Future<void> _handleSubmit() async {
+    print("Submit button clicked!"); // Debugging log
 
+    final surveyName = _surveyNameController.text.trim();
     if (surveyName.isEmpty) {
       _showSnackBar("Tên bài kiểm tra không được để trống");
+      print("Survey name is empty."); // Debugging log
       return;
     }
 
-    if (_descriptionController.text.isEmpty && _fileName == null) {
+    if (_descriptionController.text.isEmpty && _selectedFile == null) {
       _showSnackBar("Vui lòng nhập mô tả hoặc tải tài liệu lên");
+      print("Description and file are empty."); // Debugging log
       return;
     }
 
-    if (_startDateTime == null || _endDateTime == null) {
-      _showSnackBar(_startDateTime == null
-          ? "Chưa chọn thời gian bắt đầu"
-          : "Chưa chọn thời gian kết thúc");
+    if (_endDateTime == null) {
+      _showSnackBar("Chưa chọn thời gian kết thúc");
+      print("End date/time not selected."); // Debugging log
       return;
     }
 
-    if (_startDateTime!.isBefore(DateTime.now()) ||
-        _endDateTime!.isBefore(DateTime.now()) ||
-        _startDateTime!.isAfter(_endDateTime!)) {
-      _showSnackBar("Thời gian bắt đầu/kết thúc không hợp lệ");
-      return;
+    final authState = await ref.read(authProvider.future);
+    if (authState == null) {
+      print("Not authenticated.");
+      throw Exception('Not authenticated');
     }
+    final formattedDeadline = DateFormat("yyyy-MM-ddTHH:mm:ss").format(_endDateTime!);
 
-    _showSnackBar("Tạo bài kiểm tra thành công");
-    // Handle submit logic here
+    try {
+      final surveyService = ref.read(surveyServiceProvider.notifier);
+      await surveyService.createSurvey(
+        token: authState.token,
+        classId: widget.classId,
+        title: surveyName,
+        deadline: formattedDeadline,
+        description: _descriptionController.text,
+        file: _selectedFile!,
+      );
+      _showSnackBar("Tạo bài kiểm tra thành công!");
+      Future.delayed(Duration(milliseconds: 500));
+      Navigator.pop(context);
+    } catch (e) {
+      _showSnackBar("Lỗi khi tạo bài kiểm tra: $e");
+    }
   }
 
   void _showSnackBar(String message) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
   }
 }

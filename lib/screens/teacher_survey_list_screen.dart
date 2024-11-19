@@ -1,37 +1,56 @@
 import 'package:flutter/material.dart';
+import 'package:learning_management_system/services/survey_service.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:learning_management_system/models/survey.dart';
+import 'package:learning_management_system/providers/auth_provider.dart';
+import 'package:intl/intl.dart';  // Ensure this import is there
 import 'package:go_router/go_router.dart';
 import 'package:learning_management_system/routes/routes.dart';
-import 'package:intl/intl.dart';
-import 'package:learning_management_system/models/survey.dart';
 
-class TeacherSurveyListScreen extends StatefulWidget {
+class TeacherSurveyListScreen extends ConsumerStatefulWidget {
   const TeacherSurveyListScreen({super.key});
 
   @override
   TeacherSurveyListScreenState createState() => TeacherSurveyListScreenState();
 }
 
-class TeacherSurveyListScreenState extends State<TeacherSurveyListScreen> {
-  final List<TeacherSurvey> surveys = [
-    TeacherSurvey(
-      name: 'Survey 1',
-      description: 'Description for Survey 1',
-      file: 'path/to/survey1.docx',
-      responseCount: 10,
-      startTime: DateTime.now().subtract(const Duration(hours: 1)),
-      endTime: DateTime.now().add(const Duration(hours: 1)),
-      className: 'Math 101',
-    ),
-    TeacherSurvey(
-      name: 'Survey 2',
-      description: 'Description for Survey 2',
-      file: 'path/to/survey2.docx',
-      responseCount: 5,
-      startTime: DateTime.now().subtract(const Duration(hours: 2)),
-      endTime: DateTime.now().subtract(const Duration(hours: 1)),
-      className: 'Science 101',
-    ),
-  ];
+class TeacherSurveyListScreenState extends ConsumerState<TeacherSurveyListScreen> {
+  List<TeacherSurvey> surveys = [];
+
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
+  Future<void> _fetchSurveys() async {
+    final authState = await ref.read(authProvider.future);
+    if (authState == null) {
+      throw Exception('Not authenticated');
+    }
+    final surveyService = ref.read(surveyServiceProvider.notifier);
+
+    try {
+      final fetchedSurveys = await surveyService.getAllSurveys(
+        token: authState.token,
+        classId: '000253', // Replace with actual class ID
+      );
+
+      final surveyList = fetchedSurveys.map((json) => TeacherSurvey.teacherFromJson(json as Map<String, dynamic>)).toList();
+
+      setState(() {
+        surveys = surveyList; // Assign the updated list to the state
+      });
+    } catch (e) {
+      _showSnackBar('Error fetching surveys: $e');
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchSurveys();
+  }
 
   List<TeacherSurvey> getUpcomingSurveys() {
     return surveys
@@ -45,6 +64,32 @@ class TeacherSurveyListScreenState extends State<TeacherSurveyListScreen> {
         .where((survey) => survey.endTime.isBefore(DateTime.now()))
         .toList()
       ..sort((a, b) => a.endTime.compareTo(b.endTime));
+  }
+
+  Future<void> _deleteSurvey(String surveyId) async {
+    try {
+      final authState = await ref.read(authProvider.future);
+      if (authState == null) {
+        throw Exception('Not authenticated');
+      }
+
+      final surveyService = ref.read(surveyServiceProvider.notifier);
+
+      // Call the deleteSurvey method
+      await surveyService.deleteSurvey(
+        token: authState.token,
+        survey_id: surveyId,
+      );
+
+      // Reload surveys after deletion
+      await _fetchSurveys();
+
+      // Show success snackbar
+      _showSnackBar('Survey deleted successfully!');
+    } catch (e) {
+      // Show error snackbar
+      _showSnackBar('Error deleting survey: ${e.toString()}');
+    }
   }
 
   @override
@@ -84,15 +129,17 @@ class TeacherSurveyListScreenState extends State<TeacherSurveyListScreen> {
             SurveyTabContent(
               title: 'Active',
               surveys: getUpcomingSurveys(),
+              deleteSurvey: _deleteSurvey, // Pass delete function to the tab
             ),
             SurveyTabContent(
               title: 'Expired',
               surveys: getOverdueSurveys(),
+              deleteSurvey: _deleteSurvey, // Pass delete function to the tab
             ),
           ],
         ),
         floatingActionButton: FloatingActionButton(
-          onPressed: () => context.push(Routes.nestedCreateSurvey),
+          onPressed: () => context.push(Routes.nestedCreateSurvey, extra: '000253'),
           child: const Icon(Icons.add),
         ),
       ),
@@ -103,11 +150,13 @@ class TeacherSurveyListScreenState extends State<TeacherSurveyListScreen> {
 class SurveyTabContent extends StatelessWidget {
   final String title;
   final List<TeacherSurvey> surveys;
+  final Future<void> Function(String surveyId) deleteSurvey;
 
   const SurveyTabContent({
     super.key,
     required this.title,
     required this.surveys,
+    required this.deleteSurvey,
   });
 
   @override
@@ -119,10 +168,7 @@ class SurveyTabContent extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       itemBuilder: (context, index) {
         final survey = surveys[index];
-        final startTimeFormatted =
-            DateFormat('HH:mm dd-MM-yyyy').format(survey.startTime);
-        final endTimeFormatted =
-            DateFormat('HH:mm dd-MM-yyyy').format(survey.endTime);
+        final endTimeFormatted = DateFormat('HH:mm dd-MM-yyyy').format(survey.endTime);
 
         return Card(
           margin: const EdgeInsets.only(bottom: 12),
@@ -138,19 +184,17 @@ class SurveyTabContent extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            survey.name,
-                            style: theme.textTheme.titleLarge?.copyWith(
+                            endTimeFormatted,
+                            style: theme.textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'From: $startTimeFormatted',
-                            style: theme.textTheme.bodyMedium,
-                          ),
-                          Text(
-                            'To: $endTimeFormatted',
-                            style: theme.textTheme.bodyMedium,
+                            survey.name,
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ],
                       ),
@@ -173,8 +217,7 @@ class SurveyTabContent extends StatelessWidget {
                             children: [
                               Icon(Icons.delete, color: Colors.red),
                               SizedBox(width: 8),
-                              Text('Delete',
-                                  style: TextStyle(color: Colors.red)),
+                              Text('Delete', style: TextStyle(color: Colors.red)),
                             ],
                           ),
                         ),
@@ -189,25 +232,16 @@ class SurveyTabContent extends StatelessWidget {
                           ),
                         ),
                       ],
-                      onSelected: (value) {
+                      onSelected: (value) async {
                         switch (value) {
                           case 'edit':
-                            context.push(
-                              Routes.nestedEditSurvey,
-                              extra: TeacherSmallSurvey(
-                                name: survey.name,
-                                description: survey.description,
-                                file: survey.file,
-                                startTime: survey.startTime,
-                                endTime: survey.endTime,
-                              ),
-                            );
+                            context.push(Routes.nestedEditSurvey, extra: survey);
                             break;
                           case 'delete':
-                            // TODO: Implement delete
+                            await deleteSurvey(survey.id);
                             break;
                           case 'responses':
-                            // TODO: Implement view responses
+                          // TODO: Implement view responses
                             break;
                         }
                       },
@@ -221,17 +255,6 @@ class SurveyTabContent extends StatelessWidget {
                     style: theme.textTheme.bodyMedium,
                   ),
                 ],
-                const SizedBox(height: 8),
-                Text(
-                  'Responses: ${survey.responseCount}',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.primary,
-                  ),
-                ),
-                Text(
-                  'Class: ${survey.className}',
-                  style: theme.textTheme.bodyMedium,
-                ),
               ],
             ),
           ),
@@ -239,24 +262,4 @@ class SurveyTabContent extends StatelessWidget {
       },
     );
   }
-}
-
-class TeacherSurvey {
-  final String name;
-  final String? description;
-  final String? file;
-  final int responseCount;
-  final DateTime startTime;
-  final DateTime endTime;
-  final String className;
-
-  TeacherSurvey({
-    required this.name,
-    this.description,
-    this.file,
-    required this.responseCount,
-    required this.startTime,
-    required this.endTime,
-    required this.className,
-  });
 }

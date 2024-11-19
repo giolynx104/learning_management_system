@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:learning_management_system/models/survey.dart';
+import 'package:learning_management_system/services/survey_service.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:learning_management_system/providers/auth_provider.dart';
+import 'dart:io';
 
-class EditSurveyScreen extends StatefulWidget {
-  final TeacherSmallSurvey survey;
+class EditSurveyScreen extends ConsumerStatefulWidget {
+  final TeacherSurvey survey;
 
   const EditSurveyScreen({
     super.key,
@@ -15,15 +20,15 @@ class EditSurveyScreen extends StatefulWidget {
   EditSurveyScreenState createState() => EditSurveyScreenState();
 }
 
-class EditSurveyScreenState extends State<EditSurveyScreen> {
-  late TeacherSmallSurvey survey;
+class EditSurveyScreenState extends ConsumerState<EditSurveyScreen> {
+  late TeacherSurvey survey;
 
   final TextEditingController _surveyNameController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
 
-  DateTime? _startDateTime;
   DateTime? _endDateTime;
   String? _fileName;
+  String? _fileUrl;
 
   bool _isSubmitEnabled = false;
 
@@ -33,8 +38,8 @@ class EditSurveyScreenState extends State<EditSurveyScreen> {
     survey = widget.survey;
     _surveyNameController.text = survey.name;
     _descriptionController.text = survey.description ?? '';
-    _fileName = survey.file; // Prefill file name if exists
-    _startDateTime = survey.startTime; // Prefill start time
+    _fileName = survey.file; // Prefill file URL if exists
+    _fileUrl = survey.file; // Assuming the survey has a file URL
     _endDateTime = survey.endTime; // Prefill end time
 
     _surveyNameController.addListener(_validateForm);
@@ -47,18 +52,18 @@ class EditSurveyScreenState extends State<EditSurveyScreen> {
       final isNameNotEmpty = _surveyNameController.text.isNotEmpty;
       final isDescriptionOrFileNotEmpty = (_descriptionController.text.isNotEmpty || _fileName != null);
 
+      // Check if the file has changed
+      final isFileChanged = survey.file != _fileName;
+
       // Check for changes
       final isChanged = survey.name != _surveyNameController.text ||
           survey.description != _descriptionController.text ||
-          survey.file != _fileName ||
-          survey.startTime != _startDateTime ||
+          isFileChanged ||
           survey.endTime != _endDateTime;
 
-      _isSubmitEnabled = isChanged && isNameNotEmpty && isDescriptionOrFileNotEmpty;
+      _isSubmitEnabled = isChanged && isNameNotEmpty && isDescriptionOrFileNotEmpty && isFileChanged;
     });
   }
-
-// The rest of your existing code remains unchanged.
 
 
   @override
@@ -132,9 +137,9 @@ class EditSurveyScreenState extends State<EditSurveyScreen> {
                   ),
                 ),
                 const SizedBox(height: 16.0),
-                _buildFilePickerButton(),
+                _buildFileActionButtons(),
                 const SizedBox(height: 16.0),
-                _buildDateTimeSelectors(),
+                _buildEndDateSelector(),
                 const SizedBox(height: 16.0),
                 _buildSubmitButton(),
               ],
@@ -178,40 +183,65 @@ class EditSurveyScreenState extends State<EditSurveyScreen> {
     );
   }
 
-  Widget _buildFilePickerButton() {
-    return ElevatedButton(
-      onPressed: _pickFile,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.red[900],
-        foregroundColor: Colors.white,
-      ),
-      child: Text(
-        _fileName ?? 'Tải tài liệu lên ▲',
-        style: const TextStyle(
-          fontSize: 16.0,
-          fontStyle: FontStyle.italic,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDateTimeSelectors() {
-    return Row(
+  Widget _buildFileActionButtons() {
+    return Column(
       children: [
-        Expanded(child: _buildDateTimeSelector(isStart: true)),
-        const SizedBox(width: 16.0),
-        Expanded(child: _buildDateTimeSelector(isStart: false)),
+        ElevatedButton(
+          onPressed: _fileUrl != null ? _openFileLink : null,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.red[900],
+            foregroundColor: Colors.white,
+          ),
+          child: Text(
+            _fileUrl != null ? 'Link đề bài: ${_fileUrl?.split('/').last}' : 'Tải tài liệu lên ▲',
+            style: const TextStyle(
+              fontSize: 16.0,
+              fontStyle: FontStyle.italic,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+        if (_fileUrl != null)
+          TextButton(
+            onPressed: _pickNewFile,
+            child: const Text(
+              'Đổi file',
+              style: TextStyle(color: Colors.red),
+            ),
+          ),
       ],
     );
   }
 
-  Widget _buildDateTimeSelector({required bool isStart}) {
+  Future<void> _openFileLink() async {
+    if (_fileUrl != null && await canLaunchUrl(Uri.parse(_fileUrl!))) {
+      await launchUrl(Uri.parse(_fileUrl!));
+    } else {
+      _showSnackBar("Không thể mở đường dẫn tệp.");
+    }
+  }
+
+  Future<void> _pickNewFile() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['docx', 'png', 'pdf'],
+    );
+
+    if (result != null) {
+      setState(() {
+        _fileName = result.files.single.name;
+        _fileUrl = result.files.single.path; // You can change this to the desired file URL logic
+      });
+      _validateForm();
+    }
+  }
+
+  Widget _buildEndDateSelector() {
     return InkWell(
-      onTap: () => _selectDateTime(context, isStart: isStart),
+      onTap: () => _selectEndDate(context),
       child: InputDecorator(
         decoration: InputDecoration(
-          labelText: isStart ? 'Bắt đầu' : 'Kết thúc',
+          labelText: 'Kết thúc',
           labelStyle: TextStyle(color: Colors.red[900]),
           filled: true,
           fillColor: Colors.white70,
@@ -230,47 +260,14 @@ class EditSurveyScreenState extends State<EditSurveyScreen> {
           suffixIcon: Icon(Icons.arrow_drop_down, color: Colors.red[900]),
         ),
         child: Text(
-          _formatDateTime(isStart ? _startDateTime : _endDateTime),
+          _formatDateTime(_endDateTime),
           style: TextStyle(color: Colors.red[900]),
         ),
       ),
     );
   }
 
-  Widget _buildSubmitButton() {
-    return ElevatedButton(
-      onPressed: _isSubmitEnabled ? _handleSubmit : null,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: _isSubmitEnabled ? Colors.red[900] : Colors.grey,
-        foregroundColor: Colors.white,
-      ),
-      child: const Text(
-        'Submit',
-        style: TextStyle(
-          fontSize: 16.0,
-          fontStyle: FontStyle.italic,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
-  }
-
-  Future<void> _pickFile() async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['docx'],
-    );
-
-    if (result != null) {
-      setState(() {
-        _fileName = result.files.single.name;
-      });
-      _validateForm();
-    }
-  }
-
-  Future<void> _selectDateTime(BuildContext context,
-      {required bool isStart}) async {
+  Future<void> _selectEndDate(BuildContext context) async {
     final DateTime? pickedDate = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
@@ -286,18 +283,13 @@ class EditSurveyScreenState extends State<EditSurveyScreen> {
 
       if (context.mounted && pickedTime != null) {
         setState(() {
-          final selectedDateTime = DateTime(
+          _endDateTime = DateTime(
             pickedDate.year,
             pickedDate.month,
             pickedDate.day,
             pickedTime.hour,
             pickedTime.minute,
           );
-          if (isStart) {
-            _startDateTime = selectedDateTime;
-          } else {
-            _endDateTime = selectedDateTime;
-          }
         });
       }
     }
@@ -305,43 +297,73 @@ class EditSurveyScreenState extends State<EditSurveyScreen> {
 
   String _formatDateTime(DateTime? dateTime) {
     return dateTime == null
-        ? ''
-        : DateFormat('hh:mm a - dd-MM-yyyy').format(dateTime);
+        ? 'Chưa chọn'
+        : DateFormat('dd/MM/yyyy HH:mm').format(dateTime);
   }
 
-  void _handleSubmit() {
-    final surveyName = _surveyNameController.text.trim();
-
-    if (surveyName.isEmpty) {
-      _showSnackBar("Tên bài kiểm tra không được để trống");
+  void _handleSubmit() async {
+    if (_fileUrl == null || _fileName == null) {
+      _showSnackBar('Please select a file.');
       return;
     }
-
-    if (_descriptionController.text.isEmpty && _fileName == null) {
-      _showSnackBar("Vui lòng nhập mô tả hoặc tải tài liệu lên");
-      return;
+    final authState = await ref.read(authProvider.future);
+    if (authState == null) {
+      throw Exception('Not authenticated');
     }
+    final token = authState.token;  // Replace with the actual token from your auth provider
+    final assignmentId = survey.id;  // Assuming survey.id is the ID you need to send
+    final description = _descriptionController.text;
+    final deadline = _endDateTime != null
+        ? DateFormat("yyyy-MM-ddTHH:mm:ss").format(_endDateTime!)
+        : '';
 
-    if (_startDateTime == null || _endDateTime == null) {
-      _showSnackBar(_startDateTime == null
-          ? "Chưa chọn thời gian bắt đầu"
-          : "Chưa chọn thời gian kết thúc");
-      return;
+    // Create the file to upload
+    if (_fileUrl != null) {
+      try {
+        final file = PlatformFile(
+          path: _fileUrl!, // Ensure it's non-null by using '!'
+          name: _fileName!,
+          size: await File(_fileUrl!).length(),  // Calculate file size
+        );
+        final surveyService = ref.read(surveyServiceProvider.notifier);
+        await surveyService.editSurvey(
+          token: token,
+          assignmentId: assignmentId,
+          deadline: deadline,
+          description: description,
+          file: file,
+        );
+        _showSnackBar('Survey updated successfully!');
+        Future.delayed(Duration(milliseconds: 500));
+        Navigator.pop(context);
+      } catch (e) {
+        _showSnackBar('Error updating survey: ${e.toString()}');
+      }
+    } else {
+      _showSnackBar('File path is null, cannot upload file.');
     }
+  }
 
-    if (_startDateTime!.isBefore(DateTime.now()) ||
-        _endDateTime!.isBefore(DateTime.now()) ||
-        _startDateTime!.isAfter(_endDateTime!)) {
-      _showSnackBar("Thời gian bắt đầu/kết thúc không hợp lệ");
-      return;
-    }
-
-    _showSnackBar("Tạo bài kiểm tra thành công");
-    // Handle submit logic here
+  Widget _buildSubmitButton() {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: _isSubmitEnabled ? _handleSubmit : null,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.red[900],
+          foregroundColor: Colors.white,
+        ),
+        child: const Text(
+          'Edit',
+          style: TextStyle(fontSize: 16.0),
+        ),
+      ),
+    );
   }
 
   void _showSnackBar(String message) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
   }
 }

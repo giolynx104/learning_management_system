@@ -7,10 +7,10 @@ class Routes {
   static const String classRegistration = 'register';
   static const String absentRequest = 'absent_request';
   static const String nestedAbsentRequest = '/student_home/absent_request';
-  static const String surveyList = 'survey_list';
+  static const String surveyList = '/survey_list';
   static const String nestedSurveyList = '/student_home/survey_list';
   static const String submitSurvey = 'submit_survey';
-  static const String nestedSubmitSurvey = '/student_home/survey_list/submit_survey';
+  static const String nestedSubmitSurvey = 'student_home/survey_list/submit_survey';
   static const String teacherHome = '/teacher_home';
   static const String classManagement = '/class_management';
   static const String createClass = 'create_class';
@@ -30,8 +30,8 @@ class Routes {
   static const String teacherSurveyList = '/teacher_survey_list';
   static const String nestedTeacherSurveyList = '/teacher_home/teacher_survey_list';
   static const String createSurvey = 'create_survey';
-  static const String nestedCreateSurvey = '/teacher_home/teacher_survey_list/create_survey';
+  static const String nestedCreateSurvey = 'teacher_home/teacher_survey_list/create_survey';
   static const String editSurvey = 'edit_survey';
-  static const String nestedEditSurvey = '/teacher_home/teacher_survey_list/edit_survey';
+  static const String nestedEditSurvey = 'teacher_home/teacher_survey_list/edit_survey';
   static const String nestedClassRegistration = '/class_management/register';
 }

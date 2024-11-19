@@ -101,7 +101,7 @@ final appRouter = GoRouter(
                     GoRoute(
                       path: Routes.submitSurvey,
                       builder: (context, state) => SubmitSurveyScreen(
-                        survey: state.extra as SmallSurvey,
+                        survey: state.extra as Survey,
                       ),
                     ),
                   ],
@@ -159,13 +159,16 @@ final appRouter = GoRouter(
                   builder: (context, state) => const TeacherSurveyListScreen(),
                   routes: [
                     GoRoute(
-                        path: Routes.createSurvey,
-                        builder: (context, state) =>
-                            const CreateSurveyScreen()),
+                      path: Routes.createSurvey,
+                      builder: (context, state) {
+                        final classId = state.extra as String;
+                        return CreateSurveyScreen(classId: classId);
+                      },
+                    ),
                     GoRoute(
                       path: Routes.editSurvey,
                       builder: (context, state) => EditSurveyScreen(
-                        survey: state.extra as TeacherSmallSurvey,
+                        survey: state.extra as TeacherSurvey,
                       ),
                     ),
                   ],
