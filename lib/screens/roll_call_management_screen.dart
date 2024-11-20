@@ -4,7 +4,12 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:learning_management_system/routes/routes.dart';
 
 class RollCallScreen extends ConsumerWidget {
-  const RollCallScreen({super.key});
+  final String classId;
+  
+  const RollCallScreen({
+    super.key,
+    required this.classId,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -24,73 +29,86 @@ class RollCallScreen extends ConsumerWidget {
         backgroundColor: Theme.of(context).colorScheme.primary,
         foregroundColor: Theme.of(context).colorScheme.onPrimary,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              classInfo.name,
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                color: Theme.of(context).colorScheme.primary,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Class ID: ${classInfo.id}',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: Theme.of(context).colorScheme.secondary,
-              ),
-            ),
-            const SizedBox(height: 16),
-            _InfoCard(
-              title: 'Total Absences',
-              value: classInfo.totalAbsences.toString(),
-            ),
-            const SizedBox(height: 8),
-            _InfoCard(
-              title: 'Pending Absent Requests',
-              value: classInfo.pendingAbsentRequests.toString(),
-            ),
-            const SizedBox(height: 8),
-            _InfoCard(
-              title: 'Total Students',
-              value: classInfo.totalStudents.toString(),
-            ),
-            const SizedBox(height: 8),
-            _InfoCard(
-              title: 'Average Attendance',
-              value: '${(classInfo.averageAttendance * 100).toStringAsFixed(1)}%',
-            ),
-            const Spacer(),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  context.push(Routes.detailedRollCall);
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.secondary,
-                  foregroundColor: Theme.of(context).colorScheme.onSecondary,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  classInfo.name,
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
                 ),
-                child: const Text('View Detailed Roll Call'),
-              ),
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  context.push(Routes.rollCallAction);
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.primary,
-                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                const SizedBox(height: 8),
+                Text(
+                  'Class ID: ${classInfo.id}',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.secondary,
+                  ),
                 ),
-                child: const Text('Start Roll Call Now'),
-              ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: Column(
+                    children: [
+                      _InfoCard(
+                        title: 'Total Absences',
+                        value: classInfo.totalAbsences.toString(),
+                      ),
+                      const SizedBox(height: 8),
+                      _InfoCard(
+                        title: 'Pending Absent Requests',
+                        value: classInfo.pendingAbsentRequests.toString(),
+                      ),
+                      const SizedBox(height: 8),
+                      _InfoCard(
+                        title: 'Total Students',
+                        value: classInfo.totalStudents.toString(),
+                      ),
+                      const SizedBox(height: 8),
+                      _InfoCard(
+                        title: 'Average Attendance',
+                        value: '${(classInfo.averageAttendance * 100).toStringAsFixed(1)}%',
+                      ),
+                      const SizedBox(height: 24),
+                      ElevatedButton(
+                        onPressed: () {
+                          context.pushNamed(
+                            Routes.detailedRollCall,
+                            pathParameters: {'classId': classId},
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Theme.of(context).colorScheme.secondary,
+                          foregroundColor: Theme.of(context).colorScheme.onSecondary,
+                          minimumSize: const Size(double.infinity, 48),
+                        ),
+                        child: const Text('View Detailed Roll Call'),
+                      ),
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: () {
+                          context.pushNamed(
+                            Routes.rollCallAction,
+                            pathParameters: {'classId': classId},
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Theme.of(context).colorScheme.primary,
+                          foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                          minimumSize: const Size(double.infinity, 48),
+                        ),
+                        child: const Text('Start Roll Call Now'),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

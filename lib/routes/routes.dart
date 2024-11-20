@@ -17,11 +17,11 @@ class Routes {
   static const String nestedCreateClass = '/teacher_home/create_class';
   static const String modifyClass = 'modify/:classId';
   static const String nestedModifyClass = '/teacher_home/modify_class';
-  static const String rollCall = 'roll_call';
+  static const String rollCall = 'roll-call/:classId';
   static const String nestedRollCall = '/teacher_home/roll_call';
-  static const String detailedRollCall = 'detailed_roll_call';
+  static const String detailedRollCall = 'detailed-roll-call';
   static const String nestedDetailedRollCall = '/teacher_home/detailed_roll_call';
-  static const String rollCallAction = 'roll_call_action';
+  static const String rollCallAction = 'roll-call-action';
   static const String nestedRollCallAction = '/teacher_home/roll_call_action';
   static const String createAssignment = 'create_assignment';
   static const String nestedCreateAssignment = '/teacher_home/create_assignment';

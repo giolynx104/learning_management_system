@@ -276,7 +276,7 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
         context.push(Routes.nestedUploadFile);
         break;
       case 'attendance':
-        context.push(Routes.nestedRollCallAction);
+        context.push('/teacher_home/roll-call/${classItem.classId}');
         break;
     }
   }

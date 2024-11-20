@@ -144,7 +144,10 @@ final appRouter = GoRouter(
                 ),
                 GoRoute(
                   path: Routes.rollCall,
-                  builder: (context, state) => const RollCallScreen(),
+                  builder: (context, state) {
+                    final classId = state.pathParameters['classId'] ?? '';
+                    return RollCallScreen(classId: classId);
+                  },
                 ),
                 GoRoute(
                   path: Routes.detailedRollCall,
