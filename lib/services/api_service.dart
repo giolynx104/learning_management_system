@@ -8,7 +8,7 @@ class ApiService {
   final Dio _dio;
 
   ApiService() : _dio = Dio() {
-    _dio.options.baseUrl = 'http://160.30.168.228:8080'; // Replace with your actual base URL
+    _dio.options.baseUrl = 'http://160.30.168.228:8080';
     _dio.options.connectTimeout = const Duration(seconds: 5);
     _dio.options.receiveTimeout = const Duration(seconds: 3);
     _dio.options.headers = {
