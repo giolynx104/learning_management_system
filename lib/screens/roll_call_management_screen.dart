@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:learning_management_system/routes/routes.dart';
+import 'package:learning_management_system/providers/app_bar_provider.dart';
 
-class RollCallScreen extends ConsumerWidget {
+class RollCallScreen extends HookConsumerWidget {
   final String classId;
   
   const RollCallScreen({
@@ -13,8 +15,7 @@ class RollCallScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Mock data
-    const classInfo = ClassInfo(
+    final classInfo = ClassInfo(
       name: 'Advanced Mathematics',
       id: 'MATH301',
       totalAbsences: 45,
@@ -23,37 +24,57 @@ class RollCallScreen extends ConsumerWidget {
       averageAttendance: 0.92,
     );
 
+    final updateAppBar = useCallback(() {
+      Future(() {
+        ref.read(appBarProvider.notifier).updateAppBar(
+          title: 'Roll Call',
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.help_outline),
+              onPressed: () {
+                // Show help dialog
+              },
+            ),
+          ],
+        );
+      });
+    }, []);
+
+    useEffect(() {
+      updateAppBar();
+      return () {
+        Future(() {
+          ref.read(appBarProvider.notifier).reset();
+        });
+      };
+    }, const []);
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Class Roll Call'),
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        foregroundColor: Theme.of(context).colorScheme.onPrimary,
-      ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  classInfo.name,
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Class ID: ${classInfo.id}',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.secondary,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      Text(
+                        classInfo.name,
+                        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Class ID: ${classInfo.id}',
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.secondary,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
                       _InfoCard(
                         title: 'Total Absences',
                         value: classInfo.totalAbsences.toString(),
@@ -74,45 +95,64 @@ class RollCallScreen extends ConsumerWidget {
                         value: '${(classInfo.averageAttendance * 100).toStringAsFixed(1)}%',
                       ),
                       const SizedBox(height: 24),
-                      ElevatedButton(
-                        onPressed: () {
-                          context.pushNamed(
-                            Routes.detailedRollCall,
-                            pathParameters: {'classId': classId},
-                          );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Theme.of(context).colorScheme.secondary,
-                          foregroundColor: Theme.of(context).colorScheme.onSecondary,
-                          minimumSize: const Size(double.infinity, 48),
-                        ),
-                        child: const Text('View Detailed Roll Call'),
-                      ),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: () {
-                          context.pushNamed(
-                            Routes.rollCallAction,
-                            pathParameters: {'classId': classId},
-                          );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Theme.of(context).colorScheme.primary,
-                          foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                          minimumSize: const Size(double.infinity, 48),
-                        ),
-                        child: const Text('Start Roll Call Now'),
-                      ),
                     ],
                   ),
                 ),
-              ],
-            ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  ElevatedButton(
+                    onPressed: () {
+                      context.pushNamed(
+                        Routes.detailedRollCall,
+                        pathParameters: {'classId': classId},
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+                    child: const Text('View Detailed Roll Call'),
+                  ),
+                  const SizedBox(height: 8),
+                  ElevatedButton(
+                    onPressed: () {
+                      context.pushNamed(
+                        Routes.rollCallAction,
+                        pathParameters: {'classId': classId},
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+                    child: const Text('Start Roll Call Now'),
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
       ),
     );
   }
+}
+
+class ClassInfo {
+  final String name;
+  final String id;
+  final int totalAbsences;
+  final int pendingAbsentRequests;
+  final int totalStudents;
+  final double averageAttendance;
+
+  const ClassInfo({
+    required this.name,
+    required this.id,
+    required this.totalAbsences,
+    required this.pendingAbsentRequests,
+    required this.totalStudents,
+    required this.averageAttendance,
+  });
 }
 
 class _InfoCard extends StatelessWidget {
@@ -150,22 +190,4 @@ class _InfoCard extends StatelessWidget {
       ),
     );
   }
-}
-
-class ClassInfo {
-  final String name;
-  final String id;
-  final int totalAbsences;
-  final int pendingAbsentRequests;
-  final int totalStudents;
-  final double averageAttendance;
-
-  const ClassInfo({
-    required this.name,
-    required this.id,
-    required this.totalAbsences,
-    required this.pendingAbsentRequests,
-    required this.totalStudents,
-    required this.averageAttendance,
-  });
 }

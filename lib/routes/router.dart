@@ -151,12 +151,24 @@ final appRouter = GoRouter(
                 ),
                 GoRoute(
                   path: Routes.detailedRollCall,
-                  builder: (context, state) =>
-                      const DetailedRollCallInfoScreen(),
+                  builder: (context, state) {
+                    final classId = state.pathParameters['classId'];
+                    if (classId == null) {
+                      return const ErrorScreen(message: 'No class ID provided');
+                    }
+                    return DetailedRollCallInfoScreen(classId: classId);
+                  },
                 ),
                 GoRoute(
-                    path: Routes.rollCallAction,
-                    builder: (context, state) => const RollCallActionScreen()),
+                  path: Routes.rollCallAction,
+                  builder: (context, state) {
+                    final classId = state.pathParameters['classId'];
+                    if (classId == null) {
+                      return const ErrorScreen(message: 'No class ID provided');
+                    }
+                    return RollCallActionScreen(classId: classId);
+                  },
+                ),
                 GoRoute(
                   path: Routes.teacherSurveyList,
                   builder: (context, state) => const TeacherSurveyListScreen(),
@@ -226,6 +238,39 @@ final appRouter = GoRouter(
                     return ModifyClassScreen(classId: classId);
                   },
                 ),
+                GoRoute(
+                  path: 'roll-call/:classId',
+                  name: Routes.rollCall,
+                  builder: (context, state) {
+                    final classId = state.pathParameters['classId'];
+                    if (classId == null) {
+                      return const ErrorScreen(message: 'No class ID provided');
+                    }
+                    return RollCallScreen(classId: classId);
+                  },
+                ),
+                GoRoute(
+                  path: 'detailed-roll-call/:classId',
+                  name: Routes.detailedRollCall,
+                  builder: (context, state) {
+                    final classId = state.pathParameters['classId'];
+                    if (classId == null) {
+                      return const ErrorScreen(message: 'No class ID provided');
+                    }
+                    return DetailedRollCallInfoScreen(classId: classId);
+                  },
+                ),
+                GoRoute(
+                  path: 'roll-call-action/:classId',
+                  name: Routes.rollCallAction,
+                  builder: (context, state) {
+                    final classId = state.pathParameters['classId'];
+                    if (classId == null) {
+                      return const ErrorScreen(message: 'No class ID provided');
+                    }
+                    return RollCallActionScreen(classId: classId);
+                  },
+                ),
               ],
             ),
           ],
@@ -249,3 +294,32 @@ final appRouter = GoRouter(
     ),
   ],
 );
+
+// Add this error screen widget
+class ErrorScreen extends StatelessWidget {
+  final String message;
+  
+  const ErrorScreen({
+    super.key,
+    required this.message,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text('Error: $message'),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () => context.pop(),
+              child: const Text('Go Back'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

@@ -86,78 +86,88 @@ class _UploadFileScreenState extends State<UploadFileScreen> {
     );
   }
 
-  // Hàm tạo AppBar
-  AppBar _buildAppBar() {
-    return AppBar(
-      title: const Text('Upload File'),
-      leading: IconButton(
-        icon: const Icon(Icons.arrow_back),
-        onPressed: () => Navigator.of(context).pop(),
-      ),
-    );
-  }
-
-  // Hàm xây dựng danh sách file đã chọn
-  Widget _buildFileList() {
-    return ListView.builder(
-      itemCount: selectedFiles.length,
-      itemBuilder: (context, index) {
-        var file = selectedFiles[index];
-        return Card(
-          margin: const EdgeInsets.symmetric(vertical: 5),
-          child: ListTile(
-            leading: Icon(Icons.insert_drive_file, color: Theme.of(context).colorScheme.primary),
-            title: Text(file.name),
-            subtitle: Text('${(file.size / 1024).toStringAsFixed(2)} MB'), // Chuyển đổi size sang MB
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: Icon(Icons.edit, color: Theme.of(context).colorScheme.primary),
-                  onPressed: () => _editFileName(index),
-                ),
-                IconButton(
-                  icon: Icon(Icons.delete, color: Theme.of(context).colorScheme.error),
-                  onPressed: () => _removeFile(index),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: _buildAppBar(),
+      appBar: AppBar(
+        title: const Text('Upload File'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Nút chọn file và nút gửi
+            // Button section with proper constraints
             Row(
               children: [
-                ElevatedButton.icon(
-                  onPressed: _selectFiles,
-                  icon: const Icon(Icons.attach_file),
-                  label: const Text('Chọn File'),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: _selectFiles,
+                    icon: const Icon(Icons.attach_file),
+                    label: const Text('Choose File'),
+                  ),
                 ),
-                const Spacer(),
-                ElevatedButton(
-                  onPressed: () {
-                    // TODO: Add functionality to send files
-                  },
-                  child: const Text('Gửi'),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      // TODO: Add functionality to send files
+                    },
+                    child: const Text('Send'),
+                  ),
                 ),
               ],
             ),
             const SizedBox(height: 20),
-            // Kiểm tra nếu có file nào được chọn
-            selectedFiles.isNotEmpty
-                ? Expanded(child: _buildFileList()) // Hiện danh sách file
-                : const Center(child: Text('Chưa có file nào được chọn.')), // Thông báo không có file
+            // File list section
+            Expanded(
+              child: selectedFiles.isEmpty
+                  ? const Center(
+                      child: Text('No files selected.'),
+                    )
+                  : ListView.builder(
+                      itemCount: selectedFiles.length,
+                      itemBuilder: (context, index) {
+                        var file = selectedFiles[index];
+                        return Card(
+                          margin: const EdgeInsets.symmetric(vertical: 5),
+                          child: ListTile(
+                            leading: Icon(
+                              Icons.insert_drive_file,
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                            title: Text(file.name),
+                            subtitle: Text(
+                              '${(file.size / 1024).toStringAsFixed(2)} MB',
+                            ),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: Icon(
+                                    Icons.edit,
+                                    color: Theme.of(context).colorScheme.primary,
+                                  ),
+                                  onPressed: () => _editFileName(index),
+                                ),
+                                IconButton(
+                                  icon: Icon(
+                                    Icons.delete,
+                                    color: Theme.of(context).colorScheme.error,
+                                  ),
+                                  onPressed: () => _removeFile(index),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+            ),
           ],
         ),
       ),

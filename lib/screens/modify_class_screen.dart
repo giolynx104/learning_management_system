@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:learning_management_system/models/class_model.dart';
 import 'package:learning_management_system/services/class_service.dart';
 import 'package:learning_management_system/providers/auth_provider.dart';
+import 'package:learning_management_system/providers/app_bar_provider.dart';
 
 class ModifyClassScreen extends HookConsumerWidget {
   final String classId;
@@ -23,6 +24,33 @@ class ModifyClassScreen extends HookConsumerWidget {
     final formKey = useMemoized(() => GlobalKey<FormState>());
     final isLoading = useState(false);
     final classData = useState<ClassModel?>(null);
+
+    // Create a callback for app bar updates
+    final updateAppBar = useCallback(() {
+      Future(() {
+        ref.read(appBarProvider.notifier).updateAppBar(
+          title: 'Modify Class',
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.help_outline),
+              onPressed: () {
+                // Show help dialog
+              },
+            ),
+          ],
+        );
+      });
+    }, []);
+
+    // Use the callback in useEffect
+    useEffect(() {
+      updateAppBar();
+      return () {
+        Future(() {
+          ref.read(appBarProvider.notifier).reset();
+        });
+      };
+    }, const []);
 
     // Load class data when screen opens
     useEffect(() {
@@ -51,7 +79,6 @@ class ModifyClassScreen extends HookConsumerWidget {
               backgroundColor: Colors.red,
             ),
           );
-          // Navigate back if we can't load the class data
           context.pop();
         } finally {
           if (context.mounted) {
@@ -122,11 +149,6 @@ class ModifyClassScreen extends HookConsumerWidget {
 
     return Scaffold(
       backgroundColor: theme.colorScheme.onPrimary,
-      appBar: AppBar(
-        backgroundColor: theme.colorScheme.primary,
-        title: Text('Modify Class', style: TextStyle(color: theme.colorScheme.onPrimary)),
-        iconTheme: const IconThemeData(color: Colors.white),
-      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -141,7 +163,6 @@ class ModifyClassScreen extends HookConsumerWidget {
                   fontWeight: FontWeight.bold,
                   color: theme.colorScheme.primary,
                 ),
-                textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
               Text('Class Code: ${classData.value!.classId}', 

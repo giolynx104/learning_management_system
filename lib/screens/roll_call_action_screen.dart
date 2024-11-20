@@ -3,15 +3,45 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:learning_management_system/routes/routes.dart';
 import 'package:go_router/go_router.dart';
+import 'package:learning_management_system/providers/app_bar_provider.dart';
 
 class RollCallActionScreen extends ConsumerStatefulWidget {
-  const RollCallActionScreen({super.key});
+  final String classId;
+  
+  const RollCallActionScreen({
+    super.key,
+    required this.classId,
+  });
 
   @override
   ConsumerState<RollCallActionScreen> createState() => _RollCallActionScreenState();
 }
 
 class _RollCallActionScreenState extends ConsumerState<RollCallActionScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(appBarProvider.notifier).updateAppBar(
+        title: 'Take Roll Call',
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.history),
+            onPressed: () {
+              // Show roll call history
+            },
+          ),
+        ],
+      );
+    });
+  }
+
+  @override
+  void dispose() {
+    ref.read(appBarProvider.notifier).reset();
+    super.dispose();
+  }
+
   final ClassInfo classInfo = const ClassInfo(
     name: 'Advanced Mathematics',
     id: 'MATH301',
@@ -83,15 +113,13 @@ class _RollCallActionScreenState extends ConsumerState<RollCallActionScreen> {
     final formattedDate = DateFormat('yyyy-MM-dd – HH:mm').format(now);
 
     return Scaffold(
-      body: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            color: Colors.red[900],
-            child: SafeArea(
-              bottom: false,
+      body: SafeArea(
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              color: Colors.red[900],
               child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Expanded(
                     child: Column(
@@ -120,76 +148,83 @@ class _RollCallActionScreenState extends ConsumerState<RollCallActionScreen> {
                       ],
                     ),
                   ),
-                  ElevatedButton(
-                    onPressed: () {
-                      // TODO: Implement submit roll call
-                    },
-                    child: const Text('Submit'),
+                  const SizedBox(width: 8),
+                  SizedBox(
+                    width: 100,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        // TODO: Implement submit roll call
+                      },
+                      child: const Text('Submit'),
+                    ),
                   ),
                   const SizedBox(width: 8),
-                  ElevatedButton(
-                    onPressed: _showCancelConfirmationDialog,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: Colors.red[900],
+                  SizedBox(
+                    width: 100,
+                    child: ElevatedButton(
+                      onPressed: _showCancelConfirmationDialog,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: Colors.red[900],
+                      ),
+                      child: const Text('Cancel'),
                     ),
-                    child: const Center(child: Text('Cancel')),
                   ),
                 ],
               ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                ElevatedButton(
-                  onPressed: () {
-                    setState(() {
-                      showOnlyAbsent = !showOnlyAbsent;
-                    });
-                  },
-                  child: Text(showOnlyAbsent ? 'Show All' : 'Show Only Absent'),
-                ),
-                Text('Total Present: ${students.where((s) => s.isPresent).length}'),
-              ],
-            ),
-          ),
-          Expanded(
-            child: SingleChildScrollView(
-              scrollDirection: Axis.vertical,
-              child: DataTable(
-                columns: const [
-                  DataColumn(label: Text('Name')),
-                  DataColumn(label: Text('Student ID')),
-                  DataColumn(label: Text('Present')),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  ElevatedButton(
+                    onPressed: () {
+                      setState(() {
+                        showOnlyAbsent = !showOnlyAbsent;
+                      });
+                    },
+                    child: Text(showOnlyAbsent ? 'Show All' : 'Show Only Absent'),
+                  ),
+                  Text('Total Present: ${students.where((s) => s.isPresent).length}'),
                 ],
-                rows: students
-                    .where((student) => !showOnlyAbsent || !student.isPresent)
-                    .map(
-                      (student) => DataRow(
-                        cells: [
-                          DataCell(Text(student.name)),
-                          DataCell(Text(student.id)),
-                          DataCell(
-                            Checkbox(
-                              value: student.isPresent,
-                              onChanged: (bool? value) {
-                                setState(() {
-                                  student.isPresent = value ?? true;
-                                });
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                    .toList(),
               ),
             ),
-          ),
-        ],
+            Expanded(
+              child: SingleChildScrollView(
+                scrollDirection: Axis.vertical,
+                child: DataTable(
+                  columns: const [
+                    DataColumn(label: Text('Name')),
+                    DataColumn(label: Text('Student ID')),
+                    DataColumn(label: Text('Present')),
+                  ],
+                  rows: students
+                      .where((student) => !showOnlyAbsent || !student.isPresent)
+                      .map(
+                        (student) => DataRow(
+                          cells: [
+                            DataCell(Text(student.name)),
+                            DataCell(Text(student.id)),
+                            DataCell(
+                              Checkbox(
+                                value: student.isPresent,
+                                onChanged: (bool? value) {
+                                  setState(() {
+                                    student.isPresent = value ?? true;
+                                  });
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                      .toList(),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

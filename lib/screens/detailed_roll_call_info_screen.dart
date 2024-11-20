@@ -1,48 +1,60 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:learning_management_system/providers/app_bar_provider.dart';
 
-class DetailedRollCallInfoScreen extends ConsumerStatefulWidget {
-  const DetailedRollCallInfoScreen({super.key});
-
-  @override
-  ConsumerState<DetailedRollCallInfoScreen> createState() =>
-      _DetailedRollCallInfoScreenState();
-}
-
-class _DetailedRollCallInfoScreenState
-    extends ConsumerState<DetailedRollCallInfoScreen> {
-  final TextEditingController _searchController = TextEditingController();
-  bool _isSearchingById = false;
-  List<Student> _filteredStudents = [];
+class DetailedRollCallInfoScreen extends HookConsumerWidget {
+  final String classId;
+  
+  const DetailedRollCallInfoScreen({
+    super.key,
+    required this.classId,
+  });
 
   @override
-  void initState() {
-    super.initState();
-    _filteredStudents = mockStudents;
-  }
+  Widget build(BuildContext context, WidgetRef ref) {
+    final TextEditingController _searchController = useTextEditingController();
+    final isSearchingById = useState(false);
+    final filteredStudents = useState(mockStudents);
 
-  void _filterStudents(String query) {
-    setState(() {
+    useEffect(() {
+      ref.read(appBarProvider.notifier).updateAppBar(
+        title: 'Roll Call Details',
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.filter_list),
+            onPressed: () {
+              // Show filter options
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.download),
+            onPressed: () {
+              // Export attendance data
+            },
+          ),
+        ],
+      );
+      return () {
+        ref.read(appBarProvider.notifier).reset();
+      };
+    }, const []);
+
+    void filterStudents(String query) {
       if (query.isEmpty) {
-        _filteredStudents = mockStudents;
+        filteredStudents.value = mockStudents;
       } else {
-        _filteredStudents = mockStudents.where((student) {
-          if (_isSearchingById) {
+        filteredStudents.value = mockStudents.where((student) {
+          if (isSearchingById.value) {
             return student.id.toLowerCase().contains(query.toLowerCase());
           } else {
             return student.name.toLowerCase().contains(query.toLowerCase());
           }
         }).toList();
       }
-    });
-  }
+    }
 
-  @override
-  Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Detailed Roll Call Info'),
-      ),
       body: Column(
         children: [
           Padding(
@@ -54,22 +66,20 @@ class _DetailedRollCallInfoScreenState
                     controller: _searchController,
                     decoration: InputDecoration(
                       hintText:
-                          'Search by ${_isSearchingById ? 'ID' : 'Name'}',
+                          'Search by ${isSearchingById.value ? 'ID' : 'Name'}',
                       prefixIcon: const Icon(Icons.search),
                     ),
-                    onChanged: _filterStudents,
+                    onChanged: filterStudents,
                   ),
                 ),
                 const SizedBox(width: 8),
                 ElevatedButton(
                   onPressed: () {
-                    setState(() {
-                      _isSearchingById = !_isSearchingById;
-                      _searchController.clear();
-                      _filterStudents('');
-                    });
+                    isSearchingById.value = !isSearchingById.value;
+                    _searchController.clear();
+                    filterStudents('');
                   },
-                  child: Text('Search by ${_isSearchingById ? 'Name' : 'ID'}'),
+                  child: Text('Search by ${isSearchingById.value ? 'Name' : 'ID'}'),
                 ),
               ],
             ),
@@ -85,7 +95,7 @@ class _DetailedRollCallInfoScreenState
                     DataColumn(label: Text('Total Absences')),
                     DataColumn(label: Text('Student ID')),
                   ],
-                  rows: _filteredStudents
+                  rows: filteredStudents.value
                       .map(
                         (student) => DataRow(
                           cells: [

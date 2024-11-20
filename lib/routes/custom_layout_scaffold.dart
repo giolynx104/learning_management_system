@@ -4,6 +4,7 @@ import 'package:learning_management_system/routes/destinations.dart';
 import 'package:learning_management_system/mixins/sign_out_mixin.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:learning_management_system/providers/auth_provider.dart';
+import 'package:learning_management_system/providers/app_bar_provider.dart';
 
 class LayoutScaffold extends ConsumerStatefulWidget {
   final StatefulNavigationShell navigationShell;
@@ -19,31 +20,41 @@ class LayoutScaffold extends ConsumerStatefulWidget {
 }
 
 class _LayoutScaffoldState extends ConsumerState<LayoutScaffold> with SignOutMixin {
-  String appBarTitle = "Microsoft Teams";
-
   @override
   void initState() {
     super.initState();
-    appBarTitle = widget.destinations[widget.navigationShell.currentIndex].label;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(appBarProvider.notifier).updateAppBar(
+        title: widget.destinations[widget.navigationShell.currentIndex].label,
+      );
+    });
   }
 
   void updateAppBarTitle(int index) {
-    setState(() {
-      appBarTitle = widget.destinations[index].label;
-    });
+    ref.read(appBarProvider.notifier).updateAppBar(
+      title: widget.destinations[index].label,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final appBarState = ref.watch(appBarProvider);
+
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        title: Text(
-          appBarTitle,
-          style: TextStyle(color: Theme.of(context).colorScheme.onPrimary),
-        ),
-        iconTheme: IconThemeData(color: Theme.of(context).colorScheme.onPrimary),
-      ),
+      appBar: appBarState.showDefaultAppBar
+          ? appBarState.customAppBar as PreferredSizeWidget? ??
+              AppBar(
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                title: Text(
+                  appBarState.title,
+                  style: TextStyle(color: Theme.of(context).colorScheme.onPrimary),
+                ),
+                actions: appBarState.actions,
+                iconTheme: IconThemeData(
+                  color: Theme.of(context).colorScheme.onPrimary,
+                ),
+              )
+          : null,
       drawer: Consumer(
         builder: (context, ref, child) {
           final userState = ref.watch(authProvider);

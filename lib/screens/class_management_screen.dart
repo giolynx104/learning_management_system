@@ -5,6 +5,7 @@ import 'package:learning_management_system/routes/routes.dart';
 import 'package:learning_management_system/models/class_list_model.dart';
 import 'package:learning_management_system/services/class_service.dart';
 import 'package:learning_management_system/providers/auth_provider.dart';
+import 'package:learning_management_system/providers/app_bar_provider.dart';
 import 'dart:async';
 
 class ClassManagementScreen extends ConsumerStatefulWidget {
@@ -24,6 +25,25 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(appBarProvider.notifier).updateAppBar(
+        title: 'Class Management',
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.search),
+            onPressed: () {
+              // Show search functionality
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.filter_list),
+            onPressed: () {
+              // Show filter options
+            },
+          ),
+        ],
+      );
+    });
     _refreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
       if (mounted) {
         _refreshClassList();
@@ -37,6 +57,7 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
     _classCodeController.dispose();
     _classCodeFocusNode.dispose();
     _refreshTimer.cancel();
+    ref.read(appBarProvider.notifier).reset();
     super.dispose();
   }
 
@@ -276,7 +297,30 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
         context.push(Routes.nestedUploadFile);
         break;
       case 'attendance':
-        context.push('/teacher_home/roll-call/${classItem.classId}');
+        ref.read(appBarProvider.notifier).updateAppBar(
+          title: 'Attendance - ${classItem.className}',
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.history),
+              onPressed: () {
+                // Show attendance history
+              },
+            ),
+          ],
+        );
+        context.pushNamed(
+          Routes.rollCall,
+          pathParameters: {'classId': classItem.classId.toString()},
+        );
+        break;
+      case 'modify':
+        ref.read(appBarProvider.notifier).updateAppBar(
+          title: 'Modify - ${classItem.className}',
+        );
+        context.pushNamed(
+          Routes.modifyClass,
+          pathParameters: {'classId': classItem.classId.toString()},
+        );
         break;
     }
   }
