@@ -7,7 +7,7 @@ part 'api_client.g.dart';
 @riverpod
 Dio apiClient(Ref ref) {
   return Dio(BaseOptions(
-    baseUrl: 'http://160.30.168.228:8080',
+    baseUrl: 'http://157.66.24.126:8080',
     validateStatus: (status) => true,
   ));
 } 

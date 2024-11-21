@@ -64,7 +64,7 @@ class ModifyClassScreen extends HookConsumerWidget {
 
           debugPrint('ModifyClassScreen - Fetching data for ClassId: $classId');
           final response = await ref.read(classServiceProvider.notifier).getClassInfo(
-            token: authState.token,
+            token: authState.token ?? '',
             classId: classId,
           );
           
@@ -117,7 +117,7 @@ class ModifyClassScreen extends HookConsumerWidget {
           }
 
           await classService.editClass(
-            token: authState.token,
+            token: authState.token ?? '',
             classId: classId,
             className: classNameController.text,
             status: status.value,

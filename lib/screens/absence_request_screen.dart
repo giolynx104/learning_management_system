@@ -55,7 +55,7 @@ class _AbsenceRequestScreenState extends State<AbsenceRequestScreen> {
 
     try {
       final response = await http.post(
-        Uri.parse('http://160.30.168.228:8080/it5023e/request_absence'),
+        Uri.parse('http://157.66.24.126:8080/it5023e/request_absence'),
         headers: {
           'Content-Type': 'application/json; charset=UTF-8',
         },

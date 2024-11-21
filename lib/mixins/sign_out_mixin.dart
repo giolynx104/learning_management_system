@@ -10,11 +10,11 @@ mixin SignOutMixin<T extends ConsumerStatefulWidget> on ConsumerState<T> {
 
   Future<void> handleSignOut() async {
     try {
-      await _storageService.clearUserSession();
+      await _storageService.clearToken();
       if (!mounted) return;
-      
-      await ref.read(authProvider.notifier).logout();
-      
+
+      await ref.read(authProvider.notifier).signOut();
+
       if (!mounted) return;
       context.go(Routes.signin);
     } catch (e) {
@@ -24,4 +24,4 @@ mixin SignOutMixin<T extends ConsumerStatefulWidget> on ConsumerState<T> {
       );
     }
   }
-} 
+}

@@ -1,62 +1,97 @@
-import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../models/user.dart';
-import '../services/user_service.dart';
-import '../services/storage_service.dart';
-import '../services/api_service.dart';
-import 'dart:developer' as dev;
+import 'package:flutter/foundation.dart';
+import 'package:learning_management_system/models/user.dart';
+import 'package:learning_management_system/services/storage_service.dart';
+import 'package:learning_management_system/services/user_service.dart';
+import 'package:learning_management_system/providers/user_service_provider.dart';
 
 part 'auth_provider.g.dart';
 
+/// Manages authentication state using AsyncNotifier.
+///
+/// Handles:
+/// - User authentication state
+/// - Token management
+/// - Sign in/out operations
 @riverpod
 class Auth extends _$Auth {
-  @override
-  Future<User?> build() async {
-    final token = await StorageService().getToken();
-    dev.log('Auth build - Token from storage: $token');
+  late final StorageService _storage = StorageService();
+  late final UserService _userService = ref.read(userServiceProvider);
 
-    if (token == null) {
-      dev.log('Auth build - No token found in storage');
+  @override
+  FutureOr<User?> build() async {
+    return _getCurrentUser();
+  }
+
+  /// Fetches the current user using the stored token.
+  ///
+  /// Returns null if:
+  /// - No token is found
+  /// - Token is invalid
+  /// - User fetch fails
+  Future<User?> _getCurrentUser() async {
+    try {
+      final token = await _storage.getToken();
+      if (token == null) {
+        debugPrint('No token found');
+        return null;
+      }
+
+      return await _userService.getUserInfo(token);
+    } catch (e) {
+      debugPrint('Auth error: $e');
+      await _storage.clearToken();
       return null;
     }
+  }
+
+  /// Signs in a user with the provided credentials.
+  ///
+  /// Updates the state and stores the token on successful sign in.
+  Future<void> signIn(User user, String token) async {
+    state = const AsyncValue.loading();
 
     try {
-      final user = await ref.read(userServiceProvider).getUserInfo(token);
-      dev.log('Auth build - Got user: $user');
-      final userWithToken = user.copyWith(token: token);
-      dev.log('Auth build - User with token: $userWithToken');
-      return userWithToken;
+      await _storage.saveToken(token);
+      state = AsyncValue.data(user);
     } catch (e) {
-      dev.log('Auth build - Error: $e');
-      await StorageService().clearToken();
-      return null;
+      state = AsyncValue.error(e, StackTrace.current);
+      await _storage.clearToken();
     }
   }
 
-  Future<void> login(User user, String token) async {
-    dev.log('Auth login - Starting login');
-    dev.log('Auth login - Token: $token');
-    dev.log('Auth login - User: $user');
-
-    await StorageService().saveToken(token);
-    final savedToken = await StorageService().getToken();
-    dev.log('Auth login - Saved token verification: $savedToken');
-
-    state = AsyncValue.data(user.copyWith(token: token));
-    dev.log('Auth login - State updated');
+  /// Signs out the current user.
+  ///
+  /// Clears the stored token and resets the state.
+  Future<void> signOut() async {
+    await _storage.clearToken();
+    state = const AsyncValue.data(null);
   }
 
-  Future<void> logout() async {
-    dev.log('Auth logout - Starting logout');
-    await StorageService().clearToken();
-    state = const AsyncValue.data(null);
-    dev.log('Auth logout - Completed logout');
+  /// Updates the current user's information.
+  ///
+  /// Useful when user data changes but authentication remains valid.
+  void updateUserInfo(User updatedUser) {
+    if (!state.isLoading) {
+      state = AsyncValue.data(updatedUser);
+    }
   }
 }
 
-@riverpod
-ApiService apiService(Ref ref) => ApiService();
+/// Extension methods for easier state checking
+extension AuthStateX on AsyncValue<User?> {
+  /// Whether there is an authenticated user
+  bool get isAuthenticated => whenOrNull(
+        data: (user) => user != null,
+      ) ?? false;
 
-@riverpod
-UserService userService(Ref ref) =>
-    UserService(ref.watch(apiServiceProvider));
+  /// The current user's role, or null if not authenticated
+  String? get userRole => whenOrNull(
+        data: (user) => user?.role,
+      );
+
+  /// The current authentication token, or null if not authenticated
+  String? get token => whenOrNull(
+        data: (user) => user?.token,
+      );
+}

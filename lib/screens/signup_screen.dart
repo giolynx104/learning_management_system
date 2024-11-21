@@ -3,11 +3,21 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:learning_management_system/components/auth_header.dart';
 import 'package:learning_management_system/components/auth_text_field.dart';
 import 'package:learning_management_system/widgets/custom_button.dart';
-import 'package:learning_management_system/widgets/verification_dialog.dart';
 import 'package:go_router/go_router.dart';
 import 'package:learning_management_system/providers/signup_provider.dart';
 import 'package:learning_management_system/routes/routes.dart';
+import 'package:learning_management_system/utils/verification_helper.dart';
 
+/// Screen for handling new user registration.
+/// 
+/// Provides a form for users to enter their:
+/// - First and last name
+/// - Email address
+/// - Password
+/// - Role (Student or Lecturer)
+/// 
+/// After successful registration, users need to verify their email
+/// before they can sign in.
 class SignUpScreen extends ConsumerStatefulWidget {
   const SignUpScreen({super.key});
 
@@ -15,6 +25,9 @@ class SignUpScreen extends ConsumerStatefulWidget {
   ConsumerState<SignUpScreen> createState() => _SignUpScreenState();
 }
 
+/// The state class for [SignUpScreen].
+/// 
+/// Manages form validation, user input, and the registration process.
 class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
@@ -40,57 +53,80 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
     });
   }
 
+  String? _validateEmail(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Email is required';
+    }
+    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+    if (!emailRegex.hasMatch(value)) {
+      return 'Please enter a valid email';
+    }
+    return null;
+  }
+
+  String? _validatePassword(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Password is required';
+    }
+    if (value.length < 6) {
+      return 'Password must be at least 6 characters';
+    }
+    return null;
+  }
+
   Future<void> _handleSignUp() async {
-    if (_formKey.currentState!.validate()) {
-      setState(() => _isLoading = true);
+    if (!_formKey.currentState!.validate()) return;
 
-      try {
+    setState(() => _isLoading = true);
 
-        final signUpResponse = await ref.read(signUpProvider(
-          firstName: _firstNameController.text,
-          lastName: _lastNameController.text,
-          email: _emailController.text,
-          password: _passwordController.text,
-          role: _selectedRole.toUpperCase(),
-        ).future);
+    try {
+      final signUpResponse = await ref.read(signUpProvider(
+        firstName: _firstNameController.text.trim(),
+        lastName: _lastNameController.text.trim(),
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+        role: _selectedRole.toUpperCase(),
+      ).future);
+
+      if (!mounted) return;
+
+      if (signUpResponse['verify_code'] != null) {
+        final verificationSuccess = await VerificationHelper.handleVerification(
+          context: context,
+          email: _emailController.text.trim(),
+          verificationCode: signUpResponse['verify_code'],
+        );
 
         if (!mounted) return;
 
-        if (signUpResponse['verify_code'] != null) {
-          final verificationSuccess = await showDialog<bool>(
-            context: context,
-            barrierDismissible: false,
-            builder: (context) => VerificationDialog(
-              email: _emailController.text,
-              verificationCode: signUpResponse['verify_code'],
+        if (verificationSuccess) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Account created successfully! Please sign in.'),
+              backgroundColor: Colors.green,
             ),
           );
-
-          if (!mounted) return;
-
-          if (verificationSuccess == true) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Email verified successfully!')),
-            );
-            context.go(Routes.signin);
-          }
-        } else {
-          throw Exception('Verification code not received');
+          context.go(Routes.signin);
         }
-      } catch (e) {
-        if (!mounted) return;
-        
-        if (e.toString().contains('User already exists')) {
-          _showUserExistsDialog();
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error: ${e.toString()}')),
-          );
-        }
-      } finally {
-        if (mounted) {
-          setState(() => _isLoading = false);
-        }
+      } else {
+        throw Exception('Verification code not received');
+      }
+    } catch (e) {
+      if (!mounted) return;
+      
+      if (e.toString().contains('User already exists')) {
+        _showUserExistsDialog();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
       }
     }
   }
@@ -98,26 +134,23 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   void _showUserExistsDialog() {
     showDialog(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('User Already Exists'),
-          content: const Text(
-              'An account with this email already exists. Would you like to sign in instead?'),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('Cancel'),
-              onPressed: () => context.pop(),
-            ),
-            TextButton(
-              child: const Text('Sign In'),
-              onPressed: () {
-                context.pop();
-                context.go(Routes.signin);
-              },
-            ),
-          ],
-        );
-      },
+      builder: (context) => AlertDialog(
+        title: const Text('Account Exists'),
+        content: const Text('An account with this email already exists. Would you like to sign in instead?'),
+        actions: [
+          TextButton(
+            child: const Text('Cancel'),
+            onPressed: () => context.pop(),
+          ),
+          TextButton(
+            child: const Text('Sign In'),
+            onPressed: () {
+              context.pop();
+              context.go(Routes.signin);
+            },
+          ),
+        ],
+      ),
     );
   }
 
@@ -188,12 +221,9 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
         AuthTextField(
           controller: _emailController,
           labelText: 'Email',
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return 'Email is required';
-            }
-            return null;
-          },
+          validator: _validateEmail,
+          keyboardType: TextInputType.emailAddress,
+          textInputAction: TextInputAction.next,
         ),
         const SizedBox(height: 16.0),
         AuthTextField(
@@ -207,12 +237,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
             ),
             onPressed: _togglePasswordVisibility,
           ),
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return 'Password is required';
-            }
-            return null;
-          },
+          validator: _validatePassword,
         ),
         const SizedBox(height: 16.0),
         _buildRoleDropdown(),

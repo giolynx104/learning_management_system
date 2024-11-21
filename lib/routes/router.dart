@@ -298,7 +298,7 @@ final appRouter = GoRouter(
 // Add this error screen widget
 class ErrorScreen extends StatelessWidget {
   final String message;
-  
+
   const ErrorScreen({
     super.key,
     required this.message,

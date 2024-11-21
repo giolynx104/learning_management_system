@@ -37,7 +37,7 @@ class CreateClassScreen extends HookConsumerWidget {
           }
           
           await classService.createClass(
-            token: authState.token,
+            token: authState.token ?? '',
             classId: classCodeController.text,
             className: classNameController.text,
             classType: classType.value!,

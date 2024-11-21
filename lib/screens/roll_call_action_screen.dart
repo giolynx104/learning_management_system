@@ -4,20 +4,26 @@ import 'package:intl/intl.dart';
 import 'package:learning_management_system/routes/routes.dart';
 import 'package:go_router/go_router.dart';
 import 'package:learning_management_system/providers/app_bar_provider.dart';
+import 'package:learning_management_system/services/attendance_service.dart';
+import 'package:learning_management_system/models/attendance_model.dart';
+import 'package:learning_management_system/providers/auth_provider.dart';
 
 class RollCallActionScreen extends ConsumerStatefulWidget {
   final String classId;
-  
+
   const RollCallActionScreen({
     super.key,
     required this.classId,
   });
 
   @override
-  ConsumerState<RollCallActionScreen> createState() => _RollCallActionScreenState();
+  ConsumerState<RollCallActionScreen> createState() =>
+      _RollCallActionScreenState();
 }
 
 class _RollCallActionScreenState extends ConsumerState<RollCallActionScreen> {
+  bool isSubmitting = false;
+
   @override
   void initState() {
     super.initState();
@@ -107,6 +113,59 @@ class _RollCallActionScreenState extends ConsumerState<RollCallActionScreen> {
     );
   }
 
+  Future<void> _submitAttendance() async {
+    try {
+      setState(() {
+        isSubmitting = true;
+      });
+
+      final authState = ref.read(authProvider);
+      if (!authState.isAuthenticated) {
+        throw Exception('Not authenticated');
+      }
+
+      // Get present students' IDs
+      final presentStudentIds = students
+          .where((student) => student.isPresent)
+          .map((student) =>
+              int.parse(student.id.substring(1))) // Remove 'S' prefix
+          .toList();
+
+      // Use the attendance service directly
+      await ref.read(attendanceServiceProvider.notifier).submitAttendance(
+            token: authState.token ?? '',
+            classId: widget.classId,
+            date: DateFormat('yyyy-MM-dd').format(DateTime.now()),
+            attendanceList: presentStudentIds,
+          );
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Attendance submitted successfully'),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      context.go('/class_management/roll-call/${widget.classId}');
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error submitting attendance: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          isSubmitting = false;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
@@ -127,23 +186,26 @@ class _RollCallActionScreenState extends ConsumerState<RollCallActionScreen> {
                       children: [
                         Text(
                           classInfo.name,
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            color: Colors.white,
-                          ),
+                          style:
+                              Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    color: Colors.white,
+                                  ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           'Class ID: ${classInfo.id}',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Colors.white,
-                          ),
+                          style:
+                              Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: Colors.white,
+                                  ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           'Date: $formattedDate',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Colors.white,
-                          ),
+                          style:
+                              Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: Colors.white,
+                                  ),
                         ),
                       ],
                     ),
@@ -152,10 +214,14 @@ class _RollCallActionScreenState extends ConsumerState<RollCallActionScreen> {
                   SizedBox(
                     width: 100,
                     child: ElevatedButton(
-                      onPressed: () {
-                        // TODO: Implement submit roll call
-                      },
-                      child: const Text('Submit'),
+                      onPressed: isSubmitting ? null : _submitAttendance,
+                      child: isSubmitting
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Text('Submit'),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -184,9 +250,11 @@ class _RollCallActionScreenState extends ConsumerState<RollCallActionScreen> {
                         showOnlyAbsent = !showOnlyAbsent;
                       });
                     },
-                    child: Text(showOnlyAbsent ? 'Show All' : 'Show Only Absent'),
+                    child:
+                        Text(showOnlyAbsent ? 'Show All' : 'Show Only Absent'),
                   ),
-                  Text('Total Present: ${students.where((s) => s.isPresent).length}'),
+                  Text(
+                      'Total Present: ${students.where((s) => s.isPresent).length}'),
                 ],
               ),
             ),

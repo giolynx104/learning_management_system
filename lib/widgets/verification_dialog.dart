@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:learning_management_system/providers/signup_provider.dart';
 
+/// A dialog that handles email verification code input and verification.
+/// 
+/// Shows a form where users can enter their verification code and handles
+/// the verification process through the [SignUpProvider].
 class VerificationDialog extends ConsumerStatefulWidget {
   final String email;
   final String verificationCode;
@@ -39,25 +43,15 @@ class _VerificationDialogState extends ConsumerState<VerificationDialog> {
     });
 
     try {
-      debugPrint('Attempting verification with code: ${_codeController.text}');
+      final isVerified = _codeController.text == widget.verificationCode;
       
-      final authService = ref.read(authServiceProvider);
-      final success = await authService.checkVerifyCode(
-        email: widget.email,
-        verifyCode: _codeController.text.trim(), // Ensure no whitespace
-      );
-
-      debugPrint('Verification result: $success');
-
-      if (!mounted) return;
-
-      if (success) {
+      if (isVerified) {
+        if (!mounted) return;
         Navigator.of(context).pop(true);
       } else {
         setState(() => _errorMessage = 'Invalid verification code');
       }
     } catch (e) {
-      debugPrint('Verification error: $e');
       setState(() => _errorMessage = e.toString());
     } finally {
       if (mounted) {
@@ -72,16 +66,9 @@ class _VerificationDialogState extends ConsumerState<VerificationDialog> {
       title: const Text('Email Verification'),
       content: Column(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Please enter the verification code:'),
-          const SizedBox(height: 8),
-          Text(
-            'Your verification code is: ${widget.verificationCode}',
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              color: Colors.blue,
-            ),
-          ),
+          Text('Please enter the verification code sent to ${widget.email}'),
           const SizedBox(height: 16),
           TextField(
             controller: _codeController,
@@ -90,23 +77,26 @@ class _VerificationDialogState extends ConsumerState<VerificationDialog> {
               errorText: _errorMessage,
               border: const OutlineInputBorder(),
             ),
+            keyboardType: TextInputType.number,
+            textInputAction: TextInputAction.done,
+            onSubmitted: (_) => _verifyCode(),
           ),
         ],
       ),
       actions: [
         TextButton(
-          onPressed: _isLoading ? null : () => Navigator.of(context).pop(false),
+          onPressed: () => Navigator.of(context).pop(false),
           child: const Text('Cancel'),
         ),
-        ElevatedButton(
+        TextButton(
           onPressed: _isLoading ? null : _verifyCode,
-          child: _isLoading
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Text('Verify'),
+          child: _isLoading 
+            ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : const Text('Verify'),
         ),
       ],
     );
