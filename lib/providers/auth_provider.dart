@@ -20,41 +20,41 @@ class Auth extends _$Auth {
 
   @override
   FutureOr<User?> build() async {
-    return _getCurrentUser();
-  }
+    // Always return the current state if it exists
+    if (state case AsyncData(value: final user)) {
+      return user;
+    }
+    
+    // Otherwise try to restore from storage
+    final token = await _storage.getToken();
+    if (token == null) {
+      return null;
+    }
 
-  /// Fetches the current user using the stored token.
-  ///
-  /// Returns null if:
-  /// - No token is found
-  /// - Token is invalid
-  /// - User fetch fails
-  Future<User?> _getCurrentUser() async {
     try {
-      final token = await _storage.getToken();
-      if (token == null) {
-        debugPrint('No token found');
-        return null;
-      }
-
-      return await _userService.getUserInfo(token);
+      final user = await _userService.getUserInfo(token);
+      return user;
     } catch (e) {
-      debugPrint('Auth error: $e');
+      debugPrint('Auth build error: $e');
       await _storage.clearToken();
       return null;
     }
   }
 
   /// Signs in a user with the provided credentials.
-  ///
-  /// Updates the state and stores the token on successful sign in.
   Future<void> signIn(User user, String token) async {
-    state = const AsyncValue.loading();
-
+    debugPrint('AuthProvider signIn called with token: $token');
+    
     try {
+      // Save token first
       await _storage.saveToken(token);
-      state = AsyncValue.data(user);
+      
+      // Set state directly with user+token
+      state = AsyncValue.data(user.copyWith(token: token));
+      
+      debugPrint('Sign in successful with token: $token');
     } catch (e) {
+      debugPrint('Error in AuthProvider signIn: $e');
       state = AsyncValue.error(e, StackTrace.current);
       await _storage.clearToken();
     }
@@ -81,9 +81,11 @@ class Auth extends _$Auth {
 /// Extension methods for easier state checking
 extension AuthStateX on AsyncValue<User?> {
   /// Whether there is an authenticated user
-  bool get isAuthenticated => whenOrNull(
+  bool get isAuthenticated =>
+      whenOrNull(
         data: (user) => user != null,
-      ) ?? false;
+      ) ??
+      false;
 
   /// The current user's role, or null if not authenticated
   String? get userRole => whenOrNull(

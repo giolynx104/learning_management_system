@@ -1,9 +1,9 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:learning_management_system/services/api_service.dart';
-import 'package:learning_management_system/exceptions/unauthorized_exception.dart';
-import 'package:learning_management_system/exceptions/api_exception.dart';
+import 'package:learning_management_system/exceptions/api_exceptions.dart';
 
 part 'auth_service.g.dart';
 
@@ -39,14 +39,16 @@ class AuthService {
     required String password,
   }) async {
     try {
+      debugPrint('Attempting sign in for email: $email');
       final response = await _dio.post(
         '/it4788/login',
         data: {
           'email': email,
           'password': password,
-          'deviceId': 1,
+          'device_id': "1",
         },
       );
+      debugPrint('Login response: ${response.data}');
 
       // Handle verification required case
       if (response.statusCode == 403 && response.data['code'] == 9991) {
@@ -74,15 +76,28 @@ class AuthService {
       if (response.statusCode == 200 &&
           (response.data['message'] == 'OK' || response.data['code'] == 1000)) {
         final userData = response.data['data'];
+        debugPrint('User data from login: $userData');
 
         // Convert string ID to int if necessary
         if (userData['id'] is String) {
           userData['id'] = int.parse(userData['id']);
         }
 
+        // Map the response data to match User model fields
+        final mappedUserData = {
+          'id': userData['id'],
+          'firstName': userData['ho'] ?? '',
+          'lastName': userData['ten'] ?? '',
+          'email': userData['email'] ?? '',
+          'role': userData['role'] ?? '',
+          'avatar': userData['avatar'],
+          'token': userData['token'],
+        };
+        debugPrint('Mapped user data: $mappedUserData');
+
         return {
           'success': true,
-          'user': userData,
+          'user': mappedUserData,
           'token': userData['token'],
           'needs_verification': false,
         };

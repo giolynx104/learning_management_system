@@ -1,7 +1,6 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:learning_management_system/models/attendance_model.dart';
 import 'package:learning_management_system/utils/api_client.dart';
-import 'package:learning_management_system/exceptions/unauthorized_exception.dart';
+import 'package:learning_management_system/exceptions/api_exceptions.dart';
 import 'package:learning_management_system/providers/auth_provider.dart';
 
 part 'attendance_service.g.dart';
@@ -34,7 +33,7 @@ class AttendanceService extends _$AttendanceService {
       if (meta['code'] == 9998) {
         // Token invalid code
         ref.read(authProvider.notifier).signOut();
-        throw const UnauthorizedException(
+        throw UnauthorizedException(
             'Session expired. Please sign in again.');
       }
 

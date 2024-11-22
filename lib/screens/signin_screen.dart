@@ -5,10 +5,10 @@ import 'package:learning_management_system/providers/auth_provider.dart';
 import 'package:learning_management_system/components/auth_header.dart';
 import 'package:learning_management_system/components/auth_text_field.dart';
 import 'package:learning_management_system/widgets/custom_button.dart';
-import 'package:learning_management_system/services/api_service.dart';
 import 'package:learning_management_system/services/auth_service.dart';
 import 'package:learning_management_system/routes/routes.dart';
 import 'package:learning_management_system/utils/verification_helper.dart';
+import 'package:learning_management_system/models/user.dart';
 
 /// Screen for handling user sign-in functionality.
 /// 
@@ -64,9 +64,10 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
       }
 
       if (result['token'] != null) {
+        final user = User.fromJson(result['user'] as Map<String, dynamic>);
         await ref.read(authProvider.notifier).signIn(
-          result['user'],
-          result['token'],
+          user,
+          result['token'] as String,
         );
       }
     } catch (e) {
@@ -92,9 +93,10 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
       if (!mounted) return;
 
       if (result['token'] != null) {
+        final user = User.fromJson(result['user'] as Map<String, dynamic>);
         await ref.read(authProvider.notifier).signIn(
-          result['user'],
-          result['token'],
+          user,
+          result['token'] as String,
         );
       }
     } catch (e) {
@@ -143,49 +145,52 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   }
 
   Widget _buildSignInForm() {
-    return Column(
-      children: [
-        AuthTextField(
-          controller: _emailController,
-          labelText: 'Email',
-          validator: _validateEmail,
-          keyboardType: TextInputType.emailAddress,
-          textInputAction: TextInputAction.next,
-        ),
-        const SizedBox(height: 16.0),
-        AuthTextField(
-          controller: _passwordController,
-          labelText: 'Password',
-          validator: _validatePassword,
-          obscureText: _obscureText,
-          textInputAction: TextInputAction.done,
-          onSubmitted: (_) => _handleSignIn(),
-          suffixIcon: IconButton(
-            icon: Icon(
-              _obscureText ? Icons.visibility : Icons.visibility_off,
-              color: Theme.of(context).colorScheme.onPrimary,
-            ),
-            onPressed: _togglePasswordVisibility,
+    return Form(
+      key: _formKey,
+      child: Column(
+        children: [
+          AuthTextField(
+            controller: _emailController,
+            labelText: 'Email',
+            validator: _validateEmail,
+            keyboardType: TextInputType.emailAddress,
+            textInputAction: TextInputAction.next,
           ),
-        ),
-        const SizedBox(height: 8.0),
-        Align(
-          alignment: Alignment.centerRight,
-          child: TextButton(
-            onPressed: () {
-              // Handle forgot password logic here
-            },
-            child: Text(
-              'Forgot Password?',
-              style: TextStyle(
+          const SizedBox(height: 16.0),
+          AuthTextField(
+            controller: _passwordController,
+            labelText: 'Password',
+            validator: _validatePassword,
+            obscureText: _obscureText,
+            textInputAction: TextInputAction.done,
+            onSubmitted: (_) => _handleSignIn(),
+            suffixIcon: IconButton(
+              icon: Icon(
+                _obscureText ? Icons.visibility : Icons.visibility_off,
                 color: Theme.of(context).colorScheme.onPrimary,
-                decoration: TextDecoration.underline,
-                decorationColor: Colors.white,
+              ),
+              onPressed: _togglePasswordVisibility,
+            ),
+          ),
+          const SizedBox(height: 8.0),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              onPressed: () {
+                // Handle forgot password logic here
+              },
+              child: Text(
+                'Forgot Password?',
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onPrimary,
+                  decoration: TextDecoration.underline,
+                  decorationColor: Colors.white,
+                ),
               ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 

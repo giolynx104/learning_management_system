@@ -29,271 +29,299 @@ import 'package:learning_management_system/models/survey.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
 
-final appRouter = GoRouter(
-  navigatorKey: _rootNavigatorKey,
-  initialLocation: Routes.signin,
-  redirect: (BuildContext context, GoRouterState state) {
-    final container = ProviderScope.containerOf(context);
-    final authState = container.read(authProvider);
+final routerProvider = Provider<GoRouter>((ref) {
+  final router = RouterNotifier(ref);
+  
+  return GoRouter(
+    navigatorKey: _rootNavigatorKey,
+    initialLocation: Routes.signin,
+    refreshListenable: router,
+    redirect: (BuildContext context, GoRouterState state) {
+      final authState = ref.read(authProvider);
+      debugPrint('🚦 Router redirect - Current path: ${state.uri.path}');
+      debugPrint('🔑 Auth state: $authState');
 
-    return authState.when(
-      data: (user) {
-        if (user == null &&
-            state.uri.path != Routes.signin &&
-            state.uri.path != Routes.signup) {
+      return authState.when(
+        data: (user) {
+          debugPrint('👤 User in redirect: ${user?.toJson()}');
+          if (user == null) {
+            debugPrint('❌ No user found, redirecting to signin');
+            return Routes.signin;
+          }
+
+          if (state.uri.path == Routes.signin ||
+              state.uri.path == Routes.signup) {
+            final route = user.role.toUpperCase() == 'STUDENT'
+                ? Routes.studentHome
+                : Routes.teacherHome;
+            debugPrint('✅ User authenticated, redirecting to $route');
+            return route;
+          }
+
+          debugPrint('🟢 No redirect needed');
+          return null;
+        },
+        loading: () {
+          debugPrint('⌛ Loading state in redirect');
+          return null;
+        },
+        error: (error, __) {
+          debugPrint('❌ Error in redirect: $error');
           return Routes.signin;
-        }
+        },
+      );
+    },
+    routes: [
+      // Auth routes
+      GoRoute(
+        path: Routes.signin,
+        builder: (context, state) => const SignInScreen(),
+      ),
+      GoRoute(
+        path: Routes.signup,
+        builder: (context, state) => const SignUpScreen(),
+      ),
 
-        if (user != null &&
-            (state.uri.path == Routes.signin ||
-                state.uri.path == Routes.signup)) {
-          return user.role.toUpperCase() == 'STUDENT'
-              ? Routes.studentHome
-              : Routes.teacherHome;
-        }
+      // Main app shell
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) {
+          final container = ProviderScope.containerOf(context);
+          final isStudent =
+              container.read(authProvider).value?.role.toUpperCase() == 'STUDENT';
 
-        return null;
-      },
-      loading: () => null,
-      error: (_, __) => Routes.signin,
-    );
-  },
-  routes: [
-    // Auth routes
-    GoRoute(
-      path: Routes.signin,
-      builder: (context, state) => const SignInScreen(),
-    ),
-    GoRoute(
-      path: Routes.signup,
-      builder: (context, state) => const SignUpScreen(),
-    ),
-
-    // Main app shell
-    StatefulShellRoute.indexedStack(
-      builder: (context, state, navigationShell) {
-        final container = ProviderScope.containerOf(context);
-        final isStudent =
-            container.read(authProvider).value?.role.toUpperCase() == 'STUDENT';
-
-        return LayoutScaffold(
-          navigationShell: navigationShell,
-          destinations: isStudent ? studentDestinations : teacherDestinations,
-        );
-      },
-      branches: [
-        // Home Branch
-        StatefulShellBranch(
-          routes: [
-            // Student Home
-            GoRoute(
-              path: Routes.studentHome,
-              builder: (context, state) => const StudentHomeScreen(),
-              routes: [
-                GoRoute(
-                  path: Routes.absentRequest,
-                  builder: (context, state) => const AbsenceRequestScreen(),
-                ),
-                GoRoute(
-                  path: Routes.surveyList,
-                  builder: (context, state) => const SurveyListScreen(),
-                  routes: [
-                    GoRoute(
-                      path: Routes.submitSurvey,
-                      builder: (context, state) => SubmitSurveyScreen(
-                        survey: state.extra as SmallSurvey,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            // Teacher Home
-            GoRoute(
-              path: Routes.teacherHome,
-              builder: (context, state) => const TeacherHomeScreen(),
-              routes: [
-                GoRoute(
-                  path: Routes.createClass,
-                  builder: (context, state) => const CreateClassScreen(),
-                ),
-                GoRoute(
-                  path: Routes.modifyClass,
-                  builder: (context, state) {
-                    final classId = state.extra as String?;
-                    if (classId == null) {
-                      // Handle the error case by showing an error screen or redirecting
-                      return Scaffold(
-                        body: Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Text('Error: No class ID provided'),
-                              const SizedBox(height: 16),
-                              ElevatedButton(
-                                onPressed: () => context.pop(),
-                                child: const Text('Go Back'),
-                              ),
-                            ],
-                          ),
+          return LayoutScaffold(
+            navigationShell: navigationShell,
+            destinations: isStudent ? studentDestinations : teacherDestinations,
+          );
+        },
+        branches: [
+          // Home Branch
+          StatefulShellBranch(
+            routes: [
+              // Student Home
+              GoRoute(
+                path: Routes.studentHome,
+                builder: (context, state) => const StudentHomeScreen(),
+                routes: [
+                  GoRoute(
+                    path: Routes.absentRequest,
+                    builder: (context, state) => const AbsenceRequestScreen(),
+                  ),
+                  GoRoute(
+                    path: Routes.surveyList,
+                    builder: (context, state) => const SurveyListScreen(),
+                    routes: [
+                      GoRoute(
+                        path: Routes.submitSurvey,
+                        builder: (context, state) => SubmitSurveyScreen(
+                          survey: state.extra as SmallSurvey,
                         ),
-                      );
-                    }
-                    return ModifyClassScreen(classId: classId);
-                  },
-                ),
-                GoRoute(
-                  path: Routes.rollCall,
-                  builder: (context, state) {
-                    final classId = state.pathParameters['classId'] ?? '';
-                    return RollCallScreen(classId: classId);
-                  },
-                ),
-                GoRoute(
-                  path: Routes.detailedRollCall,
-                  builder: (context, state) {
-                    final classId = state.pathParameters['classId'];
-                    if (classId == null) {
-                      return const ErrorScreen(message: 'No class ID provided');
-                    }
-                    return DetailedRollCallInfoScreen(classId: classId);
-                  },
-                ),
-                GoRoute(
-                  path: Routes.rollCallAction,
-                  builder: (context, state) {
-                    final classId = state.pathParameters['classId'];
-                    if (classId == null) {
-                      return const ErrorScreen(message: 'No class ID provided');
-                    }
-                    return RollCallActionScreen(classId: classId);
-                  },
-                ),
-                GoRoute(
-                  path: Routes.teacherSurveyList,
-                  builder: (context, state) => const TeacherSurveyListScreen(),
-                  routes: [
-                    GoRoute(
-                        path: Routes.createSurvey,
-                        builder: (context, state) =>
-                            const CreateSurveyScreen()),
-                    GoRoute(
-                      path: Routes.editSurvey,
-                      builder: (context, state) => EditSurveyScreen(
-                        survey: state.extra as TeacherSmallSurvey,
                       ),
-                    ),
-                  ],
-                ),
-                GoRoute(
-                  path: Routes.uploadFile,
-                  builder: (context, state) => const UploadFileScreen(),
-                ),
-              ],
-            ),
-          ],
-        ),
-        // Notifications Branch (shared)
-        StatefulShellBranch(
-          routes: [
-            GoRoute(
-              path: Routes.notification,
-              builder: (context, state) => const NotificationScreen(),
-            ),
-          ],
-        ),
-        // Classes Branch
-        StatefulShellBranch(
-          routes: [
-            GoRoute(
-              path: Routes.classManagement,
-              builder: (context, state) => const ClassManagementScreen(),
-              routes: [
-                GoRoute(
-                  path: 'register',
-                  builder: (context, state) => const ClassRegistrationScreen(),
-                ),
-                GoRoute(
-                  path: 'modify/:classId',
-                  name: Routes.modifyClass,
-                  builder: (context, state) {
-                    final classId = state.pathParameters['classId'];
-                    if (classId == null) {
-                      return Scaffold(
-                        body: Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Text('Error: No class ID provided'),
-                              const SizedBox(height: 16),
-                              ElevatedButton(
-                                onPressed: () => context.pop(),
-                                child: const Text('Go Back'),
-                              ),
-                            ],
+                    ],
+                  ),
+                ],
+              ),
+              // Teacher Home
+              GoRoute(
+                path: Routes.teacherHome,
+                builder: (context, state) => const TeacherHomeScreen(),
+                routes: [
+                  GoRoute(
+                    path: Routes.createClass,
+                    builder: (context, state) => const CreateClassScreen(),
+                  ),
+                  GoRoute(
+                    path: Routes.modifyClass,
+                    builder: (context, state) {
+                      final classId = state.extra as String?;
+                      if (classId == null) {
+                        // Handle the error case by showing an error screen or redirecting
+                        return Scaffold(
+                          body: Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Text('Error: No class ID provided'),
+                                const SizedBox(height: 16),
+                                ElevatedButton(
+                                  onPressed: () => context.pop(),
+                                  child: const Text('Go Back'),
+                                ),
+                              ],
+                            ),
                           ),
+                        );
+                      }
+                      return ModifyClassScreen(classId: classId);
+                    },
+                  ),
+                  GoRoute(
+                    path: Routes.rollCall,
+                    builder: (context, state) {
+                      final classId = state.pathParameters['classId'] ?? '';
+                      return RollCallScreen(classId: classId);
+                    },
+                  ),
+                  GoRoute(
+                    path: Routes.detailedRollCall,
+                    builder: (context, state) {
+                      final classId = state.pathParameters['classId'];
+                      if (classId == null) {
+                        return const ErrorScreen(message: 'No class ID provided');
+                      }
+                      return DetailedRollCallInfoScreen(classId: classId);
+                    },
+                  ),
+                  GoRoute(
+                    path: Routes.rollCallAction,
+                    builder: (context, state) {
+                      final classId = state.pathParameters['classId'];
+                      if (classId == null) {
+                        return const ErrorScreen(message: 'No class ID provided');
+                      }
+                      return RollCallActionScreen(classId: classId);
+                    },
+                  ),
+                  GoRoute(
+                    path: Routes.teacherSurveyList,
+                    builder: (context, state) => const TeacherSurveyListScreen(),
+                    routes: [
+                      GoRoute(
+                          path: Routes.createSurvey,
+                          builder: (context, state) =>
+                              const CreateSurveyScreen()),
+                      GoRoute(
+                        path: Routes.editSurvey,
+                        builder: (context, state) => EditSurveyScreen(
+                          survey: state.extra as TeacherSmallSurvey,
                         ),
-                      );
-                    }
-                    return ModifyClassScreen(classId: classId);
-                  },
-                ),
-                GoRoute(
-                  path: 'roll-call/:classId',
-                  name: Routes.rollCall,
-                  builder: (context, state) {
-                    final classId = state.pathParameters['classId'];
-                    if (classId == null) {
-                      return const ErrorScreen(message: 'No class ID provided');
-                    }
-                    return RollCallScreen(classId: classId);
-                  },
-                ),
-                GoRoute(
-                  path: 'detailed-roll-call/:classId',
-                  name: Routes.detailedRollCall,
-                  builder: (context, state) {
-                    final classId = state.pathParameters['classId'];
-                    if (classId == null) {
-                      return const ErrorScreen(message: 'No class ID provided');
-                    }
-                    return DetailedRollCallInfoScreen(classId: classId);
-                  },
-                ),
-                GoRoute(
-                  path: 'roll-call-action/:classId',
-                  name: Routes.rollCallAction,
-                  builder: (context, state) {
-                    final classId = state.pathParameters['classId'];
-                    if (classId == null) {
-                      return const ErrorScreen(message: 'No class ID provided');
-                    }
-                    return RollCallActionScreen(classId: classId);
-                  },
-                ),
-              ],
-            ),
-          ],
-        ),
-        // Chat Branch
-        StatefulShellBranch(
-          routes: [
-            GoRoute(
-              path: '/chat',
-              builder: (context, state) => const ChatScreen(),
-            ),
-          ],
-        ),
-      ],
-    ),
-    // Add this route configuration
-    GoRoute(
-      path: Routes.nestedClassRegistration,
-      name: Routes.classRegistration, // if you're using named routes
-      builder: (context, state) => const ClassRegistrationScreen(),
-    ),
-  ],
-);
+                      ),
+                    ],
+                  ),
+                  GoRoute(
+                    path: Routes.uploadFile,
+                    builder: (context, state) => const UploadFileScreen(),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          // Notifications Branch (shared)
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: Routes.notification,
+                builder: (context, state) => const NotificationScreen(),
+              ),
+            ],
+          ),
+          // Classes Branch
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: Routes.classManagement,
+                builder: (context, state) => const ClassManagementScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'register',
+                    builder: (context, state) => const ClassRegistrationScreen(),
+                  ),
+                  GoRoute(
+                    path: 'modify/:classId',
+                    name: Routes.modifyClass,
+                    builder: (context, state) {
+                      final classId = state.pathParameters['classId'];
+                      if (classId == null) {
+                        return Scaffold(
+                          body: Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Text('Error: No class ID provided'),
+                                const SizedBox(height: 16),
+                                ElevatedButton(
+                                  onPressed: () => context.pop(),
+                                  child: const Text('Go Back'),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }
+                      return ModifyClassScreen(classId: classId);
+                    },
+                  ),
+                  GoRoute(
+                    path: 'roll-call/:classId',
+                    name: Routes.rollCall,
+                    builder: (context, state) {
+                      final classId = state.pathParameters['classId'];
+                      if (classId == null) {
+                        return const ErrorScreen(message: 'No class ID provided');
+                      }
+                      return RollCallScreen(classId: classId);
+                    },
+                  ),
+                  GoRoute(
+                    path: 'detailed-roll-call/:classId',
+                    name: Routes.detailedRollCall,
+                    builder: (context, state) {
+                      final classId = state.pathParameters['classId'];
+                      if (classId == null) {
+                        return const ErrorScreen(message: 'No class ID provided');
+                      }
+                      return DetailedRollCallInfoScreen(classId: classId);
+                    },
+                  ),
+                  GoRoute(
+                    path: 'roll-call-action/:classId',
+                    name: Routes.rollCallAction,
+                    builder: (context, state) {
+                      final classId = state.pathParameters['classId'];
+                      if (classId == null) {
+                        return const ErrorScreen(message: 'No class ID provided');
+                      }
+                      return RollCallActionScreen(classId: classId);
+                    },
+                  ),
+                ],
+              ),
+            ],
+          ),
+          // Chat Branch
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/chat',
+                builder: (context, state) => const ChatScreen(),
+              ),
+            ],
+          ),
+        ],
+      ),
+      // Add this route configuration
+      GoRoute(
+        path: Routes.nestedClassRegistration,
+        name: Routes.classRegistration, // if you're using named routes
+        builder: (context, state) => const ClassRegistrationScreen(),
+      ),
+    ],
+  );
+});
+
+class RouterNotifier extends ChangeNotifier {
+  final Ref _ref;
+
+  RouterNotifier(this._ref) {
+    _ref.listen(authProvider, (previous, next) {
+      debugPrint('🔄 Auth state changed: $next');
+      notifyListeners();
+    });
+  }
+}
+
+// Replace the direct GoRouter instance with the provider
+final appRouter = routerProvider;
 
 // Add this error screen widget
 class ErrorScreen extends StatelessWidget {
