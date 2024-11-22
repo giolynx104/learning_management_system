@@ -64,7 +64,7 @@ class AuthService {
         body: jsonEncode({
           'email': email,
           'password': password,
-          'deviceId': 1,
+          'device_id': 1,
         }),
       );
 
