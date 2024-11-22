@@ -18,11 +18,11 @@ class UserState extends _$UserState {
     try {
       final storageService = StorageService();
       final token = await storageService.getToken();
-      
-      if (token == null) return null;
+      final userId = await storageService.getUserId();
+      if (token == null||userId == null) return null;
 
       final userService = ref.read(userServiceProvider);
-      return await userService.getUserInfo(token);
+      return await userService.getUserInfo(token,userId);
     } on UnauthorizedException {
       // Clear invalid token
       final storageService = StorageService();

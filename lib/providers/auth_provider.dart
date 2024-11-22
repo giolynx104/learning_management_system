@@ -13,15 +13,20 @@ class Auth extends _$Auth {
   @override
   Future<User?> build() async {
     final token = await StorageService().getToken();
+    final userId = await StorageService().getUserId();
     dev.log('Auth build - Token from storage: $token');
 
     if (token == null) {
       dev.log('Auth build - No token found in storage');
       return null;
     }
+    if (userId == null) {
+      dev.log('Auth build - No userId found in storage');
+      return null;
+    }
 
     try {
-      final user = await ref.read(userServiceProvider).getUserInfo(token);
+      final user = await ref.read(userServiceProvider).getUserInfo(token, userId);
       dev.log('Auth build - Got user: $user');
       final userWithToken = user.copyWith(token: token);
       dev.log('Auth build - User with token: $userWithToken');
@@ -39,7 +44,9 @@ class Auth extends _$Auth {
     dev.log('Auth login - User: $user');
 
     await StorageService().saveToken(token);
+    await StorageService().saveUserId(user.id);
     final savedToken = await StorageService().getToken();
+    final savedUserId = await StorageService().getUserId();
     dev.log('Auth login - Saved token verification: $savedToken');
 
     state = AsyncValue.data(user.copyWith(token: token));

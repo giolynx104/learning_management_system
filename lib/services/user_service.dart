@@ -7,18 +7,21 @@ class UserService {
 
   UserService(this._apiService);
 
-  Future<User> getUserInfo(String token) async {
+  Future<User> getUserInfo(String token, String userId) async {
     try {
-      print('Debug - UserService - Getting user info with token: $token');
+      print('Debug - UserService - Getting user info with token: $token and userId: $userId');
       
       final response = await _apiService.dio.post(
         '/it4788/get_user_info',
-        data: {'token': token},
+        data: {
+          'token': token,
+          'userId': userId
+        },
       );
 
       if (response.statusCode == 200) {
         final responseData = response.data as Map<String, dynamic>;
-        if (responseData['code'] == 1000) {
+        if (responseData['code'] == "1000") {
           final userData = responseData['data'] as Map<String, dynamic>;
           final mappedData = {
             'id': userData['id'],

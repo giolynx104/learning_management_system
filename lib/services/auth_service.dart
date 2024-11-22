@@ -4,7 +4,7 @@ import 'dart:convert';
 import 'package:learning_management_system/models/user.dart';
 
 class AuthService {
-  static const String _baseUrl = 'http://160.30.168.228:8080/it4788';
+  static const String _baseUrl = 'http://157.66.24.126:8080/it4788';
 
   Future<Map<String, dynamic>> signUp({
     required String firstName,
@@ -32,7 +32,7 @@ class AuthService {
       final responseBody = jsonDecode(response.body);
 
       if (response.statusCode == 200) {
-        if (responseBody['code'] == 1000) {
+        if (responseBody['code'] == "1000") {
           return {
             'success': true,
             'verify_code': responseBody['verify_code'],
@@ -64,15 +64,16 @@ class AuthService {
         body: jsonEncode({
           'email': email,
           'password': password,
-          'deviceId': 1,
+          'device_id': 1,
+          'fcm_token': null,
         }),
       );
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
         print('Debug - Raw response data: $responseData');
-        
-        if (responseData['code'] == 1000) {
+        final code = responseData['code']?.toString();
+        if (responseData['code'] == "1000") {
           final userData = responseData['data'];
           final user = User.fromJson(userData);
           
@@ -150,7 +151,7 @@ class AuthService {
       
       if (response.statusCode == 200) {
         // Simply check if code is 1000
-        return responseBody['code'] == 1000;
+        return responseBody['code'] == "1000";
       }
       
       return false;
