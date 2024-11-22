@@ -44,12 +44,20 @@ final routerProvider = Provider<GoRouter>((ref) {
       return authState.when(
         data: (user) {
           debugPrint('👤 User in redirect: ${user?.toJson()}');
+          
+          // Allow direct access to auth routes when not authenticated
           if (user == null) {
-            debugPrint('❌ No user found, redirecting to signin');
+            // If already on signin or signup, don't redirect
+            if (state.uri.path == Routes.signin || 
+                state.uri.path == Routes.signup) {
+              return null;
+            }
+            // For all other routes, redirect to signin
             return Routes.signin;
           }
 
-          if (state.uri.path == Routes.signin ||
+          // If authenticated and on auth routes, redirect to home
+          if (state.uri.path == Routes.signin || 
               state.uri.path == Routes.signup) {
             final route = user.role.toUpperCase() == 'STUDENT'
                 ? Routes.studentHome

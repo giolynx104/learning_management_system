@@ -20,13 +20,15 @@ class ClassManagementScreen extends ConsumerStatefulWidget {
 class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
   final TextEditingController _classCodeController = TextEditingController();
   final FocusNode _classCodeFocusNode = FocusNode();
-  late Timer _refreshTimer;
+  Timer? _refreshTimer;
   List<ClassListItem> _classList = [];
 
   @override
   void initState() {
     super.initState();
+    debugPrint('ClassManagementScreen - initState called');
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      debugPrint('ClassManagementScreen - postFrameCallback');
       if (!mounted) return;
       
       ref.read(appBarProvider.notifier).updateAppBar(
@@ -52,20 +54,25 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
   }
 
   Future<void> _initializeData() async {
+    debugPrint('ClassManagementScreen - _initializeData started');
     if (!mounted) return;
     
     try {
       final authState = ref.read(authProvider);
+      debugPrint('ClassManagementScreen - authState read');
       
       return authState.when(
         data: (user) async {
+          debugPrint('ClassManagementScreen - auth data received: ${user?.role}');
           if (user == null) {
             if (mounted) context.go(Routes.signin);
             return;
           }
 
           // Set up the refresh timer only after confirming authentication
+          _refreshTimer?.cancel(); // Cancel any existing timer
           _refreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+            debugPrint('ClassManagementScreen - refresh timer triggered');
             if (mounted) {
               _refreshClassList();
             }
@@ -74,8 +81,12 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
           // Load the initial class list
           await _loadClassList();
         },
-        loading: () => null,
+        loading: () {
+          debugPrint('ClassManagementScreen - auth loading');
+          return null;
+        },
         error: (e, __) {
+          debugPrint('ClassManagementScreen - auth error: $e');
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text('Error initializing: $e')),
@@ -85,6 +96,7 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
         },
       );
     } catch (e) {
+      debugPrint('ClassManagementScreen - initialization error: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error initializing: $e')),
@@ -96,11 +108,10 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
 
   @override
   void dispose() {
+    debugPrint('ClassManagementScreen - dispose called');
     _classCodeController.dispose();
     _classCodeFocusNode.dispose();
-    if (_refreshTimer.isActive) {
-      _refreshTimer.cancel();
-    }
+    _refreshTimer?.cancel(); // Safely cancel timer if it exists
     ref.read(appBarProvider.notifier).reset();
     super.dispose();
   }

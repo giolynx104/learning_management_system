@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:learning_management_system/providers/signup_provider.dart';
+import 'package:learning_management_system/services/auth_service.dart';
 
 /// A dialog that handles email verification code input and verification.
 /// 
@@ -43,10 +44,15 @@ class _VerificationDialogState extends ConsumerState<VerificationDialog> {
     });
 
     try {
-      final isVerified = _codeController.text == widget.verificationCode;
+      final authService = ref.read(authServiceProvider);
+      final isVerified = await authService.checkVerifyCode(
+        email: widget.email,
+        verifyCode: _codeController.text,
+      );
+      
+      if (!mounted) return;
       
       if (isVerified) {
-        if (!mounted) return;
         Navigator.of(context).pop(true);
       } else {
         setState(() => _errorMessage = 'Invalid verification code');
@@ -69,11 +75,20 @@ class _VerificationDialogState extends ConsumerState<VerificationDialog> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('Please enter the verification code sent to ${widget.email}'),
+          const SizedBox(height: 8),
+          // Display the verification code
+          Text(
+            'Verification Code: ${widget.verificationCode}',
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+            ),
+          ),
           const SizedBox(height: 16),
           TextField(
             controller: _codeController,
             decoration: InputDecoration(
-              labelText: 'Verification Code',
+              labelText: 'Enter Verification Code',
               errorText: _errorMessage,
               border: const OutlineInputBorder(),
             ),
