@@ -51,7 +51,8 @@ class _AbsenceRequestScreenState extends State<AbsenceRequestScreen> {
 
     final String title = _titleController.text;
     final String reason = _reasonController.text;
-    final String formattedDate = DateFormat('yyyy-MM-dd').format(_selectedDate!);
+    final String formattedDate =
+        DateFormat('yyyy-MM-dd').format(_selectedDate!);
 
     try {
       var uri = Uri.parse('http://157.66.24.126:8080/it5023e/request_absence');
@@ -110,22 +111,23 @@ class _AbsenceRequestScreenState extends State<AbsenceRequestScreen> {
                   children: [
                     TextField(
                       controller: _titleController,
+                      maxLines: 2,
                       decoration: const InputDecoration(
                         labelText: 'Title',
                         border: OutlineInputBorder(),
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 30),
                     TextField(
                       controller: _reasonController,
-                      maxLines: 3,
+                      maxLines: 6,
                       decoration: const InputDecoration(
                         labelText: 'Reason',
                         border: OutlineInputBorder(),
                         alignLabelWithHint: true,
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 30),
                     TextField(
                       readOnly: true,
                       controller: TextEditingController(
@@ -142,7 +144,15 @@ class _AbsenceRequestScreenState extends State<AbsenceRequestScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 30),
+                    Text(
+                      "Proof File",
+                      style: TextStyle(
+                          fontSize: 15,
+                          color: Colors.red[700],
+                          fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 10),
                     FilledButton.tonalIcon(
                       onPressed: _pickFile,
                       icon: const Icon(Icons.attach_file),
@@ -151,16 +161,26 @@ class _AbsenceRequestScreenState extends State<AbsenceRequestScreen> {
                     if (_selectedFile != null)
                       Padding(
                         padding: const EdgeInsets.only(top: 8.0),
-                        child: Text('Selected file: ${_selectedFile!.path.split('/').last}'),
+                        child: Text(
+                            'Selected file: ${_selectedFile!.path.split('/').last}'),
                       ),
+                    const SizedBox(height: 20),
+
                   ],
                 ),
               ),
             ),
-            const SizedBox(height: 16),
-            FilledButton(
-              onPressed: _submit,
-              child: const Text('Submit Request'),
+            const SizedBox(height: 40),
+            SizedBox(
+              width: MediaQuery.of(context).size.width * 0.4, // Chiếm 80% chiều rộng màn hình
+              height: 60, // Đặt chiều cao
+              child: FilledButton(
+                onPressed: _submit,
+                child: const Text(
+                  'Submit Request',
+                  style: TextStyle(fontSize: 20),
+                ),
+              ),
             ),
           ],
         ),

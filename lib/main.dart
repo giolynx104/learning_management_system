@@ -1,20 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:learning_management_system/providers/router_provider.dart';
+import 'package:learning_management_system/screens/absence_request_screen.dart';
 
 void main() {
   runApp(const ProviderScope(child: MyApp()));
 }
 
-class MyApp extends ConsumerWidget {
+class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final router = ref.watch(routerProvider);
+  Widget build(BuildContext context) {
     final seedColor = Colors.red[900]!;
 
-    return MaterialApp.router(
+    return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Learning Management System',
       theme: ThemeData(
@@ -76,7 +75,7 @@ class MyApp extends ConsumerWidget {
         scaffoldBackgroundColor: Colors.grey[50],
         useMaterial3: true,
       ),
-      routerConfig: router,
+      home: const AbsenceRequestScreen(), // Gọi trực tiếp màn hình
     );
   }
 }
