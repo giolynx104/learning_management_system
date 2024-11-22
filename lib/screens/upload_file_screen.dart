@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:learning_management_system/providers/app_bar_provider.dart';
 import 'package:file_picker/file_picker.dart';
 
 // Class để lưu trữ thông tin file
@@ -10,25 +12,44 @@ class FileData {
   FileData({required this.name, required this.size, this.path});
 }
 
-class UploadFileScreen extends StatefulWidget {
+class UploadFileScreen extends ConsumerStatefulWidget {
   const UploadFileScreen({super.key});
 
   @override
-  State<UploadFileScreen> createState() => _UploadFileScreenState();
+  ConsumerState<UploadFileScreen> createState() => _UploadFileScreenState();
 }
 
-class _UploadFileScreenState extends State<UploadFileScreen> {
+class _UploadFileScreenState extends ConsumerState<UploadFileScreen> {
   List<FileData> selectedFiles = [];
 
   @override
   void initState() {
     super.initState();
+    Future.microtask(() {
+      ref.read(appBarNotifierProvider.notifier).setAppBar(
+        title: 'Upload Files',
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.cloud_upload),
+            onPressed: () {
+              // Show upload options
+            },
+          ),
+        ],
+      );
+    });
     // Khởi tạo danh sách file mẫu
     selectedFiles = [
       FileData(name: 'Document1.pdf', size: 1024),
       FileData(name: 'Image2.jpg', size: 2048),
       FileData(name: 'Presentation3.pptx', size: 3072),
     ];
+  }
+
+  @override
+  void dispose() {
+    ref.read(appBarNotifierProvider.notifier).reset();
+    super.dispose();
   }
 
   // Hàm chọn file từ thiết bị

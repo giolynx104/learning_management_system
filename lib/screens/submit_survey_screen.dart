@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:learning_management_system/providers/app_bar_provider.dart';
 import 'package:file_picker/file_picker.dart';
 
-class SubmitSurveyScreen extends StatefulWidget {
+class SubmitSurveyScreen extends ConsumerStatefulWidget {
   // Required parameter for Survey
   final SmallSurvey survey;
 
@@ -11,7 +13,7 @@ class SubmitSurveyScreen extends StatefulWidget {
   });
 
   @override
-  SubmitSurveyScreenState createState() => SubmitSurveyScreenState();
+  ConsumerState<SubmitSurveyScreen> createState() => _SubmitSurveyScreenState();
 }
 
 class SmallSurvey {
@@ -32,7 +34,7 @@ class SmallSurvey {
   });
 }
 
-class SubmitSurveyScreenState extends State<SubmitSurveyScreen> {
+class _SubmitSurveyScreenState extends ConsumerState<SubmitSurveyScreen> {
   late SmallSurvey survey;
 
   // Controllers for TextFields
@@ -48,6 +50,19 @@ class SubmitSurveyScreenState extends State<SubmitSurveyScreen> {
   @override
   void initState() {
     super.initState();
+    Future.microtask(() {
+      ref.read(appBarNotifierProvider.notifier).setAppBar(
+        title: 'Submit Survey',
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.help_outline),
+            onPressed: () {
+              // Show survey help
+            },
+          ),
+        ],
+      );
+    });
     // Directly use the passed survey
     survey = widget.survey;
 
@@ -65,6 +80,7 @@ class SubmitSurveyScreenState extends State<SubmitSurveyScreen> {
 
   @override
   void dispose() {
+    ref.read(appBarNotifierProvider.notifier).reset();
     _descriptionController.dispose();
     _nameController.dispose();
     _surveyDescriptionController.dispose();

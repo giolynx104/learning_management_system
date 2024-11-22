@@ -5,6 +5,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:learning_management_system/services/class_service.dart';
 import 'package:learning_management_system/providers/auth_provider.dart';
+import 'package:learning_management_system/providers/app_bar_provider.dart';
 
 class CreateClassScreen extends HookConsumerWidget {
   const CreateClassScreen({super.key});
@@ -72,6 +73,26 @@ class CreateClassScreen extends HookConsumerWidget {
         }
       }
     }
+
+    // Use useEffect for app bar management
+    useEffect(() {
+      Future.microtask(() {
+        ref.read(appBarNotifierProvider.notifier).setAppBar(
+          title: 'Create Class',
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.help_outline),
+              onPressed: () {
+                // Show help dialog
+              },
+            ),
+          ],
+        );
+      });
+      return () {
+        ref.read(appBarNotifierProvider.notifier).reset();
+      };
+    }, const []);
 
     return Scaffold(
       backgroundColor: theme.colorScheme.onPrimary,

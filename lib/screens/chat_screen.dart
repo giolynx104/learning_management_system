@@ -19,14 +19,20 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(appBarProvider.notifier).updateAppBar(
+    Future.microtask(() {
+      ref.read(appBarNotifierProvider.notifier).setAppBar(
         title: 'Chat',
         actions: [
           IconButton(
+            icon: const Icon(Icons.search),
+            onPressed: () {
+              // Show search functionality
+            },
+          ),
+          IconButton(
             icon: const Icon(Icons.more_vert),
             onPressed: () {
-              // Show chat options
+              // Show chat options menu
             },
           ),
         ],
@@ -36,8 +42,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   @override
   void dispose() {
+    ref.read(appBarNotifierProvider.notifier).reset();
     _controller.dispose();
-    ref.read(appBarProvider.notifier).reset();
     super.dispose();
   }
 

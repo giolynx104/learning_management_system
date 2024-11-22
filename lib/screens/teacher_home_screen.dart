@@ -1,190 +1,53 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:learning_management_system/components/pinned_item.dart';
-import 'package:learning_management_system/components/teams_item.dart';
-import 'package:learning_management_system/mixins/sign_out_mixin.dart';
-import 'package:learning_management_system/models/pinnedChannel.dart';
-import 'package:learning_management_system/models/teams.dart';
-import 'package:learning_management_system/routes/routes.dart';
+import 'package:learning_management_system/providers/app_bar_provider.dart';
 
-class TeacherHomeScreen extends ConsumerStatefulWidget {
+class TeacherHomeScreen extends HookConsumerWidget {
   const TeacherHomeScreen({super.key});
 
   @override
-  ConsumerState<TeacherHomeScreen> createState() => _TeacherHomeScreenState();
-}
-
-class _TeacherHomeScreenState extends ConsumerState<TeacherHomeScreen> with SignOutMixin {
-  List<TeamsModel> teams = [];
-  bool isClassesExpanded = true;
-  bool isPinnedChannelExpanded = false;
-  List<PinnedChannelModel> pinnedChannels = [];
-
-  void _getPinnedChanel(){
-    setState(() {
-      pinnedChannels = PinnedChannelModel.getPinnedChannels();
-    });
-  }
-
-  void _getTeams() {
-    setState(() {
-      teams = TeamsModel.getTeams();
-    });
-  }
-
-  void _unpinChannel(PinnedChannelModel channel) {
-    setState(() {
-      pinnedChannels.remove(channel);
-    });
-  }
-
-  void _showTeamOptions(BuildContext context, TeamsModel team) {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ListTile(
-            leading: const Icon(Icons.edit),
-            title: const Text('Edit'),
-            onTap: () {
-              context.pop();
-              debugPrint('TeacherHomeScreen - ClassId: ${team.classId}, Type: ${team.classId.runtimeType}');
-              context.goNamed(
-                Routes.modifyClass,
-                pathParameters: {'classId': team.classId.toString()},
-              );
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.delete, color: Colors.red),
-            title: const Text('Delete', style: TextStyle(color: Colors.red)),
-            onTap: () {
-              // TODO: Implement delete functionality
-              context.pop();
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _searchField(),
-            const SizedBox(height: 40),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _teams(), 
-              ],
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Handle app bar setup and cleanup
+    useEffect(() {
+      Future.microtask(() {
+        ref.read(appBarNotifierProvider.notifier).setAppBar(
+          title: 'AllHust',
+          backgroundColor: Theme.of(context).colorScheme.primary,
+          foregroundColor: Theme.of(context).colorScheme.onPrimary,
+          elevation: 2,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.notifications_outlined),
+              onPressed: () {
+                // Handle notifications
+              },
             ),
           ],
-        ),
-      ),
-    );
-  }
+        );
+      });
+      return () {
+        ref.read(appBarNotifierProvider.notifier).reset();
+      };
+    }, const []);
 
-
-Widget _pinnedChannels() {
-  return ExpansionTile(
-   
-    title: const Text("Pinned Channels"),
-    leading: Icon(
-        isPinnedChannelExpanded ? Icons.arrow_drop_down : Icons.arrow_right,
-      ),
-    trailing: const SizedBox.shrink(),
-    onExpansionChanged: (bool expanded) {
-        setState(() => isPinnedChannelExpanded = expanded);
-      },
-    children: [
-      ListView.builder(
-        shrinkWrap: true,
-        padding: EdgeInsets.zero,
-        physics: const NeverScrollableScrollPhysics(),
-        itemCount: pinnedChannels.length,
-        itemBuilder: (context, index) {
-          var channel = pinnedChannels[index];
-          return PinnedItem(
-            channel: channel,
-            onUnpinPressed: () => _unpinChannel(channel),
-          );
-        },
-      ),
-    ],
-  );
-}
-
-  Widget _teams() {
-    return ExpansionTile(
-      initiallyExpanded: true,
-      title: const Text("Classes"),
-      leading: Icon(
-        isClassesExpanded ? Icons.arrow_drop_down : Icons.arrow_right,
-      ),
-      trailing: IconButton(
-        icon: const Icon(Icons.add),
-        onPressed: () => context.push(
-                  Routes.nestedCreateClass
-                ) ,
-        ),
-      onExpansionChanged: (bool expanded) {
-        setState(() => isClassesExpanded = expanded);
-      },
-      children: [
-        ListView.builder(
-          shrinkWrap: true,
-          padding:  EdgeInsets.zero,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: teams.length,
-          itemBuilder: (context, index) {
-            var team = teams[index];
-            return TeamsItem(
-              name: team.name,
-              color: team.color,
-              onMorePressed: () => _showTeamOptions(context, team),
-            );
-          },
-        ),
-      ],
-    );
-  }
-
-  Container _searchField() {
-    return Container(
-      margin: const EdgeInsets.only(top: 40, left: 30, right: 30),
-      decoration: BoxDecoration(
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.11),
-            blurRadius: 40,
-            spreadRadius: 0.0,
-          ),
-        ],
-      ),
-      child: TextField(
-        decoration: InputDecoration(
-          filled: true,
-          fillColor: Colors.white,
-          hintText: 'Search',
-          hintStyle: const TextStyle(
-            color: Colors.grey,
-            fontSize: 14,
-          ),
-          contentPadding: const EdgeInsets.all(10),
-          prefixIcon: const Padding(
-            padding: EdgeInsets.all(12),
-            child: Icon(Icons.search),
-          ),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide.none,
+    return Scaffold(
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Add your actual home screen content here
+              Text(
+                'Welcome, Teacher',
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 24),
+              // Add more widgets as needed
+            ],
           ),
         ),
       ),

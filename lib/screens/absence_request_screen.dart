@@ -1,17 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:learning_management_system/providers/app_bar_provider.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
-class AbsenceRequestScreen extends StatefulWidget {
+class AbsenceRequestScreen extends ConsumerStatefulWidget {
   const AbsenceRequestScreen({super.key});
 
   @override
-  State<AbsenceRequestScreen> createState() => _AbsenceRequestScreenState();
+  ConsumerState<AbsenceRequestScreen> createState() => _AbsenceRequestScreenState();
 }
 
-class _AbsenceRequestScreenState extends State<AbsenceRequestScreen> {
+class _AbsenceRequestScreenState extends ConsumerState<AbsenceRequestScreen> {
   DateTime? _selectedDate;
   String? _selectedFile;
   final TextEditingController _titleController = TextEditingController();
@@ -81,6 +83,30 @@ class _AbsenceRequestScreenState extends State<AbsenceRequestScreen> {
         SnackBar(content: Text('Error: ${e.toString()}')),
       );
     }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() {
+      ref.read(appBarNotifierProvider.notifier).setAppBar(
+        title: 'Request Absence',
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.info_outline),
+            onPressed: () {
+              // Show absence request guidelines
+            },
+          ),
+        ],
+      );
+    });
+  }
+
+  @override
+  void dispose() {
+    ref.read(appBarNotifierProvider.notifier).reset();
+    super.dispose();
   }
 
   @override

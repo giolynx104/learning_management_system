@@ -1,17 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:learning_management_system/routes/routes.dart';
+import 'package:learning_management_system/providers/app_bar_provider.dart';
 import 'package:intl/intl.dart';
 import 'package:learning_management_system/screens/submit_survey_screen.dart';
 
-class SurveyListScreen extends StatefulWidget {
+class SurveyListScreen extends ConsumerStatefulWidget {
   const SurveyListScreen({super.key});
 
   @override
-  SurveyListScreenState createState() => SurveyListScreenState();
+  ConsumerState<SurveyListScreen> createState() => _SurveyListScreenState();
 }
 
-class SurveyListScreenState extends State<SurveyListScreen> {
+class _SurveyListScreenState extends ConsumerState<SurveyListScreen> {
   final List<Survey> surveys = [
     Survey(
       name: 'Survey 1',
@@ -82,6 +84,30 @@ class SurveyListScreenState extends State<SurveyListScreen> {
         endTime: survey.endTime,
       ),
     );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() {
+      ref.read(appBarNotifierProvider.notifier).setAppBar(
+        title: 'Surveys',
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.filter_list),
+            onPressed: () {
+              // Show filter options
+            },
+          ),
+        ],
+      );
+    });
+  }
+
+  @override
+  void dispose() {
+    ref.read(appBarNotifierProvider.notifier).reset();
+    super.dispose();
   }
 
   @override

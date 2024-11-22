@@ -1,17 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:learning_management_system/routes/routes.dart';
+import 'package:learning_management_system/providers/app_bar_provider.dart';
 import 'package:intl/intl.dart';
 import 'package:learning_management_system/models/survey.dart';
 
-class TeacherSurveyListScreen extends StatefulWidget {
+class TeacherSurveyListScreen extends ConsumerStatefulWidget {
   const TeacherSurveyListScreen({super.key});
 
   @override
-  TeacherSurveyListScreenState createState() => TeacherSurveyListScreenState();
+  ConsumerState<TeacherSurveyListScreen> createState() => _TeacherSurveyListScreenState();
 }
 
-class TeacherSurveyListScreenState extends State<TeacherSurveyListScreen> {
+class _TeacherSurveyListScreenState extends ConsumerState<TeacherSurveyListScreen> {
   final List<TeacherSurvey> surveys = [
     TeacherSurvey(
       name: 'Survey 1',
@@ -45,6 +47,28 @@ class TeacherSurveyListScreenState extends State<TeacherSurveyListScreen> {
         .where((survey) => survey.endTime.isBefore(DateTime.now()))
         .toList()
       ..sort((a, b) => a.endTime.compareTo(b.endTime));
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() {
+      ref.read(appBarNotifierProvider.notifier).setAppBar(
+        title: 'Manage Surveys',
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add),
+            onPressed: () => context.push(Routes.createSurvey),
+          ),
+        ],
+      );
+    });
+  }
+
+  @override
+  void dispose() {
+    ref.read(appBarNotifierProvider.notifier).reset();
+    super.dispose();
   }
 
   @override

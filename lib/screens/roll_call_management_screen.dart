@@ -7,7 +7,7 @@ import 'package:learning_management_system/providers/app_bar_provider.dart';
 
 class RollCallScreen extends HookConsumerWidget {
   final String classId;
-  
+
   const RollCallScreen({
     super.key,
     required this.classId,
@@ -24,9 +24,9 @@ class RollCallScreen extends HookConsumerWidget {
       averageAttendance: 0.92,
     );
 
-    final updateAppBar = useCallback(() {
-      Future(() {
-        ref.read(appBarProvider.notifier).updateAppBar(
+    useEffect(() {
+      Future.microtask(() {
+        ref.read(appBarNotifierProvider.notifier).setAppBar(
           title: 'Roll Call',
           actions: [
             IconButton(
@@ -38,14 +38,8 @@ class RollCallScreen extends HookConsumerWidget {
           ],
         );
       });
-    }, []);
-
-    useEffect(() {
-      updateAppBar();
       return () {
-        Future(() {
-          ref.read(appBarProvider.notifier).reset();
-        });
+        ref.read(appBarNotifierProvider.notifier).reset();
       };
     }, const []);
 
@@ -63,16 +57,22 @@ class RollCallScreen extends HookConsumerWidget {
                     children: [
                       Text(
                         classInfo.name,
-                        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
+                        style: Theme.of(context)
+                            .textTheme
+                            .headlineMedium
+                            ?.copyWith(
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
                       ),
                       const SizedBox(height: 8),
                       Text(
                         'Class ID: ${classInfo.id}',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: Theme.of(context).colorScheme.secondary,
-                        ),
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleMedium
+                            ?.copyWith(
+                              color: Theme.of(context).colorScheme.secondary,
+                            ),
                       ),
                       const SizedBox(height: 16),
                       _InfoCard(
@@ -92,7 +92,8 @@ class RollCallScreen extends HookConsumerWidget {
                       const SizedBox(height: 8),
                       _InfoCard(
                         title: 'Average Attendance',
-                        value: '${(classInfo.averageAttendance * 100).toStringAsFixed(1)}%',
+                        value:
+                            '${(classInfo.averageAttendance * 100).toStringAsFixed(1)}%',
                       ),
                       const SizedBox(height: 24),
                     ],
@@ -176,14 +177,14 @@ class _InfoCard extends StatelessWidget {
             Text(
               title,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
             ),
             Text(
               value,
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                color: Theme.of(context).colorScheme.primary,
-              ),
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
             ),
           ],
         ),

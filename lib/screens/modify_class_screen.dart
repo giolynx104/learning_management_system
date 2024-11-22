@@ -10,7 +10,7 @@ import 'package:learning_management_system/providers/app_bar_provider.dart';
 
 class ModifyClassScreen extends HookConsumerWidget {
   final String classId;
-  
+
   const ModifyClassScreen({
     super.key,
     required this.classId,
@@ -18,17 +18,18 @@ class ModifyClassScreen extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    debugPrint('ModifyClassScreen - Received ClassId: $classId, Type: ${classId.runtimeType}');
-    
+    debugPrint(
+        'ModifyClassScreen - Received ClassId: $classId, Type: ${classId.runtimeType}');
+
     final theme = Theme.of(context);
     final formKey = useMemoized(() => GlobalKey<FormState>());
     final isLoading = useState(false);
     final classData = useState<ClassModel?>(null);
 
-    // Create a callback for app bar updates
-    final updateAppBar = useCallback(() {
-      Future(() {
-        ref.read(appBarProvider.notifier).updateAppBar(
+    // Single AppBar update in useEffect
+    useEffect(() {
+      Future.microtask(() {
+        ref.read(appBarNotifierProvider.notifier).setAppBar(
           title: 'Modify Class',
           actions: [
             IconButton(
@@ -40,15 +41,8 @@ class ModifyClassScreen extends HookConsumerWidget {
           ],
         );
       });
-    }, []);
-
-    // Use the callback in useEffect
-    useEffect(() {
-      updateAppBar();
       return () {
-        Future(() {
-          ref.read(appBarProvider.notifier).reset();
-        });
+        ref.read(appBarNotifierProvider.notifier).reset();
       };
     }, const []);
 
@@ -63,12 +57,14 @@ class ModifyClassScreen extends HookConsumerWidget {
           }
 
           debugPrint('ModifyClassScreen - Fetching data for ClassId: $classId');
-          final response = await ref.read(classServiceProvider.notifier).getClassInfo(
-            token: authState.token ?? '',
-            classId: classId,
-          );
-          
-          debugPrint('ModifyClassScreen - Received response: ${response.toString()}');
+          final response =
+              await ref.read(classServiceProvider.notifier).getClassInfo(
+                    token: authState.token ?? '',
+                    classId: classId,
+                  );
+
+          debugPrint(
+              'ModifyClassScreen - Received response: ${response.toString()}');
           classData.value = response;
         } catch (e) {
           debugPrint('ModifyClassScreen - Error: $e');
@@ -100,10 +96,13 @@ class ModifyClassScreen extends HookConsumerWidget {
       );
     }
 
-    final classNameController = useTextEditingController(text: classData.value!.className);
+    final classNameController =
+        useTextEditingController(text: classData.value!.className);
     final status = useState<String>(classData.value!.status);
-    final startDate = useState<DateTime>(DateTime.parse(classData.value!.startDate));
-    final endDate = useState<DateTime>(DateTime.parse(classData.value!.endDate));
+    final startDate =
+        useState<DateTime>(DateTime.parse(classData.value!.startDate));
+    final endDate =
+        useState<DateTime>(DateTime.parse(classData.value!.endDate));
 
     Future<void> handleEditClass() async {
       if (formKey.currentState?.validate() ?? false) {
@@ -111,7 +110,7 @@ class ModifyClassScreen extends HookConsumerWidget {
           isLoading.value = true;
           final classService = ref.read(classServiceProvider.notifier);
           final authState = await ref.read(authProvider.future);
-          
+
           if (authState == null) {
             throw Exception('Not authenticated');
           }
@@ -165,7 +164,8 @@ class ModifyClassScreen extends HookConsumerWidget {
                 ),
               ),
               const SizedBox(height: 24),
-              Text('Class Code: ${classData.value!.classId}', 
+              Text(
+                'Class Code: ${classData.value!.classId}',
                 style: TextStyle(
                   fontSize: 18.0,
                   color: theme.colorScheme.primary,
@@ -185,7 +185,8 @@ class ModifyClassScreen extends HookConsumerWidget {
                 labelText: 'Status',
                 items: const [
                   DropdownMenuItem(value: 'ACTIVE', child: Text('Active')),
-                  DropdownMenuItem(value: 'COMPLETED', child: Text('Completed')),
+                  DropdownMenuItem(
+                      value: 'COMPLETED', child: Text('Completed')),
                   DropdownMenuItem(value: 'UPCOMING', child: Text('Upcoming')),
                 ],
                 onChanged: (value) => status.value = value ?? status.value,
@@ -219,11 +220,11 @@ class ModifyClassScreen extends HookConsumerWidget {
                   ),
                 ),
                 child: isLoading.value
-                  ? const CircularProgressIndicator(color: Colors.white)
-                  : const Text(
-                      'Save Changes',
-                      style: TextStyle(fontSize: 18.0),
-                    ),
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text(
+                        'Save Changes',
+                        style: TextStyle(fontSize: 18.0),
+                      ),
               ),
             ],
           ),

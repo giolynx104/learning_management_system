@@ -27,14 +27,14 @@ class _RollCallActionScreenState extends ConsumerState<RollCallActionScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(appBarProvider.notifier).updateAppBar(
+    Future.microtask(() {
+      ref.read(appBarNotifierProvider.notifier).setAppBar(
         title: 'Take Roll Call',
         actions: [
           IconButton(
-            icon: const Icon(Icons.history),
+            icon: const Icon(Icons.help_outline),
             onPressed: () {
-              // Show roll call history
+              // Show help dialog
             },
           ),
         ],
@@ -44,7 +44,7 @@ class _RollCallActionScreenState extends ConsumerState<RollCallActionScreen> {
 
   @override
   void dispose() {
-    ref.read(appBarProvider.notifier).reset();
+    ref.read(appBarNotifierProvider.notifier).reset();
     super.dispose();
   }
 

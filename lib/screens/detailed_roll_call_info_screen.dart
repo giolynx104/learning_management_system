@@ -5,7 +5,7 @@ import 'package:learning_management_system/providers/app_bar_provider.dart';
 
 class DetailedRollCallInfoScreen extends HookConsumerWidget {
   final String classId;
-  
+
   const DetailedRollCallInfoScreen({
     super.key,
     required this.classId,
@@ -18,25 +18,27 @@ class DetailedRollCallInfoScreen extends HookConsumerWidget {
     final filteredStudents = useState(mockStudents);
 
     useEffect(() {
-      ref.read(appBarProvider.notifier).updateAppBar(
-        title: 'Roll Call Details',
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.filter_list),
-            onPressed: () {
-              // Show filter options
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.download),
-            onPressed: () {
-              // Export attendance data
-            },
-          ),
-        ],
-      );
+      Future.microtask(() {
+        ref.read(appBarNotifierProvider.notifier).setAppBar(
+          title: 'Roll Call Details',
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.filter_list),
+              onPressed: () {
+                // Show filter options
+              },
+            ),
+            IconButton(
+              icon: const Icon(Icons.download),
+              onPressed: () {
+                // Export attendance data
+              },
+            ),
+          ],
+        );
+      });
       return () {
-        ref.read(appBarProvider.notifier).reset();
+        ref.read(appBarNotifierProvider.notifier).reset();
       };
     }, const []);
 
@@ -79,7 +81,8 @@ class DetailedRollCallInfoScreen extends HookConsumerWidget {
                     _searchController.clear();
                     filterStudents('');
                   },
-                  child: Text('Search by ${isSearchingById.value ? 'Name' : 'ID'}'),
+                  child: Text(
+                      'Search by ${isSearchingById.value ? 'Name' : 'ID'}'),
                 ),
               ],
             ),

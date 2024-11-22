@@ -8,6 +8,7 @@ import 'package:learning_management_system/mixins/sign_out_mixin.dart';
 import 'package:go_router/go_router.dart';
 import 'package:learning_management_system/providers/auth_provider.dart';
 import 'package:learning_management_system/routes/routes.dart';
+import 'package:learning_management_system/providers/app_bar_provider.dart';
 
 class StudentHomeScreen extends ConsumerStatefulWidget {
   const StudentHomeScreen({super.key});
@@ -39,6 +40,19 @@ class _StudentHomeScreenState extends ConsumerState<StudentHomeScreen> with Sign
     super.initState();
     _getTeams();
     _getPinnedChanel();
+    Future.microtask(() {
+      ref.read(appBarNotifierProvider.notifier).setAppBar(
+        title: 'Home',
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications),
+            onPressed: () {
+              // Handle notifications
+            },
+          ),
+        ],
+      );
+    });
   }
 
   @override
@@ -152,67 +166,6 @@ class _StudentHomeScreenState extends ConsumerState<StudentHomeScreen> with Sign
             borderRadius: BorderRadius.circular(10),
             borderSide: BorderSide.none,
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDrawer() {
-    final userState = ref.watch(authProvider);
-
-    return Drawer(
-      child: userState.when(
-        data: (user) {
-          if (user == null) return const SizedBox.shrink();
-
-          return ListView(
-            padding: EdgeInsets.zero,
-            children: [
-              UserAccountsDrawerHeader(
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                accountName: Text('${user.firstName} ${user.lastName}'),
-                accountEmail: Text(user.email),
-                currentAccountPicture: user.avatar != null
-                    ? CircleAvatar(
-                        backgroundImage: NetworkImage(user.avatar!),
-                        backgroundColor: Colors.white,
-                      )
-                    : const CircleAvatar(
-                        backgroundColor: Colors.white,
-                        child: Icon(Icons.person, color: Colors.red),
-                      ),
-              ),
-              ListTile(
-                leading: const Icon(Icons.person),
-                title: const Text('Profile'),
-                onTap: () {
-                  context.pop();
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.settings),
-                title: const Text('Settings'),
-                onTap: () {
-                  context.pop();
-                },
-              ),
-              const Divider(),
-              ListTile(
-                leading: const Icon(Icons.logout, color: Colors.red),
-                title: const Text('Sign Out', style: TextStyle(color: Colors.red)),
-                onTap: () {
-                  context.pop();
-                  handleSignOut();
-                },
-              ),
-            ],
-          );
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(
-          child: Text('Error loading user data: $error'),
         ),
       ),
     );

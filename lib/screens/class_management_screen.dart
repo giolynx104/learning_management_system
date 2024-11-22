@@ -22,17 +22,14 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
   final FocusNode _classCodeFocusNode = FocusNode();
   Timer? _refreshTimer;
   List<ClassListItem> _classList = [];
+  bool _isDisposed = false;
 
   @override
   void initState() {
     super.initState();
-    debugPrint('ClassManagementScreen - initState called');
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      debugPrint('ClassManagementScreen - postFrameCallback');
-      if (!mounted) return;
-      
-      ref.read(appBarProvider.notifier).updateAppBar(
-        title: 'Class Management',
+    Future.microtask(() {
+      ref.read(appBarNotifierProvider.notifier).setAppBar(
+        title: 'Classes',
         actions: [
           IconButton(
             icon: const Icon(Icons.search),
@@ -48,22 +45,22 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
           ),
         ],
       );
-
-      _initializeData();
     });
+    _initializeData();
   }
 
   Future<void> _initializeData() async {
     debugPrint('ClassManagementScreen - _initializeData started');
     if (!mounted) return;
-    
+
     try {
       final authState = ref.read(authProvider);
       debugPrint('ClassManagementScreen - authState read');
-      
+
       return authState.when(
         data: (user) async {
-          debugPrint('ClassManagementScreen - auth data received: ${user?.role}');
+          debugPrint(
+              'ClassManagementScreen - auth data received: ${user?.role}');
           if (user == null) {
             if (mounted) context.go(Routes.signin);
             return;
@@ -109,10 +106,10 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
   @override
   void dispose() {
     debugPrint('ClassManagementScreen - dispose called');
+    _isDisposed = true;
     _classCodeController.dispose();
     _classCodeFocusNode.dispose();
-    _refreshTimer?.cancel(); // Safely cancel timer if it exists
-    ref.read(appBarProvider.notifier).reset();
+    _refreshTimer?.cancel();
     super.dispose();
   }
 
@@ -120,7 +117,7 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
     try {
       final authState = ref.read(authProvider);
       final token = authState.token;
-      
+
       if (token == null) {
         if (mounted) {
           context.go(Routes.signin);
@@ -128,9 +125,8 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
         return;
       }
 
-      final classes = await ref
-          .read(classServiceProvider.notifier)
-          .getClassList(token);
+      final classes =
+          await ref.read(classServiceProvider.notifier).getClassList(token);
 
       if (mounted) {
         setState(() {
@@ -351,7 +347,7 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
     );
   }
 
-  void _handleClassAction(String action, ClassListItem classItem) {
+  Future<void> _handleClassAction(String action, ClassListItem classItem) async {
     switch (action) {
       case 'edit':
         debugPrint(
@@ -375,7 +371,7 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
         context.push(Routes.nestedUploadFile);
         break;
       case 'attendance':
-        ref.read(appBarProvider.notifier).updateAppBar(
+        ref.read(appBarNotifierProvider.notifier).setAppBar(
           title: 'Attendance - ${classItem.className}',
           actions: [
             IconButton(
@@ -392,9 +388,9 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
         );
         break;
       case 'modify':
-        ref.read(appBarProvider.notifier).updateAppBar(
-              title: 'Modify - ${classItem.className}',
-            );
+        ref.read(appBarNotifierProvider.notifier).setAppBar(
+          title: 'Modify - ${classItem.className}',
+        );
         context.pushNamed(
           Routes.modifyClass,
           pathParameters: {'classId': classItem.classId.toString()},
