@@ -27,6 +27,8 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      
       ref.read(appBarProvider.notifier).updateAppBar(
         title: 'Class Management',
         actions: [
@@ -45,36 +47,48 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
         ],
       );
 
-      // Wait for auth to initialize before loading classes
       _initializeData();
     });
   }
 
   Future<void> _initializeData() async {
+    if (!mounted) return;
+    
     try {
-      final authState = await ref.read(authProvider.future);
-      if (authState == null) {
-        if (mounted) {
-          context.go(Routes.signin);
-        }
-        return;
-      }
+      final authState = ref.read(authProvider);
+      
+      return authState.when(
+        data: (user) async {
+          if (user == null) {
+            if (mounted) context.go(Routes.signin);
+            return;
+          }
 
-      // Set up the refresh timer only after confirming authentication
-      _refreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
-        if (mounted) {
-          _refreshClassList();
-        }
-      });
+          // Set up the refresh timer only after confirming authentication
+          _refreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+            if (mounted) {
+              _refreshClassList();
+            }
+          });
 
-      // Load the initial class list
-      await _loadClassList();
+          // Load the initial class list
+          await _loadClassList();
+        },
+        loading: () => null,
+        error: (e, __) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Error initializing: $e')),
+            );
+            context.go(Routes.signin);
+          }
+        },
+      );
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error initializing: $e')),
         );
-        // Redirect to sign in on error
         context.go(Routes.signin);
       }
     }
@@ -84,7 +98,9 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
   void dispose() {
     _classCodeController.dispose();
     _classCodeFocusNode.dispose();
-    _refreshTimer.cancel();
+    if (_refreshTimer.isActive) {
+      _refreshTimer.cancel();
+    }
     ref.read(appBarProvider.notifier).reset();
     super.dispose();
   }
@@ -92,7 +108,9 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
   Future<void> _loadClassList() async {
     try {
       final authState = ref.read(authProvider);
-      if (authState.token == null) {
+      final token = authState.token;
+      
+      if (token == null) {
         if (mounted) {
           context.go(Routes.signin);
         }
@@ -101,7 +119,7 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
 
       final classes = await ref
           .read(classServiceProvider.notifier)
-          .getClassList(authState.token!);
+          .getClassList(token);
 
       if (mounted) {
         setState(() {
