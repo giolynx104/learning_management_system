@@ -3,6 +3,9 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:learning_management_system/providers/attendance_provider.dart';
+import 'package:learning_management_system/providers/auth_provider.dart';
+import 'package:learning_management_system/services/class_service.dart';
+import 'package:learning_management_system/models/student_info.dart';
 import 'package:go_router/go_router.dart';
 
 class RollCallActionScreen extends HookConsumerWidget {
@@ -16,21 +19,51 @@ class RollCallActionScreen extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedDate = useState(DateTime.now());
-    final students = useState<List<Student>>([]);
+    final students = useState<List<StudentInfo>>([]);
     final showOnlyAbsent = useState(false);
+    final isLoading = useState(true);
+    final error = useState<String?>(null);
     
     final attendanceState = ref.watch(takeAttendanceProvider);
 
     useEffect(() {
-      // TODO: Fetch students for this class
-      students.value = List.generate(
-        30,
-        (index) => Student(
-          id: (index + 1).toString(),
-          name: 'Student ${index + 1}',
-          isPresent: true,
-        ),
-      );
+      Future<void> loadStudents() async {
+        try {
+          isLoading.value = true;
+          error.value = null;
+          
+          final token = ref.read(authProvider).value?.token;
+          if (token == null) {
+            throw Exception('No authentication token found');
+          }
+
+          final classInfo = await ref.read(classServiceProvider.notifier).getClassInfo(
+            token: token,
+            classId: classId,
+          );
+
+          if (classInfo == null) {
+            throw Exception('Failed to fetch class information');
+          }
+
+          // Convert student list to StudentInfo objects
+          students.value = classInfo.studentList.map((student) {
+            final studentData = student as Map<String, dynamic>;
+            return StudentInfo(
+              id: studentData['id']?.toString() ?? '',
+              name: '${studentData['first_name'] ?? ''} ${studentData['last_name'] ?? ''}'.trim(),
+              isPresent: true,
+            );
+          }).toList();
+
+        } catch (e) {
+          error.value = e.toString();
+        } finally {
+          isLoading.value = false;
+        }
+      }
+
+      loadStudents();
       return null;
     }, []);
 
@@ -78,49 +111,42 @@ class RollCallActionScreen extends HookConsumerWidget {
             ),
           ),
           Expanded(
-            child: attendanceState.when(
-              data: (_) => ListView.builder(
-                itemCount: students.value.length,
-                itemBuilder: (context, index) {
-                  final student = students.value[index];
-                  if (showOnlyAbsent.value && student.isPresent) {
-                    return const SizedBox.shrink();
-                  }
-                  return CheckboxListTile(
-                    title: Text(student.name),
-                    subtitle: Text('ID: ${student.id}'),
-                    value: student.isPresent,
-                    onChanged: (value) {
-                      final newStudents = [...students.value];
-                      newStudents[index] = Student(
-                        id: student.id,
-                        name: student.name,
-                        isPresent: value ?? true,
-                      );
-                      students.value = newStudents;
-                    },
-                  );
-                },
-              ),
-              loading: () => const Center(
-                child: CircularProgressIndicator(),
-              ),
-              error: (error, stack) => Center(
-                child: SelectableText.rich(
-                  TextSpan(
-                    text: 'Error: ',
-                    children: [
-                      TextSpan(
-                        text: error.toString(),
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.error,
+            child: isLoading.value
+                ? const Center(child: CircularProgressIndicator())
+                : error.value != null
+                    ? Center(
+                        child: Text(
+                          'Error: ${error.value}',
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.error,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
+                      )
+                    : students.value.isEmpty
+                        ? const Center(
+                            child: Text('No students found in this class'),
+                          )
+                        : ListView.builder(
+                            itemCount: students.value.length,
+                            itemBuilder: (context, index) {
+                              final student = students.value[index];
+                              if (showOnlyAbsent.value && student.isPresent) {
+                                return const SizedBox.shrink();
+                              }
+                              return CheckboxListTile(
+                                title: Text(student.name),
+                                subtitle: Text('ID: ${student.id}'),
+                                value: student.isPresent,
+                                onChanged: (value) {
+                                  final newStudents = [...students.value];
+                                  newStudents[index] = student.copyWith(
+                                    isPresent: value ?? true,
+                                  );
+                                  students.value = newStudents;
+                                },
+                              );
+                            },
+                          ),
           ),
           Padding(
             padding: const EdgeInsets.all(16.0),
@@ -155,16 +181,4 @@ class RollCallActionScreen extends HookConsumerWidget {
       ),
     );
   }
-}
-
-class Student {
-  final String name;
-  final String id;
-  final bool isPresent;
-
-  const Student({
-    required this.name,
-    required this.id,
-    required this.isPresent,
-  });
 }
