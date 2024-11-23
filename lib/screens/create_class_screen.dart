@@ -1,8 +1,11 @@
+import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:learning_management_system/exceptions/api_exceptions.dart';
+import 'package:learning_management_system/routes/routes.dart';
 import 'package:learning_management_system/services/class_service.dart';
 import 'package:learning_management_system/providers/auth_provider.dart';
 
@@ -27,46 +30,118 @@ class CreateClassScreen extends HookConsumerWidget {
     /// in the create class request
 
     Future<void> handleCreateClass() async {
+      debugPrint('CreateClassScreen - Starting class creation');
       if (formKey.currentState?.validate() ?? false) {
         try {
           final classService = ref.read(classServiceProvider.notifier);
           final authState = await ref.read(authProvider.future);
           
+          debugPrint('CreateClassScreen - Auth state: ${authState?.token}');
+          
           if (authState == null) {
             throw Exception('Not authenticated');
           }
-          
+
+          // Validate class code format
+          if (!RegExp(r'^\d{6}$').hasMatch(classCodeController.text.trim())) {
+            throw Exception('Class code must be exactly 6 digits');
+          }
+
+          // Validate dates
+          if (startDate.value == null || endDate.value == null) {
+            throw Exception('Please select both start and end dates');
+          }
+
+          if (endDate.value!.isBefore(startDate.value!)) {
+            throw Exception('End date cannot be before start date');
+          }
+
+          // Validate max students
+          final maxStudents = int.tryParse(maxStudentsController.text);
+          if (maxStudents == null || maxStudents <= 0) {
+            throw Exception('Please enter a valid number for maximum students');
+          }
+
+          final formattedStartDate = DateFormat('yyyy-MM-dd').format(startDate.value!);
+          final formattedEndDate = DateFormat('yyyy-MM-dd').format(endDate.value!);
+
+          debugPrint('CreateClassScreen - Request data:');
+          debugPrint('Token: ${authState.token}');
+          debugPrint('ClassId: ${classCodeController.text.trim()}');
+          debugPrint('ClassName: ${classNameController.text.trim()}');
+          debugPrint('ClassType: ${classType.value}');
+          debugPrint('StartDate: $formattedStartDate');
+          debugPrint('EndDate: $formattedEndDate');
+          debugPrint('MaxStudents: $maxStudents');
+          debugPrint('AttachedCode: ${associatedClassCodeController.text.isEmpty ? "null" : associatedClassCodeController.text.trim()}');
+
           await classService.createClass(
-            token: authState.token,
-            classId: classCodeController.text,
-            className: classNameController.text,
+            token: authState.token ?? '',
+            classId: classCodeController.text.trim(),
+            className: classNameController.text.trim(),
             classType: classType.value!,
-            startDate: startDate.value!,
-            endDate: endDate.value!,
-            maxStudentAmount: int.parse(maxStudentsController.text),
-            attachedCode: associatedClassCodeController.text.isNotEmpty 
-              ? associatedClassCodeController.text 
-              : null,
-            // Status is handled server-side and defaults to 'ACTIVE'
+            startDate: formattedStartDate,
+            endDate: formattedEndDate,
+            maxStudentAmount: maxStudents,
+            attachedCode: associatedClassCodeController.text.isEmpty 
+                ? null 
+                : associatedClassCodeController.text.trim(),
           );
 
+          debugPrint('CreateClassScreen - Class created successfully');
+
           if (!context.mounted) return;
+          
+          // Pop and return true to indicate success
           context.pop(true);
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text(
-                'Class created successfully (Status: Active)',
+                'Class created successfully',
                 style: TextStyle(color: Colors.white),
               ),
               backgroundColor: Colors.green,
             ),
           );
-        } catch (e) {
+        } on UnauthorizedException catch (e) {
+          debugPrint('CreateClassScreen - UnauthorizedException: $e');
           if (!context.mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Error creating class: $e'),
+              content: Text(e.toString()),
               backgroundColor: Colors.red,
+            ),
+          );
+          context.go(Routes.signin);
+        } catch (e) {
+          debugPrint('CreateClassScreen - Error: $e');
+          if (!context.mounted) return;
+          
+          String errorMessage;
+          if (e.toString().contains('Class ID already exists')) {
+            errorMessage = 'This class code is already in use. Please try a different one.';
+          } else if (e.toString().contains('maxStudentAmount')) {
+            errorMessage = 'Maximum number of students must be between 1 and 50.';
+          } else if (e.toString().contains('Invalid parameters')) {
+            errorMessage = 'Invalid parameters. Please check all fields and try again.';
+          } else if (e.toString().contains('parameter value is invalid')) {
+            errorMessage = 'One or more fields have invalid values. Please check and try again.';
+          } else {
+            errorMessage = e.toString();
+          }
+          
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: SelectableText(errorMessage),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 5),
+              action: SnackBarAction(
+                label: 'Dismiss',
+                textColor: Colors.white,
+                onPressed: () {
+                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                },
+              ),
             ),
           );
         }
@@ -94,22 +169,32 @@ class CreateClassScreen extends HookConsumerWidget {
               const SizedBox(height: 24),
               _buildTextField(
                 controller: classCodeController,
-                labelText: 'Class Code',
+                labelText: 'Class Code (6 digits)',
                 validator: (value) {
-                  if (value == null || value.isEmpty) {
+                  if (value == null || value.trim().isEmpty) {
                     return 'Please enter a class code';
                   }
-                  if (value.length != 6) {
+                  if (!RegExp(r'^\d{6}$').hasMatch(value)) {
                     return 'Class code must be exactly 6 digits';
-                  }
-                  if (!RegExp(r'^[0-9]+$').hasMatch(value)) {
-                    return 'Class code must contain only digits';
                   }
                   return null;
                 },
                 maxLength: 6,
                 keyboardType: TextInputType.number,
                 theme: theme,
+                helperText: 'Enter exactly 6 digits',
+                suffixIcon: Tooltip(
+                  message: 'Class code must be 6 digits',
+                  child: Icon(
+                    Icons.info_outline,
+                    color: theme.colorScheme.primary,
+                    size: 20,
+                  ),
+                ),
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(6),
+                ],
               ),
               const SizedBox(height: 16),
               _buildTextField(
@@ -144,9 +229,9 @@ class CreateClassScreen extends HookConsumerWidget {
                 value: classType.value,
                 labelText: 'Class Type',
                 items: const [
-                  DropdownMenuItem(value: 'Theory', child: Text('Theory')),
-                  DropdownMenuItem(value: 'Exercise', child: Text('Exercise')),
-                  DropdownMenuItem(value: 'Both', child: Text('Both')),
+                  DropdownMenuItem(value: 'Theory', child: Text('Theory (LT)')),
+                  DropdownMenuItem(value: 'Exercise', child: Text('Exercise (BT)')),
+                  DropdownMenuItem(value: 'Both', child: Text('Both (LT_BT)')),
                 ],
                 onChanged: (value) => classType.value = value,
                 validator: (value) =>
@@ -156,7 +241,7 @@ class CreateClassScreen extends HookConsumerWidget {
               const SizedBox(height: 16),
               _buildTextField(
                 controller: maxStudentsController,
-                labelText: 'Maximum Students',
+                labelText: 'Maximum Students (1-50)',
                 keyboardType: TextInputType.number,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -166,9 +251,21 @@ class CreateClassScreen extends HookConsumerWidget {
                   if (number == null || number <= 0) {
                     return 'Please enter a valid number';
                   }
+                  if (number > 50) {
+                    return 'Maximum students cannot exceed 50';
+                  }
                   return null;
                 },
                 theme: theme,
+                helperText: 'Enter a number between 1 and 50',
+                suffixIcon: Tooltip(
+                  message: 'Maximum allowed: 50 students',
+                  child: Icon(
+                    Icons.info_outline,
+                    color: theme.colorScheme.primary,
+                    size: 20,
+                  ),
+                ),
               ),
               const SizedBox(height: 16),
               _DatePickerField(
@@ -214,6 +311,9 @@ class CreateClassScreen extends HookConsumerWidget {
     required ThemeData theme,
     TextInputType? keyboardType,
     int? maxLength,
+    String? helperText,
+    Widget? suffixIcon,
+    List<TextInputFormatter>? inputFormatters,
   }) {
     return TextFormField(
       controller: controller,
@@ -237,11 +337,27 @@ class CreateClassScreen extends HookConsumerWidget {
           borderSide: BorderSide(color: theme.colorScheme.error),
         ),
         errorStyle: TextStyle(color: theme.colorScheme.error),
+        helperText: helperText,
+        helperStyle: TextStyle(color: theme.colorScheme.secondary),
+        suffixIcon: suffixIcon,
         counterText: '',
       ),
       maxLength: maxLength,
       keyboardType: keyboardType,
       validator: validator,
+      inputFormatters: inputFormatters ?? (keyboardType == TextInputType.number
+          ? [
+              FilteringTextInputFormatter.digitsOnly,
+              if (maxLength != null) LengthLimitingTextInputFormatter(maxLength),
+              if (labelText.contains('Maximum Students'))
+                TextInputFormatter.withFunction((oldValue, newValue) {
+                  if (newValue.text.isEmpty) return newValue;
+                  final number = int.tryParse(newValue.text);
+                  if (number == null || number > 50) return oldValue;
+                  return newValue;
+                }),
+            ]
+          : null),
     );
   }
 

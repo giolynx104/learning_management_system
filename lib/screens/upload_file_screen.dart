@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:learning_management_system/providers/app_bar_provider.dart';
 import 'package:file_picker/file_picker.dart';
 
 // Class để lưu trữ thông tin file
@@ -10,25 +12,35 @@ class FileData {
   FileData({required this.name, required this.size, this.path});
 }
 
-class UploadFileScreen extends StatefulWidget {
-  const UploadFileScreen({super.key});
+class UploadFileScreen extends ConsumerStatefulWidget {
+  final String classId;
+
+  const UploadFileScreen({
+    super.key,
+    required this.classId,
+  });
 
   @override
-  State<UploadFileScreen> createState() => _UploadFileScreenState();
+  ConsumerState<UploadFileScreen> createState() => _UploadFileScreenState();
 }
 
-class _UploadFileScreenState extends State<UploadFileScreen> {
+class _UploadFileScreenState extends ConsumerState<UploadFileScreen> {
   List<FileData> selectedFiles = [];
 
   @override
   void initState() {
     super.initState();
-    // Khởi tạo danh sách file mẫu
+    debugPrint('UploadFileScreen - ClassId: ${widget.classId}');
     selectedFiles = [
       FileData(name: 'Document1.pdf', size: 1024),
       FileData(name: 'Image2.jpg', size: 2048),
       FileData(name: 'Presentation3.pptx', size: 3072),
     ];
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
   }
 
   // Hàm chọn file từ thiết bị
@@ -86,78 +98,88 @@ class _UploadFileScreenState extends State<UploadFileScreen> {
     );
   }
 
-  // Hàm tạo AppBar
-  AppBar _buildAppBar() {
-    return AppBar(
-      title: const Text('Upload File'),
-      leading: IconButton(
-        icon: const Icon(Icons.arrow_back),
-        onPressed: () => Navigator.of(context).pop(),
-      ),
-    );
-  }
-
-  // Hàm xây dựng danh sách file đã chọn
-  Widget _buildFileList() {
-    return ListView.builder(
-      itemCount: selectedFiles.length,
-      itemBuilder: (context, index) {
-        var file = selectedFiles[index];
-        return Card(
-          margin: const EdgeInsets.symmetric(vertical: 5),
-          child: ListTile(
-            leading: Icon(Icons.insert_drive_file, color: Theme.of(context).colorScheme.primary),
-            title: Text(file.name),
-            subtitle: Text('${(file.size / 1024).toStringAsFixed(2)} MB'), // Chuyển đổi size sang MB
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: Icon(Icons.edit, color: Theme.of(context).colorScheme.primary),
-                  onPressed: () => _editFileName(index),
-                ),
-                IconButton(
-                  icon: Icon(Icons.delete, color: Theme.of(context).colorScheme.error),
-                  onPressed: () => _removeFile(index),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: _buildAppBar(),
+      appBar: AppBar(
+        title: const Text('Upload File'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Nút chọn file và nút gửi
+            // Button section with proper constraints
             Row(
               children: [
-                ElevatedButton.icon(
-                  onPressed: _selectFiles,
-                  icon: const Icon(Icons.attach_file),
-                  label: const Text('Chọn File'),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: _selectFiles,
+                    icon: const Icon(Icons.attach_file),
+                    label: const Text('Choose File'),
+                  ),
                 ),
-                const Spacer(),
-                ElevatedButton(
-                  onPressed: () {
-                    // TODO: Add functionality to send files
-                  },
-                  child: const Text('Gửi'),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      // TODO: Add functionality to send files
+                    },
+                    child: const Text('Send'),
+                  ),
                 ),
               ],
             ),
             const SizedBox(height: 20),
-            // Kiểm tra nếu có file nào được chọn
-            selectedFiles.isNotEmpty
-                ? Expanded(child: _buildFileList()) // Hiện danh sách file
-                : const Center(child: Text('Chưa có file nào được chọn.')), // Thông báo không có file
+            // File list section
+            Expanded(
+              child: selectedFiles.isEmpty
+                  ? const Center(
+                      child: Text('No files selected.'),
+                    )
+                  : ListView.builder(
+                      itemCount: selectedFiles.length,
+                      itemBuilder: (context, index) {
+                        var file = selectedFiles[index];
+                        return Card(
+                          margin: const EdgeInsets.symmetric(vertical: 5),
+                          child: ListTile(
+                            leading: Icon(
+                              Icons.insert_drive_file,
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                            title: Text(file.name),
+                            subtitle: Text(
+                              '${(file.size / 1024).toStringAsFixed(2)} MB',
+                            ),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: Icon(
+                                    Icons.edit,
+                                    color: Theme.of(context).colorScheme.primary,
+                                  ),
+                                  onPressed: () => _editFileName(index),
+                                ),
+                                IconButton(
+                                  icon: Icon(
+                                    Icons.delete,
+                                    color: Theme.of(context).colorScheme.error,
+                                  ),
+                                  onPressed: () => _removeFile(index),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+            ),
           ],
         ),
       ),

@@ -1,21 +1,37 @@
 import 'package:flutter/material.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:go_router/go_router.dart';
+import 'package:learning_management_system/routes/routes.dart';
+import 'package:learning_management_system/providers/auth_provider.dart';
 
-class AbsenceRequestScreen extends StatefulWidget {
-  const AbsenceRequestScreen({super.key});
+class AbsenceRequestScreen extends ConsumerStatefulWidget {
+  final String classId;
+
+  const AbsenceRequestScreen({
+    super.key,
+    required this.classId,
+  });
 
   @override
-  State<AbsenceRequestScreen> createState() => _AbsenceRequestScreenState();
+  ConsumerState<AbsenceRequestScreen> createState() => _AbsenceRequestScreenState();
 }
 
-class _AbsenceRequestScreenState extends State<AbsenceRequestScreen> {
+class _AbsenceRequestScreenState extends ConsumerState<AbsenceRequestScreen> {
   DateTime? _selectedDate;
   String? _selectedFile;
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _reasonController = TextEditingController();
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _reasonController.dispose();
+    super.dispose();
+  }
 
   Future<void> _pickDate() async {
     final DateTime? pickedDate = await showDatePicker(
@@ -43,25 +59,31 @@ class _AbsenceRequestScreenState extends State<AbsenceRequestScreen> {
   Future<void> _submit() async {
     if (_selectedDate == null || _selectedFile == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Please select a date and upload proof file')),
+        const SnackBar(content: Text('Please select a date and upload proof file')),
       );
       return;
     }
 
+    final authState = ref.read(authProvider);
+    final token = authState.value?.token;
+    
+    if (token == null) {
+      if (mounted) context.go(Routes.signin);
+      return;
+    }
+
     final String reason = _reasonController.text;
-    final String formattedDate =
-        DateFormat('yyyy-MM-dd').format(_selectedDate!);
+    final String formattedDate = DateFormat('yyyy-MM-dd').format(_selectedDate!);
 
     try {
       final response = await http.post(
-        Uri.parse('http://160.30.168.228:8080/it5023e/request_absence'),
+        Uri.parse('http://157.66.24.126:8080/it5023e/request_absence'),
         headers: {
           'Content-Type': 'application/json; charset=UTF-8',
         },
         body: jsonEncode({
-          'token': 'ZeLxSs', // TODO: Get from auth provider
-          'class_id': '783226', // TODO: Get from class context
+          'token': token,
+          'class_id': widget.classId,
           'date': formattedDate,
           'reason': reason,
         }),
@@ -85,12 +107,13 @@ class _AbsenceRequestScreenState extends State<AbsenceRequestScreen> {
 
   @override
   Widget build(BuildContext context) {
-    Theme.of(context);
-
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Absence Request'),
-        centerTitle: true,
+        title: const Text('Request Absence'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),

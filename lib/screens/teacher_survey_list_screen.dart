@@ -1,82 +1,69 @@
 import 'package:flutter/material.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:learning_management_system/routes/routes.dart';
 import 'package:intl/intl.dart';
 import 'package:learning_management_system/models/survey.dart';
+import 'package:learning_management_system/widgets/survey_tab_bar.dart';
 
-class TeacherSurveyListScreen extends StatefulWidget {
-  const TeacherSurveyListScreen({super.key});
+class TeacherSurveyListScreen extends HookConsumerWidget {
+  final String classId;
 
-  @override
-  TeacherSurveyListScreenState createState() => TeacherSurveyListScreenState();
-}
-
-class TeacherSurveyListScreenState extends State<TeacherSurveyListScreen> {
-  final List<TeacherSurvey> surveys = [
-    TeacherSurvey(
-      name: 'Survey 1',
-      description: 'Description for Survey 1',
-      file: 'path/to/survey1.docx',
-      responseCount: 10,
-      startTime: DateTime.now().subtract(const Duration(hours: 1)),
-      endTime: DateTime.now().add(const Duration(hours: 1)),
-      className: 'Math 101',
-    ),
-    TeacherSurvey(
-      name: 'Survey 2',
-      description: 'Description for Survey 2',
-      file: 'path/to/survey2.docx',
-      responseCount: 5,
-      startTime: DateTime.now().subtract(const Duration(hours: 2)),
-      endTime: DateTime.now().subtract(const Duration(hours: 1)),
-      className: 'Science 101',
-    ),
-  ];
-
-  List<TeacherSurvey> getUpcomingSurveys() {
-    return surveys
-        .where((survey) => survey.endTime.isAfter(DateTime.now()))
-        .toList()
-      ..sort((a, b) => a.endTime.compareTo(b.endTime));
-  }
-
-  List<TeacherSurvey> getOverdueSurveys() {
-    return surveys
-        .where((survey) => survey.endTime.isBefore(DateTime.now()))
-        .toList()
-      ..sort((a, b) => a.endTime.compareTo(b.endTime));
-  }
+  const TeacherSurveyListScreen({
+    super.key,
+    required this.classId,
+  });
 
   @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+  Widget build(BuildContext context, WidgetRef ref) {
+    debugPrint('TeacherSurveyListScreen - ClassId: $classId');
+
+    final List<TeacherSurvey> surveys = [
+      TeacherSurvey(
+        name: 'Survey 1',
+        description: 'Description for Survey 1',
+        file: 'path/to/survey1.docx',
+        responseCount: 10,
+        startTime: DateTime.now().subtract(const Duration(hours: 1)),
+        endTime: DateTime.now().add(const Duration(hours: 1)),
+        className: 'Math 101',
+      ),
+      TeacherSurvey(
+        name: 'Survey 2',
+        description: 'Description for Survey 2',
+        file: 'path/to/survey2.docx',
+        responseCount: 5,
+        startTime: DateTime.now().subtract(const Duration(hours: 2)),
+        endTime: DateTime.now().subtract(const Duration(hours: 1)),
+        className: 'Science 101',
+      ),
+    ];
+
+    List<TeacherSurvey> getUpcomingSurveys() {
+      return surveys
+          .where((survey) => survey.endTime.isAfter(DateTime.now()))
+          .toList()
+        ..sort((a, b) => a.endTime.compareTo(b.endTime));
+    }
+
+    List<TeacherSurvey> getOverdueSurveys() {
+      return surveys
+          .where((survey) => survey.endTime.isBefore(DateTime.now()))
+          .toList()
+        ..sort((a, b) => a.endTime.compareTo(b.endTime));
+    }
 
     return DefaultTabController(
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-          title: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text('Survey Management'),
-              Image.asset(
-                'assets/images/HUST_white.png',
-                height: 30,
-                fit: BoxFit.contain,
-              ),
-            ],
-          ),
+          title: const Text('Manage Assignments'),
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
-            onPressed: () => context.pop(),
+            onPressed: () => Navigator.of(context).pop(),
           ),
-          bottom: TabBar(
-            labelColor: theme.colorScheme.onPrimary,
-            unselectedLabelColor: theme.colorScheme.onPrimary.withOpacity(0.7),
-            tabs: const [
-              Tab(text: 'Active'),
-              Tab(text: 'Expired'),
-            ],
+          bottom: const SurveyTabBar(
+            tabLabels: ['Active', 'Expired'],
           ),
         ),
         body: TabBarView(
@@ -93,6 +80,8 @@ class TeacherSurveyListScreenState extends State<TeacherSurveyListScreen> {
         ),
         floatingActionButton: FloatingActionButton(
           onPressed: () => context.push(Routes.nestedCreateSurvey),
+          backgroundColor: Theme.of(context).colorScheme.primary,
+          foregroundColor: Theme.of(context).colorScheme.onPrimary,
           child: const Icon(Icons.add),
         ),
       ),

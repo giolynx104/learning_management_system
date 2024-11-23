@@ -9,14 +9,15 @@ mixin SignOutMixin<T extends ConsumerStatefulWidget> on ConsumerState<T> {
   final _storageService = StorageService();
 
   Future<void> handleSignOut() async {
+    if (!mounted) return;
+    
     try {
-      await _storageService.clearUserSession();
-      if (!mounted) return;
+      // Reset app bar through router navigation
+      context.go(Routes.signin); // This will trigger router's redirect
       
-      await ref.read(authProvider.notifier).logout();
-      
-      if (!mounted) return;
-      context.go(Routes.signin);
+      // Clear storage and sign out
+      await _storageService.clearToken();
+      await ref.read(authProvider.notifier).signOut();
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -24,4 +25,4 @@ mixin SignOutMixin<T extends ConsumerStatefulWidget> on ConsumerState<T> {
       );
     }
   }
-} 
+}

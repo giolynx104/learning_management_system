@@ -1,126 +1,106 @@
 import 'package:flutter/material.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:learning_management_system/routes/routes.dart';
 import 'package:intl/intl.dart';
 import 'package:learning_management_system/screens/submit_survey_screen.dart';
+import 'package:learning_management_system/widgets/survey_tab_bar.dart';
 
-class SurveyListScreen extends StatefulWidget {
-  const SurveyListScreen({super.key});
+class StudentSurveyListScreen extends HookConsumerWidget {
+  final String classId;
+
+  const StudentSurveyListScreen({
+    super.key,
+    required this.classId,
+  });
 
   @override
-  SurveyListScreenState createState() => SurveyListScreenState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    debugPrint('SurveyListScreen - ClassId: $classId');
 
-class SurveyListScreenState extends State<SurveyListScreen> {
-  final List<Survey> surveys = [
-    Survey(
-      name: 'Survey 1',
-      description: 'This is a description for Survey 1',
-      file: 'path/to/survey1.docx',
-      answerDescription: null,
-      answerFile: null,
-      endTime: DateTime.now().add(const Duration(hours: 1)),
-      turnInTime: null,
-      className: 'Math 101',
-    ),
-    Survey(
-      name: 'Survey 2',
-      description: 'This is a description for Survey 2',
-      file: 'path/to/survey2.docx',
-      answerDescription: null,
-      answerFile: null,
-      endTime: DateTime.now().subtract(const Duration(hours: 1)),
-      turnInTime: null,
-      className: 'Science 101',
-    ),
-    Survey(
-      name: 'Survey 3',
-      description: null,
-      file: null,
-      answerDescription: 'Answer description for Survey 3',
-      answerFile: 'path/to/answer3.docx',
-      endTime: DateTime.now().add(const Duration(hours: 2)),
-      turnInTime: DateTime.now().subtract(const Duration(minutes: 30)),
-      className: 'History 101',
-    ),
-  ];
-
-  List<Survey> getUpcomingSurveys() {
-    return surveys
-        .where((survey) => 
-            survey.endTime.isAfter(DateTime.now()) && 
-            survey.turnInTime == null)
-        .toList()
-      ..sort((a, b) => a.endTime.compareTo(b.endTime));
-  }
-
-  List<Survey> getOverdueSurveys() {
-    return surveys
-        .where((survey) => 
-            survey.endTime.isBefore(DateTime.now()) && 
-            survey.turnInTime == null)
-        .toList()
-      ..sort((a, b) => a.endTime.compareTo(b.endTime));
-  }
-
-  List<Survey> getCompletedSurveys() {
-    return surveys
-        .where((survey) => survey.turnInTime != null)
-        .toList()
-      ..sort((a, b) => a.turnInTime!.compareTo(b.turnInTime!));
-  }
-
-  void _navigateToSubmitSurvey(Survey survey) {
-    context.push(
-      Routes.nestedSubmitSurvey,
-      extra: SmallSurvey(
-        name: survey.name,
-        description: survey.description,
-        file: survey.file,
-        answerDescription: survey.answerDescription,
-        answerFile: survey.answerFile,
-        endTime: survey.endTime,
+    final List<Survey> surveys = [
+      Survey(
+        name: 'Survey 1',
+        description: 'This is a description for Survey 1',
+        file: 'path/to/survey1.docx',
+        answerDescription: null,
+        answerFile: null,
+        endTime: DateTime.now().add(const Duration(hours: 1)),
+        turnInTime: null,
+        className: 'Math 101',
       ),
-    );
-  }
+      Survey(
+        name: 'Survey 2',
+        description: 'This is a description for Survey 2',
+        file: 'path/to/survey2.docx',
+        answerDescription: null,
+        answerFile: null,
+        endTime: DateTime.now().subtract(const Duration(hours: 1)),
+        turnInTime: null,
+        className: 'Science 101',
+      ),
+      Survey(
+        name: 'Survey 3',
+        description: null,
+        file: null,
+        answerDescription: 'Answer description for Survey 3',
+        answerFile: 'path/to/answer3.docx',
+        endTime: DateTime.now().add(const Duration(hours: 2)),
+        turnInTime: DateTime.now().subtract(const Duration(minutes: 30)),
+        className: 'History 101',
+      ),
+    ];
 
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    
+    List<Survey> getUpcomingSurveys() {
+      return surveys
+          .where((survey) => 
+              survey.endTime.isAfter(DateTime.now()) && 
+              survey.turnInTime == null)
+          .toList()
+        ..sort((a, b) => a.endTime.compareTo(b.endTime));
+    }
+
+    List<Survey> getOverdueSurveys() {
+      return surveys
+          .where((survey) => 
+              survey.endTime.isBefore(DateTime.now()) && 
+              survey.turnInTime == null)
+          .toList()
+        ..sort((a, b) => a.endTime.compareTo(b.endTime));
+    }
+
+    List<Survey> getCompletedSurveys() {
+      return surveys
+          .where((survey) => survey.turnInTime != null)
+          .toList()
+        ..sort((a, b) => a.turnInTime!.compareTo(b.turnInTime!));
+    }
+
+    void _navigateToSubmitSurvey(Survey survey) {
+      context.push(
+        Routes.nestedSubmitSurvey,
+        extra: SmallSurvey(
+          name: survey.name,
+          description: survey.description,
+          file: survey.file,
+          answerDescription: survey.answerDescription,
+          answerFile: survey.answerFile,
+          endTime: survey.endTime,
+        ),
+      );
+    }
+
     return DefaultTabController(
       length: 3,
       child: Scaffold(
         appBar: AppBar(
-          title: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'SURVEY LIST',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontFamily: 'Times New Roman',
-                ),
-              ),
-              Image.asset(
-                'assets/images/HUST_white.png',
-                height: 30,
-                fit: BoxFit.contain,
-              ),
-            ],
-          ),
+          title: const Text('Class Assignments'),
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () => context.pop(),
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => Navigator.of(context).pop(),
           ),
-          bottom: TabBar(
-            labelColor: theme.colorScheme.onPrimary,
-            unselectedLabelColor: theme.colorScheme.onPrimary.withOpacity(0.7),
-            tabs: const [
-              Tab(text: 'Upcoming'),
-              Tab(text: 'Overdue'),
-              Tab(text: 'Completed'),
-            ],
+          bottom: const SurveyTabBar(
+            tabLabels: ['Upcoming', 'Overdue', 'Completed'],
           ),
         ),
         body: TabBarView(

@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:learning_management_system/providers/router_provider.dart';
+import 'package:learning_management_system/routes/router.dart';
 
 void main() {
-  runApp(const ProviderScope(child: MyApp()));
+  runApp(
+    const ProviderScope(
+      child: MyApp(),
+    ),
+  );
 }
 
 class MyApp extends ConsumerWidget {
