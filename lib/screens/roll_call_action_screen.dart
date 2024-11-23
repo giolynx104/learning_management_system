@@ -23,7 +23,7 @@ class RollCallActionScreen extends HookConsumerWidget {
     final showOnlyAbsent = useState(false);
     final isLoading = useState(true);
     final error = useState<String?>(null);
-    
+
     final attendanceState = ref.watch(takeAttendanceProvider);
 
     useEffect(() {
@@ -31,31 +31,30 @@ class RollCallActionScreen extends HookConsumerWidget {
         try {
           isLoading.value = true;
           error.value = null;
-          
+
           final token = ref.read(authProvider).value?.token;
           if (token == null) {
             throw Exception('No authentication token found');
           }
 
-          final classInfo = await ref.read(classServiceProvider.notifier).getClassInfo(
-            token: token,
-            classId: classId,
-          );
+          final classInfo =
+              await ref.read(classServiceProvider.notifier).getClassDetail(
+                    token: token,
+                    classId: classId,
+                  );
 
           if (classInfo == null) {
             throw Exception('Failed to fetch class information');
           }
 
-          // Convert student list to StudentInfo objects
-          students.value = classInfo.studentList.map((student) {
-            final studentData = student as Map<String, dynamic>;
-            return StudentInfo(
-              id: studentData['id']?.toString() ?? '',
-              name: '${studentData['first_name'] ?? ''} ${studentData['last_name'] ?? ''}'.trim(),
-              isPresent: true,
-            );
-          }).toList();
-
+          // Convert student accounts to StudentInfo objects
+          students.value = classInfo.studentAccounts
+              .map((student) => StudentInfo(
+                    id: student.studentId,
+                    name: '${student.firstName} ${student.lastName}'.trim(),
+                    isPresent: true,
+                  ))
+              .toList();
         } catch (e) {
           error.value = e.toString();
         } finally {
@@ -173,7 +172,9 @@ class RollCallActionScreen extends HookConsumerWidget {
                       });
                     },
               child: Text(
-                attendanceState.isLoading ? 'Submitting...' : 'Submit Attendance',
+                attendanceState.isLoading
+                    ? 'Submitting...'
+                    : 'Submit Attendance',
               ),
             ),
           ),

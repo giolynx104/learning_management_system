@@ -43,4 +43,5 @@ class Routes {
       '/teacher_home/teacher_survey_list/edit_survey';
   static const String nestedClassRegistration = '/class_management/register';
   static const String notifications = '/notifications';
+  static const String detailedAttendanceList = 'detailed-attendance-list/:classId';
 }

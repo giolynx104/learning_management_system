@@ -29,6 +29,7 @@ import 'package:learning_management_system/screens/absence_request_screen.dart';
 import 'package:learning_management_system/models/survey.dart';
 import 'package:learning_management_system/widgets/scaffold_with_navigation.dart';
 import 'package:learning_management_system/screens/profile_screen.dart';
+import 'package:learning_management_system/screens/detailed_attendance_list_screen.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
 final _shellNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'shell');
@@ -146,6 +147,13 @@ final routerProvider = Provider<GoRouter>((ref) {
                     name: Routes.rollCallAction,
                     path: 'roll-call-action/:classId',
                     builder: (context, state) => RollCallActionScreen(
+                      classId: state.pathParameters['classId'] ?? '',
+                    ),
+                  ),
+                  GoRoute(
+                    name: Routes.detailedAttendanceList,
+                    path: 'detailed-attendance-list/:classId',
+                    builder: (context, state) => DetailedAttendanceListScreen(
                       classId: state.pathParameters['classId'] ?? '',
                     ),
                   ),

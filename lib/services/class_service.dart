@@ -6,6 +6,7 @@ import 'package:learning_management_system/models/class_list_model.dart';
 import 'package:learning_management_system/utils/api_client.dart';
 import 'package:learning_management_system/exceptions/api_exceptions.dart';
 import 'package:learning_management_system/providers/auth_provider.dart';
+import 'package:learning_management_system/models/class_detail_model.dart';
 
 part 'class_service.g.dart';
 
@@ -63,17 +64,20 @@ class ClassService extends _$ClassService {
 
       if (meta['code'] != '1000') {
         debugPrint('ClassService - Error: ${meta['message']}');
-        
+
         // Map specific error codes to more meaningful messages
         switch (meta['code']) {
           case '1004':
-            if (responseData['data'].toString().contains('class id already exists')) {
+            if (responseData['data']
+                .toString()
+                .contains('class id already exists')) {
               throw Exception('Class ID already exists');
             }
             throw Exception('Invalid parameters: ${responseData['data']}');
           case '9998':
             ref.read(authProvider.notifier).signOut();
-            throw UnauthorizedException('Session expired. Please sign in again.');
+            throw UnauthorizedException(
+                'Session expired. Please sign in again.');
           default:
             throw Exception('Failed to create class: ${responseData['data']}');
         }
@@ -103,7 +107,7 @@ class ClassService extends _$ClassService {
   }) async {
     try {
       debugPrint('ClassService - Fetching class list with token: $token');
-      
+
       final Map<String, dynamic> requestData = {
         'token': token,
         if (role != null) 'role': role,
@@ -115,9 +119,9 @@ class ClassService extends _$ClassService {
       };
 
       final response = await ref.read(apiClientProvider).post(
-        '/it5023e/get_class_list',
-        data: requestData,
-      );
+            '/it5023e/get_class_list',
+            data: requestData,
+          );
       debugPrint('ClassService - Raw response: ${response.data}');
 
       final responseData = response.data as Map<String, dynamic>;
@@ -134,18 +138,21 @@ class ClassService extends _$ClassService {
 
       final data = responseData['data'] as Map<String, dynamic>;
       final pageContent = data['page_content'] as List<dynamic>;
-      
+
       // Convert the list items and handle potential type mismatches
-      return pageContent.map((json) {
-        try {
-          return ClassListItem.fromJson(json as Map<String, dynamic>);
-        } catch (e) {
-          debugPrint('ClassService - Error parsing class item: $e');
-          debugPrint('ClassService - Problematic JSON: $json');
-          // Skip invalid items instead of failing the whole list
-          return null;
-        }
-      }).whereType<ClassListItem>().toList(); // Filter out null values
+      return pageContent
+          .map((json) {
+            try {
+              return ClassListItem.fromJson(json as Map<String, dynamic>);
+            } catch (e) {
+              debugPrint('ClassService - Error parsing class item: $e');
+              debugPrint('ClassService - Problematic JSON: $json');
+              // Skip invalid items instead of failing the whole list
+              return null;
+            }
+          })
+          .whereType<ClassListItem>()
+          .toList(); // Filter out null values
     } catch (e) {
       debugPrint('ClassService - Error fetching class list: $e');
       if (e is UnauthorizedException) rethrow;
@@ -433,6 +440,40 @@ class ClassService extends _$ClassService {
       return null;
     } catch (e) {
       debugPrint('ClassService - Unexpected error: $e');
+      return null;
+    }
+  }
+
+  Future<ClassDetailModel?> getClassDetail({
+    required String token,
+    required String classId,
+  }) async {
+    try {
+      debugPrint('ClassService - Fetching detailed class info for ID: $classId');
+      final response = await ref.read(apiClientProvider).post(
+        '/it5023e/get_class_info',
+        data: {
+          'token': token,
+          'class_id': classId,
+        },
+      );
+
+      final responseData = response.data as Map<String, dynamic>;
+      final meta = responseData['meta'] as Map<String, dynamic>;
+
+      if (meta['code'] == '9998') {
+        ref.read(authProvider.notifier).signOut();
+        throw UnauthorizedException('Session expired. Please sign in again.');
+      }
+
+      if (meta['code'] != '1000') {
+        return null;
+      }
+
+      final data = responseData['data'] as Map<String, dynamic>;
+      return ClassDetailModel.fromJson(data);
+    } catch (e) {
+      debugPrint('ClassService - Error fetching class detail: $e');
       return null;
     }
   }
