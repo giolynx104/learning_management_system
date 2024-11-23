@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:learning_management_system/services/api_service.dart';
 import 'package:learning_management_system/models/attendance_list_model.dart';
 
@@ -10,21 +11,37 @@ class AttendanceService {
     required String classId,
     required DateTime date,
     required List<String> absentStudentIds,
+    required String token,
   }) async {
     try {
+      debugPrint('AttendanceService - Starting takeAttendance');
+      debugPrint('AttendanceService - Request data:');
+      debugPrint('  Class ID: $classId');
+      debugPrint('  Date: ${date.toIso8601String().split('T')[0]}');
+      debugPrint('  Absent IDs: $absentStudentIds');
+      debugPrint('  Token: $token');
+
       final response = await _apiService.dio.post(
         '/it5023e/take_attendance',
         data: {
+          'token': token,
           'class_id': classId,
           'date': date.toIso8601String().split('T')[0],
           'attendance_list': absentStudentIds,
         },
       );
 
+      debugPrint('AttendanceService - Response status: ${response.statusCode}');
+      debugPrint('AttendanceService - Response data: ${response.data}');
+
       if (response.statusCode != 200) {
+        debugPrint('AttendanceService - Error: Non-200 status code');
         throw Exception(response.data['message'] ?? 'Failed to submit attendance');
       }
+
+      debugPrint('AttendanceService - Attendance submitted successfully');
     } catch (e) {
+      debugPrint('AttendanceService - Error occurred: $e');
       throw Exception('Failed to submit attendance: ${e.toString()}');
     }
   }
