@@ -3,7 +3,9 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:learning_management_system/routes/routes.dart';
-import 'package:learning_management_system/providers/app_bar_provider.dart';
+import 'package:learning_management_system/providers/auth_provider.dart';
+import 'package:learning_management_system/services/class_service.dart';
+import 'package:learning_management_system/models/class_detail_model.dart';
 
 class RollCallScreen extends HookConsumerWidget {
   final String classId;
@@ -15,14 +17,73 @@ class RollCallScreen extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final classInfo = ClassInfo(
-      name: 'Advanced Mathematics',
-      id: 'MATH301',
-      totalAbsences: 45,
-      pendingAbsentRequests: 3,
-      totalStudents: 30,
-      averageAttendance: 0.92,
-    );
+    final classInfo = useState<ClassDetailModel?>(null);
+    final isLoading = useState(true);
+    final error = useState<String?>(null);
+    final token = ref.watch(authProvider).value?.token;
+
+    useEffect(() {
+      Future<void> loadClassInfo() async {
+        try {
+          isLoading.value = true;
+          error.value = null;
+
+          if (token == null) {
+            throw Exception('No authentication token found');
+          }
+
+          final info = await ref.read(classServiceProvider.notifier).getClassDetail(
+            token: token,
+            classId: classId,
+          );
+
+          if (info == null) {
+            throw Exception('Failed to fetch class information');
+          }
+
+          classInfo.value = info;
+        } catch (e) {
+          error.value = e.toString();
+        } finally {
+          isLoading.value = false;
+        }
+      }
+
+      loadClassInfo();
+      return null;
+    }, [token]);
+
+    if (isLoading.value) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (error.value != null) {
+      return Scaffold(
+        body: Center(
+          child: Text(
+            'Error: ${error.value}',
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.error,
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (classInfo.value == null) {
+      return const Scaffold(
+        body: Center(
+          child: Text('No class information found'),
+        ),
+      );
+    }
+
+    final info = classInfo.value!;
+    final totalStudents = int.tryParse(info.studentCount) ?? 0;
+    // Calculate attendance rate based on student accounts
+    final attendanceRate = totalStudents > 0 ? info.studentAccounts.length / totalStudents : 0.0;
 
     return Scaffold(
       body: SafeArea(
@@ -37,7 +98,7 @@ class RollCallScreen extends HookConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        classInfo.name,
+                        info.className,
                         style: Theme.of(context)
                             .textTheme
                             .headlineMedium
@@ -47,7 +108,7 @@ class RollCallScreen extends HookConsumerWidget {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Class ID: ${classInfo.id}',
+                        'Class ID: ${info.classId}',
                         style: Theme.of(context)
                             .textTheme
                             .titleMedium
@@ -57,24 +118,23 @@ class RollCallScreen extends HookConsumerWidget {
                       ),
                       const SizedBox(height: 16),
                       _InfoCard(
-                        title: 'Total Absences',
-                        value: classInfo.totalAbsences.toString(),
-                      ),
-                      const SizedBox(height: 8),
-                      _InfoCard(
-                        title: 'Pending Absent Requests',
-                        value: classInfo.pendingAbsentRequests.toString(),
-                      ),
-                      const SizedBox(height: 8),
-                      _InfoCard(
                         title: 'Total Students',
-                        value: classInfo.totalStudents.toString(),
+                        value: totalStudents.toString(),
                       ),
                       const SizedBox(height: 8),
                       _InfoCard(
-                        title: 'Average Attendance',
-                        value:
-                            '${(classInfo.averageAttendance * 100).toStringAsFixed(1)}%',
+                        title: 'Student Accounts',
+                        value: info.studentAccounts.length.toString(),
+                      ),
+                      const SizedBox(height: 8),
+                      _InfoCard(
+                        title: 'Class Type',
+                        value: info.classType,
+                      ),
+                      const SizedBox(height: 8),
+                      _InfoCard(
+                        title: 'Attendance Rate',
+                        value: '${(attendanceRate * 100).toStringAsFixed(1)}%',
                       ),
                       const SizedBox(height: 24),
                     ],
@@ -117,24 +177,6 @@ class RollCallScreen extends HookConsumerWidget {
       ),
     );
   }
-}
-
-class ClassInfo {
-  final String name;
-  final String id;
-  final int totalAbsences;
-  final int pendingAbsentRequests;
-  final int totalStudents;
-  final double averageAttendance;
-
-  const ClassInfo({
-    required this.name,
-    required this.id,
-    required this.totalAbsences,
-    required this.pendingAbsentRequests,
-    required this.totalStudents,
-    required this.averageAttendance,
-  });
 }
 
 class _InfoCard extends StatelessWidget {
