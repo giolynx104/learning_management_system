@@ -11,7 +11,10 @@ class ClassListItem with _$ClassListItem {
     @JsonKey(name: 'class_type') required String classType,
     @JsonKey(name: 'attached_code') String? attachedCode,
     @JsonKey(name: 'lecturer_name') String? lecturerName,
-    @JsonKey(name: 'student_count') @Default(0) int studentCount,
+    @JsonKey(
+      name: 'student_count',
+      fromJson: _stringToInt,
+    ) required int studentCount,
     @JsonKey(name: 'start_date') required String startDate,
     @JsonKey(name: 'end_date') required String endDate,
     required String status,
@@ -19,4 +22,11 @@ class ClassListItem with _$ClassListItem {
 
   factory ClassListItem.fromJson(Map<String, dynamic> json) => 
       _$ClassListItemFromJson(json);
+}
+
+int _stringToInt(dynamic value) {
+  if (value == null) return 0;
+  if (value is int) return value;
+  if (value is String) return int.tryParse(value) ?? 0;
+  return 0;
 } 
