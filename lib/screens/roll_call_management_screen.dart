@@ -94,7 +94,7 @@ class RollCallScreen extends HookConsumerWidget {
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
                     ),
-                    child: const Text('View Detailed Roll Call'),
+                    child: const Text('Get Attendance List'),
                   ),
                   const SizedBox(height: 8),
                   ElevatedButton(
@@ -107,7 +107,7 @@ class RollCallScreen extends HookConsumerWidget {
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
                     ),
-                    child: const Text('Start Roll Call Now'),
+                    child: const Text('Take Attendance'),
                   ),
                 ],
               ),

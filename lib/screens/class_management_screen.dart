@@ -343,10 +343,7 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
         context.push(Routes.nestedUploadFile);
         break;
       case 'attendance':
-        context.pushNamed(
-          Routes.rollCall,
-          pathParameters: {'classId': classItem.classId.toString()},
-        );
+        context.push('/classes/roll-call/${classItem.classId}');
         break;
       case 'modify':
         context.pushNamed(

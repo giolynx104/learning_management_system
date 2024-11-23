@@ -130,7 +130,24 @@ final routerProvider = Provider<GoRouter>((ref) {
                       classId: state.pathParameters['classId'] ?? '',
                     ),
                   ),
-                  // ... (keep other class-related routes)
+                  GoRoute(
+                    path: 'roll-call/:classId',
+                    builder: (context, state) => RollCallScreen(
+                      classId: state.pathParameters['classId'] ?? '',
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'detailed-roll-call/:classId',
+                    builder: (context, state) => DetailedRollCallInfoScreen(
+                      classId: state.pathParameters['classId'] ?? '',
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'roll-call-action/:classId',
+                    builder: (context, state) => RollCallActionScreen(
+                      classId: state.pathParameters['classId'] ?? '',
+                    ),
+                  ),
                 ],
               ),
             ],
