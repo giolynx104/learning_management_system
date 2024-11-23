@@ -19,6 +19,13 @@ class _AbsenceRequestScreenState extends ConsumerState<AbsenceRequestScreen> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _reasonController = TextEditingController();
 
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _reasonController.dispose();
+    super.dispose();
+  }
+
   Future<void> _pickDate() async {
     final DateTime? pickedDate = await showDatePicker(
       context: context,
@@ -86,38 +93,8 @@ class _AbsenceRequestScreenState extends ConsumerState<AbsenceRequestScreen> {
   }
 
   @override
-  void initState() {
-    super.initState();
-    Future.microtask(() {
-      ref.read(appBarNotifierProvider.notifier).setAppBar(
-        title: 'Request Absence',
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.info_outline),
-            onPressed: () {
-              // Show absence request guidelines
-            },
-          ),
-        ],
-      );
-    });
-  }
-
-  @override
-  void dispose() {
-    ref.read(appBarNotifierProvider.notifier).reset();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    Theme.of(context);
-
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Absence Request'),
-        centerTitle: true,
-      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(

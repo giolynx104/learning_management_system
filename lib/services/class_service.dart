@@ -6,6 +6,8 @@ import 'package:learning_management_system/models/class_list_model.dart';
 import 'package:learning_management_system/utils/api_client.dart';
 import 'package:learning_management_system/exceptions/api_exceptions.dart';
 import 'package:learning_management_system/providers/auth_provider.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 part 'class_service.g.dart';
 
@@ -14,71 +16,71 @@ class ClassService extends _$ClassService {
   @override
   FutureOr<void> build() {}
 
-  Future<ClassModel> createClass({
+  Future<void> createClass({
     required String token,
     required String classId,
     required String className,
     required String classType,
-    required DateTime startDate,
-    required DateTime endDate,
+    required String startDate,
+    required String endDate,
     required int maxStudentAmount,
     String? attachedCode,
-    String? description,
-    List<String>? studentIds,
-    List<String>? assignmentIds,
-    List<String>? attendanceIds,
   }) async {
     try {
-      final data = {
-        'token': token,
-        'class_id': classId,
-        'class_name': className,
-        'class_type': _mapClassType(classType),
-        'start_date': startDate.toIso8601String().split('T')[0],
-        'end_date': endDate.toIso8601String().split('T')[0],
-        'max_student_amount': maxStudentAmount,
-      };
-
-      if (attachedCode != null && attachedCode.isNotEmpty) {
-        data['attached_code'] = attachedCode;
-      }
-      if (description != null) {
-        data['description'] = description;
-      }
-      if (studentIds != null) {
-        data['student_list'] = studentIds;
-      }
-      if (assignmentIds != null) {
-        data['assignment_list'] = assignmentIds;
-      }
-      if (attendanceIds != null) {
-        data['attendance_list'] = attendanceIds;
-      }
+      debugPrint('ClassService - Creating class with data:');
+      debugPrint('Token: $token');
+      debugPrint('ClassId: $classId');
+      debugPrint('ClassName: $className');
+      debugPrint('ClassType: $classType');
+      debugPrint('StartDate: $startDate');
+      debugPrint('EndDate: $endDate');
+      debugPrint('MaxStudentAmount: $maxStudentAmount');
+      debugPrint('AttachedCode: $attachedCode');
 
       final response = await ref.read(apiClientProvider).post(
-            '/it5023e/create_class',
-            data: data,
-          );
+        '/it5023e/create_class',
+        data: {
+          'token': token,
+          'class_id': classId,
+          'class_name': className,
+          'class_type': _mapClassType(classType),
+          'start_date': startDate,
+          'end_date': endDate,
+          'max_student_amount': maxStudentAmount,
+          if (attachedCode != null) 'attached_code': attachedCode,
+        },
+      );
 
+      debugPrint('ClassService - Response received: ${response.data}');
       final responseData = response.data as Map<String, dynamic>;
       final meta = responseData['meta'] as Map<String, dynamic>;
 
+      debugPrint('ClassService - Response meta: $meta');
+
+      if (meta['code'] == 9998) {
+        debugPrint('ClassService - Token expired');
+        ref.read(authProvider.notifier).signOut();
+        throw UnauthorizedException('Session expired. Please sign in again.');
+      }
+
       if (meta['code'] != 1000) {
+        debugPrint('ClassService - Error: ${meta['message']}');
         throw Exception(meta['message'] ?? 'Failed to create class');
       }
 
-      final classData = responseData['data'] as Map<String, dynamic>;
-      return ClassModel.fromJson({
-        ...classData,
-        'student_list': classData['student_list'] ?? [],
-        'assignment_list': classData['assignment_list'] ?? [],
-        'attendance_list': classData['attendance_list'] ?? [],
-        'description': classData['description'] ?? '',
-        'schedule': classData['schedule'] ?? '',
-      });
+      debugPrint('ClassService - Class created successfully');
+
     } on DioException catch (e) {
+      debugPrint('ClassService - DioException: ${e.message}');
+      debugPrint('ClassService - Response: ${e.response?.data}');
       final responseData = e.response?.data as Map<String, dynamic>?;
       final meta = responseData?['meta'] as Map<String, dynamic>?;
+
+      if (meta?['code'] == 9998) {
+        ref.read(authProvider.notifier).signOut();
+        throw UnauthorizedException('Session expired. Please sign in again.');
+      }
+
       throw Exception(meta?['message'] ?? 'Failed to create class');
     }
   }

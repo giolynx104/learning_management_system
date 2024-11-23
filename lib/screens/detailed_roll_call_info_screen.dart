@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:learning_management_system/providers/app_bar_provider.dart';
 
 class DetailedRollCallInfoScreen extends HookConsumerWidget {
   final String classId;
@@ -13,34 +12,9 @@ class DetailedRollCallInfoScreen extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final TextEditingController _searchController = useTextEditingController();
+    final searchController = useTextEditingController();
     final isSearchingById = useState(false);
     final filteredStudents = useState(mockStudents);
-
-    useEffect(() {
-      Future.microtask(() {
-        ref.read(appBarNotifierProvider.notifier).setAppBar(
-          title: 'Roll Call Details',
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.filter_list),
-              onPressed: () {
-                // Show filter options
-              },
-            ),
-            IconButton(
-              icon: const Icon(Icons.download),
-              onPressed: () {
-                // Export attendance data
-              },
-            ),
-          ],
-        );
-      });
-      return () {
-        ref.read(appBarNotifierProvider.notifier).reset();
-      };
-    }, const []);
 
     void filterStudents(String query) {
       if (query.isEmpty) {
@@ -65,7 +39,7 @@ class DetailedRollCallInfoScreen extends HookConsumerWidget {
               children: [
                 Expanded(
                   child: TextField(
-                    controller: _searchController,
+                    controller: searchController,
                     decoration: InputDecoration(
                       hintText:
                           'Search by ${isSearchingById.value ? 'ID' : 'Name'}',
@@ -78,7 +52,7 @@ class DetailedRollCallInfoScreen extends HookConsumerWidget {
                 ElevatedButton(
                   onPressed: () {
                     isSearchingById.value = !isSearchingById.value;
-                    _searchController.clear();
+                    searchController.clear();
                     filterStudents('');
                   },
                   child: Text(

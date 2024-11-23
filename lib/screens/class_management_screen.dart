@@ -27,25 +27,6 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(() {
-      ref.read(appBarNotifierProvider.notifier).setAppBar(
-        title: 'Classes',
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.search),
-            onPressed: () {
-              // Show search functionality
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.filter_list),
-            onPressed: () {
-              // Show filter options
-            },
-          ),
-        ],
-      );
-    });
     _initializeData();
   }
 
@@ -314,21 +295,11 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
             child: authState.whenOrNull(
                   data: (user) => user != null
                       ? FloatingActionButton.extended(
-                          onPressed: () async {
+                          onPressed: () {
                             if (user.role == 'STUDENT') {
-                              // Navigate to registration screen for students
-                              final result = await context
-                                  .push('/class_management/register');
-                              if (result == true) {
-                                _refreshClassList();
-                              }
+                              context.push(Routes.classRegistration);
                             } else {
-                              // Navigate to create class screen for teachers
-                              final result =
-                                  await context.push(Routes.nestedCreateClass);
-                              if (result == true) {
-                                _refreshClassList();
-                              }
+                              context.push(Routes.createClass);
                             }
                           },
                           icon: Icon(
@@ -371,26 +342,12 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
         context.push(Routes.nestedUploadFile);
         break;
       case 'attendance':
-        ref.read(appBarNotifierProvider.notifier).setAppBar(
-          title: 'Attendance - ${classItem.className}',
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.history),
-              onPressed: () {
-                // Show attendance history
-              },
-            ),
-          ],
-        );
         context.pushNamed(
           Routes.rollCall,
           pathParameters: {'classId': classItem.classId.toString()},
         );
         break;
       case 'modify':
-        ref.read(appBarNotifierProvider.notifier).setAppBar(
-          title: 'Modify - ${classItem.className}',
-        );
         context.pushNamed(
           Routes.modifyClass,
           pathParameters: {'classId': classItem.classId.toString()},

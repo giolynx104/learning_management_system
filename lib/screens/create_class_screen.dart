@@ -3,9 +3,12 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:learning_management_system/exceptions/api_exceptions.dart';
+import 'package:learning_management_system/routes/routes.dart';
 import 'package:learning_management_system/services/class_service.dart';
 import 'package:learning_management_system/providers/auth_provider.dart';
 import 'package:learning_management_system/providers/app_bar_provider.dart';
+import 'package:learning_management_system/models/class_model.dart';
 
 class CreateClassScreen extends HookConsumerWidget {
   const CreateClassScreen({super.key});
@@ -28,71 +31,98 @@ class CreateClassScreen extends HookConsumerWidget {
     /// in the create class request
 
     Future<void> handleCreateClass() async {
+      debugPrint('CreateClassScreen - Starting class creation');
       if (formKey.currentState?.validate() ?? false) {
         try {
           final classService = ref.read(classServiceProvider.notifier);
           final authState = await ref.read(authProvider.future);
           
+          debugPrint('CreateClassScreen - Auth state: ${authState?.token}');
+          
           if (authState == null) {
             throw Exception('Not authenticated');
           }
+
+          // Validate required fields
+          if (startDate.value == null || endDate.value == null) {
+            debugPrint('CreateClassScreen - Missing dates');
+            throw Exception('Please select both start and end dates');
+          }
+
+          if (classType.value == null) {
+            debugPrint('CreateClassScreen - Missing class type');
+            throw Exception('Please select a class type');
+          }
           
+          // Ensure maxStudents is a valid integer
+          final maxStudents = int.tryParse(maxStudentsController.text);
+          if (maxStudents == null) {
+            debugPrint('CreateClassScreen - Invalid max students value');
+            throw Exception('Please enter a valid number for maximum students');
+          }
+
+          // Format dates to match API requirements (YYYY-MM-DD)
+          final formattedStartDate = DateFormat('yyyy-MM-dd').format(startDate.value!);
+          final formattedEndDate = DateFormat('yyyy-MM-dd').format(endDate.value!);
+
+          debugPrint('CreateClassScreen - Calling createClass with:');
+          debugPrint('ClassId: ${classCodeController.text}');
+          debugPrint('ClassName: ${classNameController.text}');
+          debugPrint('ClassType: ${classType.value}');
+          debugPrint('StartDate: $formattedStartDate');
+          debugPrint('EndDate: $formattedEndDate');
+          debugPrint('MaxStudents: $maxStudents');
+
           await classService.createClass(
             token: authState.token ?? '',
-            classId: classCodeController.text,
-            className: classNameController.text,
+            classId: classCodeController.text.trim(),
+            className: classNameController.text.trim(),
             classType: classType.value!,
-            startDate: startDate.value!,
-            endDate: endDate.value!,
-            maxStudentAmount: int.parse(maxStudentsController.text),
-            attachedCode: associatedClassCodeController.text.isNotEmpty 
-              ? associatedClassCodeController.text 
-              : null,
-            // Status is handled server-side and defaults to 'ACTIVE'
+            startDate: formattedStartDate,
+            endDate: formattedEndDate,
+            maxStudentAmount: maxStudents,
+            attachedCode: associatedClassCodeController.text.isEmpty 
+                ? null 
+                : associatedClassCodeController.text.trim(),
           );
 
+          debugPrint('CreateClassScreen - Class created successfully');
+
           if (!context.mounted) return;
+          
+          // Pop and return true to indicate success
           context.pop(true);
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text(
-                'Class created successfully (Status: Active)',
+                'Class created successfully',
                 style: TextStyle(color: Colors.white),
               ),
               backgroundColor: Colors.green,
             ),
           );
-        } catch (e) {
+        } on UnauthorizedException catch (e) {
+          debugPrint('CreateClassScreen - UnauthorizedException: $e');
           if (!context.mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Error creating class: $e'),
+              content: Text(e.toString()),
+              backgroundColor: Colors.red,
+            ),
+          );
+          context.go(Routes.signin);
+        } catch (e) {
+          debugPrint('CreateClassScreen - Error: $e');
+          if (!context.mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error creating class: ${e.toString()}'),
               backgroundColor: Colors.red,
             ),
           );
         }
       }
     }
-
-    // Use useEffect for app bar management
-    useEffect(() {
-      Future.microtask(() {
-        ref.read(appBarNotifierProvider.notifier).setAppBar(
-          title: 'Create Class',
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.help_outline),
-              onPressed: () {
-                // Show help dialog
-              },
-            ),
-          ],
-        );
-      });
-      return () {
-        ref.read(appBarNotifierProvider.notifier).reset();
-      };
-    }, const []);
 
     return Scaffold(
       backgroundColor: theme.colorScheme.onPrimary,
@@ -117,14 +147,8 @@ class CreateClassScreen extends HookConsumerWidget {
                 controller: classCodeController,
                 labelText: 'Class Code',
                 validator: (value) {
-                  if (value == null || value.isEmpty) {
+                  if (value == null || value.trim().isEmpty) {
                     return 'Please enter a class code';
-                  }
-                  if (value.length != 6) {
-                    return 'Class code must be exactly 6 digits';
-                  }
-                  if (!RegExp(r'^[0-9]+$').hasMatch(value)) {
-                    return 'Class code must contain only digits';
                   }
                   return null;
                 },

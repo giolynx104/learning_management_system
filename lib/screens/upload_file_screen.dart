@@ -25,20 +25,6 @@ class _UploadFileScreenState extends ConsumerState<UploadFileScreen> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(() {
-      ref.read(appBarNotifierProvider.notifier).setAppBar(
-        title: 'Upload Files',
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.cloud_upload),
-            onPressed: () {
-              // Show upload options
-            },
-          ),
-        ],
-      );
-    });
-    // Khởi tạo danh sách file mẫu
     selectedFiles = [
       FileData(name: 'Document1.pdf', size: 1024),
       FileData(name: 'Image2.jpg', size: 2048),
@@ -48,7 +34,6 @@ class _UploadFileScreenState extends ConsumerState<UploadFileScreen> {
 
   @override
   void dispose() {
-    ref.read(appBarNotifierProvider.notifier).reset();
     super.dispose();
   }
 

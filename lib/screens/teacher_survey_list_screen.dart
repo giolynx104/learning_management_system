@@ -6,119 +6,62 @@ import 'package:learning_management_system/providers/app_bar_provider.dart';
 import 'package:intl/intl.dart';
 import 'package:learning_management_system/models/survey.dart';
 
-class TeacherSurveyListScreen extends ConsumerStatefulWidget {
+class TeacherSurveyListScreen extends HookConsumerWidget {
   const TeacherSurveyListScreen({super.key});
 
   @override
-  ConsumerState<TeacherSurveyListScreen> createState() => _TeacherSurveyListScreenState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final List<TeacherSurvey> surveys = [
+      TeacherSurvey(
+        name: 'Survey 1',
+        description: 'Description for Survey 1',
+        file: 'path/to/survey1.docx',
+        responseCount: 10,
+        startTime: DateTime.now().subtract(const Duration(hours: 1)),
+        endTime: DateTime.now().add(const Duration(hours: 1)),
+        className: 'Math 101',
+      ),
+      TeacherSurvey(
+        name: 'Survey 2',
+        description: 'Description for Survey 2',
+        file: 'path/to/survey2.docx',
+        responseCount: 5,
+        startTime: DateTime.now().subtract(const Duration(hours: 2)),
+        endTime: DateTime.now().subtract(const Duration(hours: 1)),
+        className: 'Science 101',
+      ),
+    ];
 
-class _TeacherSurveyListScreenState extends ConsumerState<TeacherSurveyListScreen> {
-  final List<TeacherSurvey> surveys = [
-    TeacherSurvey(
-      name: 'Survey 1',
-      description: 'Description for Survey 1',
-      file: 'path/to/survey1.docx',
-      responseCount: 10,
-      startTime: DateTime.now().subtract(const Duration(hours: 1)),
-      endTime: DateTime.now().add(const Duration(hours: 1)),
-      className: 'Math 101',
-    ),
-    TeacherSurvey(
-      name: 'Survey 2',
-      description: 'Description for Survey 2',
-      file: 'path/to/survey2.docx',
-      responseCount: 5,
-      startTime: DateTime.now().subtract(const Duration(hours: 2)),
-      endTime: DateTime.now().subtract(const Duration(hours: 1)),
-      className: 'Science 101',
-    ),
-  ];
+    List<TeacherSurvey> getUpcomingSurveys() {
+      return surveys
+          .where((survey) => survey.endTime.isAfter(DateTime.now()))
+          .toList()
+        ..sort((a, b) => a.endTime.compareTo(b.endTime));
+    }
 
-  List<TeacherSurvey> getUpcomingSurveys() {
-    return surveys
-        .where((survey) => survey.endTime.isAfter(DateTime.now()))
-        .toList()
-      ..sort((a, b) => a.endTime.compareTo(b.endTime));
-  }
+    List<TeacherSurvey> getOverdueSurveys() {
+      return surveys
+          .where((survey) => survey.endTime.isBefore(DateTime.now()))
+          .toList()
+        ..sort((a, b) => a.endTime.compareTo(b.endTime));
+    }
 
-  List<TeacherSurvey> getOverdueSurveys() {
-    return surveys
-        .where((survey) => survey.endTime.isBefore(DateTime.now()))
-        .toList()
-      ..sort((a, b) => a.endTime.compareTo(b.endTime));
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    Future.microtask(() {
-      ref.read(appBarNotifierProvider.notifier).setAppBar(
-        title: 'Manage Surveys',
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () => context.push(Routes.createSurvey),
+    return Scaffold(
+      body: TabBarView(
+        children: [
+          SurveyTabContent(
+            title: 'Active',
+            surveys: getUpcomingSurveys(),
+          ),
+          SurveyTabContent(
+            title: 'Expired',
+            surveys: getOverdueSurveys(),
           ),
         ],
-      );
-    });
-  }
-
-  @override
-  void dispose() {
-    ref.read(appBarNotifierProvider.notifier).reset();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        appBar: AppBar(
-          title: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text('Survey Management'),
-              Image.asset(
-                'assets/images/HUST_white.png',
-                height: 30,
-                fit: BoxFit.contain,
-              ),
-            ],
-          ),
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: () => context.pop(),
-          ),
-          bottom: TabBar(
-            labelColor: theme.colorScheme.onPrimary,
-            unselectedLabelColor: theme.colorScheme.onPrimary.withOpacity(0.7),
-            tabs: const [
-              Tab(text: 'Active'),
-              Tab(text: 'Expired'),
-            ],
-          ),
-        ),
-        body: TabBarView(
-          children: [
-            SurveyTabContent(
-              title: 'Active',
-              surveys: getUpcomingSurveys(),
-            ),
-            SurveyTabContent(
-              title: 'Expired',
-              surveys: getOverdueSurveys(),
-            ),
-          ],
-        ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () => context.push(Routes.nestedCreateSurvey),
-          child: const Icon(Icons.add),
-        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => context.push(Routes.nestedCreateSurvey),
+        child: const Icon(Icons.add),
       ),
     );
   }

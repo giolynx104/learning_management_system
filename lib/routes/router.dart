@@ -58,9 +58,7 @@ final routerProvider = Provider<GoRouter>((ref) {
 
           if (state.uri.path == Routes.signin || 
               state.uri.path == Routes.signup) {
-            return user.role.toLowerCase() == 'student' 
-                ? Routes.studentHome 
-                : Routes.teacherHome;
+            return '/';
           }
 
           return null;
@@ -104,12 +102,14 @@ final routerProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: Routes.studentHome,
-                builder: (context, state) => const StudentHomeScreen(),
-              ),
-              GoRoute(
-                path: Routes.teacherHome,
-                builder: (context, state) => const TeacherHomeScreen(),
+                path: '/',
+                builder: (context, state) {
+                  final container = ProviderScope.containerOf(context);
+                  final isStudent = container.read(authProvider).value?.role.toLowerCase() == 'student';
+                  return isStudent 
+                      ? const StudentHomeScreen() 
+                      : const TeacherHomeScreen();
+                },
               ),
             ],
           ),
@@ -120,7 +120,10 @@ final routerProvider = Provider<GoRouter>((ref) {
                 path: '/classes',
                 builder: (context, state) => const ClassManagementScreen(),
                 routes: [
-                  // Nested class routes
+                  GoRoute(
+                    path: 'create',
+                    builder: (context, state) => const CreateClassScreen(),
+                  ),
                   GoRoute(
                     path: 'modify/:classId',
                     builder: (context, state) => ModifyClassScreen(

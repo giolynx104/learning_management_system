@@ -9,7 +9,6 @@ import 'package:learning_management_system/services/auth_service.dart';
 import 'package:learning_management_system/routes/routes.dart';
 import 'package:learning_management_system/utils/verification_helper.dart';
 import 'package:learning_management_system/models/user.dart';
-import 'package:learning_management_system/routes/custom_layout_scaffold.dart';
 
 /// Screen for handling user sign-in functionality.
 /// 
@@ -110,37 +109,34 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return CustomLayoutScaffold(
-      hideAppBar: true,
-      child: Scaffold(
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        body: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                IconButton(
-                  icon:
-                      Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onPrimary),
-                  onPressed: () => context.pop(),
-                ),
-                const SizedBox(height: 16.0),
-                const AuthHeader(title: 'Welcome Back to AllHust'),
-                const SizedBox(height: 32.0),
-                _buildSignInForm(),
-                const SizedBox(height: 24.0),
-                CustomButton(
-                  text: 'SIGN IN',
-                  onPressed: _handleSignIn,
-                  isLoading: _isLoading,
-                  backgroundColor: Theme.of(context).colorScheme.onPrimary,
-                  textColor: Theme.of(context).colorScheme.primary,
-                ),
-                const SizedBox(height: 16.0),
-                _buildSignUpLink(),
-              ],
-            ),
+    return Scaffold(
+      backgroundColor: Theme.of(context).colorScheme.primary,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              IconButton(
+                icon:
+                    Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onPrimary),
+                onPressed: () => context.pop(),
+              ),
+              const SizedBox(height: 16.0),
+              const AuthHeader(title: 'Welcome Back to AllHust'),
+              const SizedBox(height: 32.0),
+              _buildSignInForm(),
+              const SizedBox(height: 24.0),
+              CustomButton(
+                text: 'SIGN IN',
+                onPressed: _handleSignIn,
+                isLoading: _isLoading,
+                backgroundColor: Theme.of(context).colorScheme.onPrimary,
+                textColor: Theme.of(context).colorScheme.primary,
+              ),
+              const SizedBox(height: 16.0),
+              _buildSignUpLink(),
+            ],
           ),
         ),
       ),

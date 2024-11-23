@@ -1,5 +1,6 @@
 class Routes {
   Routes._();
+  static const String home = '/';
   static const String signup = '/signup';
   static const String signin = '/signin';
   static const String notification = '/notification_screen';
@@ -14,7 +15,7 @@ class Routes {
       '/student_home/survey_list/submit_survey';
   static const String teacherHome = '/teacher_home';
   static const String classManagement = '/class_management';
-  static const String createClass = 'create_class';
+  static const String createClass = '/classes/create';
   static const String nestedCreateClass = '/teacher_home/create_class';
   static const String modifyClass = 'modify/:classId';
   static const String nestedModifyClass = '/teacher_home/modify_class';

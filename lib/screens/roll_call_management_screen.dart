@@ -24,25 +24,6 @@ class RollCallScreen extends HookConsumerWidget {
       averageAttendance: 0.92,
     );
 
-    useEffect(() {
-      Future.microtask(() {
-        ref.read(appBarNotifierProvider.notifier).setAppBar(
-          title: 'Roll Call',
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.help_outline),
-              onPressed: () {
-                // Show help dialog
-              },
-            ),
-          ],
-        );
-      });
-      return () {
-        ref.read(appBarNotifierProvider.notifier).reset();
-      };
-    }, const []);
-
     return Scaffold(
       body: SafeArea(
         child: Padding(

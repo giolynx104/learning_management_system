@@ -6,7 +6,7 @@ class CustomLayoutScaffold extends ConsumerWidget {
   final Widget child;
   final bool hideAppBar;
   final bool? resizeToAvoidBottomInset;
-  
+
   const CustomLayoutScaffold({
     required this.child,
     this.hideAppBar = false,
@@ -16,39 +16,31 @@ class CustomLayoutScaffold extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final appBarState = ref.watch(appBarNotifierProvider);
     final theme = Theme.of(context);
-    
+    final appBarState = ref.watch(appBarNotifierProvider);
+
     return Scaffold(
       resizeToAvoidBottomInset: resizeToAvoidBottomInset,
-      appBar: hideAppBar 
-          ? null 
+      appBar: hideAppBar || appBarState.hideAppBar
+          ? null
           : AppBar(
-              title: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    appBarState.title,
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      color: theme.colorScheme.onPrimary,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Image.asset(
-                    'assets/images/HUST_white.png',
-                    height: 30,
-                    fit: BoxFit.contain,
-                  ),
-                ],
+              title: Image.asset(
+                'assets/images/HUST_white.png',
+                height: 30,
+                fit: BoxFit.contain,
               ),
-              centerTitle: appBarState.centerTitle,
-              elevation: appBarState.elevation,
-              backgroundColor: appBarState.backgroundColor ?? theme.colorScheme.primary,
-              foregroundColor: appBarState.foregroundColor ?? theme.colorScheme.onPrimary,
-              automaticallyImplyLeading: appBarState.automaticallyImplyLeading,
-              leading: appBarState.leading,
-              actions: appBarState.actions,
-              bottom: appBarState.bottom,
+              centerTitle: true,
+              elevation: 0,
+              backgroundColor: theme.colorScheme.primary,
+              foregroundColor: theme.colorScheme.onPrimary,
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.notifications_outlined),
+                  onPressed: () {
+                    // Handle notifications
+                  },
+                ),
+              ],
             ),
       body: child,
     );

@@ -50,23 +50,7 @@ class _SubmitSurveyScreenState extends ConsumerState<SubmitSurveyScreen> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(() {
-      ref.read(appBarNotifierProvider.notifier).setAppBar(
-        title: 'Submit Survey',
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.help_outline),
-            onPressed: () {
-              // Show survey help
-            },
-          ),
-        ],
-      );
-    });
-    // Directly use the passed survey
     survey = widget.survey;
-
-    // Set the initial value for the read-only fields
     _nameController.text = survey.name;
     if (survey.description != null) {
       _surveyDescriptionController.text = survey.description!;
@@ -74,13 +58,11 @@ class _SubmitSurveyScreenState extends ConsumerState<SubmitSurveyScreen> {
     if (survey.answerDescription != null) {
       _answerDescriptionController.text = survey.answerDescription!;
     }
-
     _descriptionController.addListener(_validateForm);
   }
 
   @override
   void dispose() {
-    ref.read(appBarNotifierProvider.notifier).reset();
     _descriptionController.dispose();
     _nameController.dispose();
     _surveyDescriptionController.dispose();

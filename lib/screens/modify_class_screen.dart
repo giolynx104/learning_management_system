@@ -26,26 +26,6 @@ class ModifyClassScreen extends HookConsumerWidget {
     final isLoading = useState(false);
     final classData = useState<ClassModel?>(null);
 
-    // Single AppBar update in useEffect
-    useEffect(() {
-      Future.microtask(() {
-        ref.read(appBarNotifierProvider.notifier).setAppBar(
-          title: 'Modify Class',
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.help_outline),
-              onPressed: () {
-                // Show help dialog
-              },
-            ),
-          ],
-        );
-      });
-      return () {
-        ref.read(appBarNotifierProvider.notifier).reset();
-      };
-    }, const []);
-
     // Load class data when screen opens
     useEffect(() {
       Future<void> loadClassData() async {
