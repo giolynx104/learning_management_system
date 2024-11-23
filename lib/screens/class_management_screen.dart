@@ -324,10 +324,7 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
       case 'edit':
         debugPrint(
             'ClassManagementScreen - ClassId: ${classItem.classId}, Type: ${classItem.classId.runtimeType}');
-        context.pushNamed(
-          Routes.modifyClass,
-          pathParameters: {'classId': classItem.classId.toString()},
-        ).then((result) {
+        context.push('/classes/modify/${classItem.classId}').then((result) {
           if (result == true) {
             _refreshClassList();
           }
