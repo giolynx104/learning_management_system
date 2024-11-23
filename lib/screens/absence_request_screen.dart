@@ -1,13 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:learning_management_system/providers/app_bar_provider.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:go_router/go_router.dart';
+import 'package:learning_management_system/routes/routes.dart';
+import 'package:learning_management_system/providers/auth_provider.dart';
 
 class AbsenceRequestScreen extends ConsumerStatefulWidget {
-  const AbsenceRequestScreen({super.key});
+  final String classId;
+
+  const AbsenceRequestScreen({
+    super.key,
+    required this.classId,
+  });
 
   @override
   ConsumerState<AbsenceRequestScreen> createState() => _AbsenceRequestScreenState();
@@ -52,15 +59,21 @@ class _AbsenceRequestScreenState extends ConsumerState<AbsenceRequestScreen> {
   Future<void> _submit() async {
     if (_selectedDate == null || _selectedFile == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Please select a date and upload proof file')),
+        const SnackBar(content: Text('Please select a date and upload proof file')),
       );
       return;
     }
 
+    final authState = ref.read(authProvider);
+    final token = authState.value?.token;
+    
+    if (token == null) {
+      if (mounted) context.go(Routes.signin);
+      return;
+    }
+
     final String reason = _reasonController.text;
-    final String formattedDate =
-        DateFormat('yyyy-MM-dd').format(_selectedDate!);
+    final String formattedDate = DateFormat('yyyy-MM-dd').format(_selectedDate!);
 
     try {
       final response = await http.post(
@@ -69,8 +82,8 @@ class _AbsenceRequestScreenState extends ConsumerState<AbsenceRequestScreen> {
           'Content-Type': 'application/json; charset=UTF-8',
         },
         body: jsonEncode({
-          'token': 'ZeLxSs', // TODO: Get from auth provider
-          'class_id': '783226', // TODO: Get from class context
+          'token': token,
+          'class_id': widget.classId,
           'date': formattedDate,
           'reason': reason,
         }),

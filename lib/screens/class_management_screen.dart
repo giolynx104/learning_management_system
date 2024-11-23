@@ -334,19 +334,20 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
         _showDeleteConfirmationDialog(classItem);
         break;
       case 'assignment':
-        context.push(Routes.nestedTeacherSurveyList);
+        context.push('/classes/assignments/${classItem.classId}');
         break;
       case 'files':
-        context.push(Routes.nestedUploadFile);
+        context.push('/classes/files/${classItem.classId}');
         break;
       case 'attendance':
-        context.push('/classes/roll-call/${classItem.classId}');
-        break;
-      case 'modify':
-        context.pushNamed(
-          Routes.modifyClass,
-          pathParameters: {'classId': classItem.classId.toString()},
-        );
+        final authState = ref.read(authProvider);
+        final isStudent = authState.value?.role.toLowerCase() == 'student';
+        
+        if (isStudent) {
+          context.push('/classes/absence-request/${classItem.classId}');
+        } else {
+          context.push(Routes.nestedRollCall.replaceAll(':classId', classItem.classId));
+        }
         break;
     }
   }

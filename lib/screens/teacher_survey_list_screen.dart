@@ -7,10 +7,17 @@ import 'package:intl/intl.dart';
 import 'package:learning_management_system/models/survey.dart';
 
 class TeacherSurveyListScreen extends HookConsumerWidget {
-  const TeacherSurveyListScreen({super.key});
+  final String classId;
+
+  const TeacherSurveyListScreen({
+    super.key,
+    required this.classId,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    debugPrint('TeacherSurveyListScreen - ClassId: $classId');
+
     final List<TeacherSurvey> surveys = [
       TeacherSurvey(
         name: 'Survey 1',
@@ -46,22 +53,34 @@ class TeacherSurveyListScreen extends HookConsumerWidget {
         ..sort((a, b) => a.endTime.compareTo(b.endTime));
     }
 
-    return Scaffold(
-      body: TabBarView(
-        children: [
-          SurveyTabContent(
-            title: 'Active',
-            surveys: getUpcomingSurveys(),
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Assignments'),
+          bottom: const TabBar(
+            tabs: [
+              Tab(text: 'Active'),
+              Tab(text: 'Expired'),
+            ],
           ),
-          SurveyTabContent(
-            title: 'Expired',
-            surveys: getOverdueSurveys(),
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => context.push(Routes.nestedCreateSurvey),
-        child: const Icon(Icons.add),
+        ),
+        body: TabBarView(
+          children: [
+            SurveyTabContent(
+              title: 'Active',
+              surveys: getUpcomingSurveys(),
+            ),
+            SurveyTabContent(
+              title: 'Expired',
+              surveys: getOverdueSurveys(),
+            ),
+          ],
+        ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () => context.push(Routes.nestedCreateSurvey),
+          child: const Icon(Icons.add),
+        ),
       ),
     );
   }

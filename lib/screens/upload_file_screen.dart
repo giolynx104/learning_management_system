@@ -13,7 +13,12 @@ class FileData {
 }
 
 class UploadFileScreen extends ConsumerStatefulWidget {
-  const UploadFileScreen({super.key});
+  final String classId;
+
+  const UploadFileScreen({
+    super.key,
+    required this.classId,
+  });
 
   @override
   ConsumerState<UploadFileScreen> createState() => _UploadFileScreenState();
@@ -25,6 +30,7 @@ class _UploadFileScreenState extends ConsumerState<UploadFileScreen> {
   @override
   void initState() {
     super.initState();
+    debugPrint('UploadFileScreen - ClassId: ${widget.classId}');
     selectedFiles = [
       FileData(name: 'Document1.pdf', size: 1024),
       FileData(name: 'Image2.jpg', size: 2048),
