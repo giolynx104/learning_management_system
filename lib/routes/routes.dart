@@ -32,8 +32,10 @@ class Routes {
       '/teacher_home/create_assignment';
   static const String uploadFile = 'files/:classId';
   static const String nestedUploadFile = '/classes/files/:classId';
-  static const String teacherSurveyList = 'assignments/:classId';
-  static const String nestedTeacherSurveyList = '/classes/assignments/:classId';
+  static const String studentSurveyList = 'student-assignments/:classId';
+  static const String nestedStudentSurveyList = '/classes/student-assignments/:classId';
+  static const String teacherSurveyList = 'teacher-assignments/:classId';
+  static const String nestedTeacherSurveyList = '/classes/teacher-assignments/:classId';
   static const String createSurvey = 'create_survey';
   static const String nestedCreateSurvey =
       '/teacher_home/teacher_survey_list/create_survey';

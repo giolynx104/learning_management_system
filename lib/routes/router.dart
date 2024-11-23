@@ -16,6 +16,7 @@ import 'package:learning_management_system/screens/notification_screen.dart';
 import 'package:learning_management_system/screens/roll_call_action_screen.dart';
 import 'package:learning_management_system/screens/roll_call_management_screen.dart';
 import 'package:learning_management_system/screens/student_home_screen.dart';
+import 'package:learning_management_system/screens/student_survey_list_screen.dart';
 import 'package:learning_management_system/screens/teacher_home_screen.dart';
 import 'package:learning_management_system/screens/teacher_survey_list_screen.dart';
 import 'package:learning_management_system/screens/upload_file_screen.dart';
@@ -156,7 +157,13 @@ final routerProvider = Provider<GoRouter>((ref) {
                     ),
                   ),
                   GoRoute(
-                    path: 'assignments/:classId',
+                    path: 'student-assignments/:classId',
+                    builder: (context, state) => StudentSurveyListScreen(
+                      classId: state.pathParameters['classId'] ?? '',
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'teacher-assignments/:classId',
                     builder: (context, state) => TeacherSurveyListScreen(
                       classId: state.pathParameters['classId'] ?? '',
                     ),

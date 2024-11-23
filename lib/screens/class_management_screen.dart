@@ -334,7 +334,14 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
         _showDeleteConfirmationDialog(classItem);
         break;
       case 'assignment':
-        context.push('/classes/assignments/${classItem.classId}');
+        final authState = ref.read(authProvider);
+        final isStudent = authState.value?.role.toLowerCase() == 'student';
+        
+        if (isStudent) {
+          context.push('/classes/student-assignments/${classItem.classId}');
+        } else {
+          context.push('/classes/teacher-assignments/${classItem.classId}');
+        }
         break;
       case 'files':
         context.push('/classes/files/${classItem.classId}');

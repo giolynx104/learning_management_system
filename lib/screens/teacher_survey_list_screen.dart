@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:learning_management_system/routes/routes.dart';
-import 'package:learning_management_system/providers/app_bar_provider.dart';
 import 'package:intl/intl.dart';
 import 'package:learning_management_system/models/survey.dart';
+import 'package:learning_management_system/widgets/survey_tab_bar.dart';
 
 class TeacherSurveyListScreen extends HookConsumerWidget {
   final String classId;
@@ -57,12 +57,13 @@ class TeacherSurveyListScreen extends HookConsumerWidget {
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Assignments'),
-          bottom: const TabBar(
-            tabs: [
-              Tab(text: 'Active'),
-              Tab(text: 'Expired'),
-            ],
+          title: const Text('Manage Assignments'),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+          bottom: const SurveyTabBar(
+            tabLabels: ['Active', 'Expired'],
           ),
         ),
         body: TabBarView(
@@ -79,6 +80,8 @@ class TeacherSurveyListScreen extends HookConsumerWidget {
         ),
         floatingActionButton: FloatingActionButton(
           onPressed: () => context.push(Routes.nestedCreateSurvey),
+          backgroundColor: Theme.of(context).colorScheme.primary,
+          foregroundColor: Theme.of(context).colorScheme.onPrimary,
           child: const Icon(Icons.add),
         ),
       ),

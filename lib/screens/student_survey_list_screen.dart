@@ -2,15 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:learning_management_system/routes/routes.dart';
-import 'package:learning_management_system/providers/app_bar_provider.dart';
 import 'package:intl/intl.dart';
 import 'package:learning_management_system/screens/submit_survey_screen.dart';
+import 'package:learning_management_system/widgets/survey_tab_bar.dart';
 
-class SurveyListScreen extends HookConsumerWidget {
-  const SurveyListScreen({super.key});
+class StudentSurveyListScreen extends HookConsumerWidget {
+  final String classId;
+
+  const StudentSurveyListScreen({
+    super.key,
+    required this.classId,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    debugPrint('SurveyListScreen - ClassId: $classId');
+
     final List<Survey> surveys = [
       Survey(
         name: 'Survey 1',
@@ -86,6 +93,16 @@ class SurveyListScreen extends HookConsumerWidget {
     return DefaultTabController(
       length: 3,
       child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Class Assignments'),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+          bottom: const SurveyTabBar(
+            tabLabels: ['Upcoming', 'Overdue', 'Completed'],
+          ),
+        ),
         body: TabBarView(
           children: [
             SurveyTabContent(
