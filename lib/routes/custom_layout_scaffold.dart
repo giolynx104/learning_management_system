@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:learning_management_system/providers/app_bar_provider.dart';
+import 'package:learning_management_system/routes/routes.dart';
 
 class CustomLayoutScaffold extends ConsumerWidget {
   final Widget child;
@@ -36,8 +38,9 @@ class CustomLayoutScaffold extends ConsumerWidget {
               actions: [
                 IconButton(
                   icon: const Icon(Icons.notifications_outlined),
+                  tooltip: 'Notifications',
                   onPressed: () {
-                    // Handle notifications
+                    context.push(Routes.notification);
                   },
                 ),
               ],

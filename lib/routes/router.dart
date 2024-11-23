@@ -155,6 +155,13 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
         ],
       ),
+      // Notification route
+      GoRoute(
+        path: Routes.notification,
+        builder: (context, state) => const CustomLayoutScaffold(
+          child: NotificationScreen(),
+        ),
+      ),
     ],
   );
 });
