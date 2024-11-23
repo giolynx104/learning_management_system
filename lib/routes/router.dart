@@ -79,17 +79,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         ),
       ),
       
-      // ModifyClass route
-      GoRoute(
-        name: Routes.modifyClass,
-        path: '/classes/modify/:classId',
-        builder: (context, state) => CustomLayoutScaffold(
-          child: ModifyClassScreen(
-            classId: state.pathParameters['classId'] ?? '',
-          ),
-        ),
-      ),
-      
       // Main app shell
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
@@ -129,6 +118,12 @@ final routerProvider = Provider<GoRouter>((ref) {
                   GoRoute(
                     path: 'create',
                     builder: (context, state) => const CreateClassScreen(),
+                  ),
+                  GoRoute(
+                    path: 'modify/:classId',
+                    builder: (context, state) => ModifyClassScreen(
+                      classId: state.pathParameters['classId'] ?? '',
+                    ),
                   ),
                   GoRoute(
                     path: 'roll-call/:classId',

@@ -6,7 +6,6 @@ import 'package:go_router/go_router.dart';
 import 'package:learning_management_system/models/class_model.dart';
 import 'package:learning_management_system/services/class_service.dart';
 import 'package:learning_management_system/providers/auth_provider.dart';
-import 'package:learning_management_system/providers/app_bar_provider.dart';
 
 class ModifyClassScreen extends HookConsumerWidget {
   final String classId;
@@ -69,7 +68,14 @@ class ModifyClassScreen extends HookConsumerWidget {
 
     // Show loading indicator while fetching data
     if (classData.value == null) {
-      return const Scaffold(
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Modify Class'),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+        ),
         body: Center(
           child: CircularProgressIndicator(),
         ),
@@ -127,86 +133,86 @@ class ModifyClassScreen extends HookConsumerWidget {
     }
 
     return Scaffold(
-      backgroundColor: theme.colorScheme.onPrimary,
+      appBar: AppBar(
+        title: const Text('Modify Class'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Form(
           key: formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                'Modify Class Information',
-                style: TextStyle(
-                  fontSize: 24.0,
-                  fontWeight: FontWeight.bold,
-                  color: theme.colorScheme.primary,
-                ),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                'Class Code: ${classData.value!.classId}',
-                style: TextStyle(
-                  fontSize: 18.0,
-                  color: theme.colorScheme.primary,
-                ),
-              ),
-              const SizedBox(height: 24),
-              _buildTextField(
-                controller: classNameController,
-                labelText: 'Class Name',
-                validator: (value) =>
-                    value?.isEmpty ?? true ? 'Please enter a class name' : null,
-                theme: theme,
-              ),
-              const SizedBox(height: 16),
-              _buildDropdownField(
-                value: status.value,
-                labelText: 'Status',
-                items: const [
-                  DropdownMenuItem(value: 'ACTIVE', child: Text('Active')),
-                  DropdownMenuItem(
-                      value: 'COMPLETED', child: Text('Completed')),
-                  DropdownMenuItem(value: 'UPCOMING', child: Text('Upcoming')),
-                ],
-                onChanged: (value) => status.value = value ?? status.value,
-                validator: (value) =>
-                    value == null ? 'Please select a status' : null,
-                theme: theme,
-              ),
-              const SizedBox(height: 16),
-              _DatePickerField(
-                labelText: 'Start Date',
-                selectedDate: startDate.value,
-                onDateSelected: (date) => startDate.value = date,
-                theme: theme,
-              ),
-              const SizedBox(height: 16),
-              _DatePickerField(
-                labelText: 'End Date',
-                selectedDate: endDate.value,
-                onDateSelected: (date) => endDate.value = date,
-                theme: theme,
-              ),
-              const SizedBox(height: 32),
-              ElevatedButton(
-                onPressed: isLoading.value ? null : handleEditClass,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: theme.colorScheme.primary,
-                  foregroundColor: theme.colorScheme.onPrimary,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+          child: Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'Class Code: ${classData.value!.classId}',
+                    style: TextStyle(
+                      fontSize: 18.0,
+                      color: theme.colorScheme.primary,
+                    ),
                   ),
-                ),
-                child: isLoading.value
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text(
-                        'Save Changes',
-                        style: TextStyle(fontSize: 18.0),
-                      ),
+                  const SizedBox(height: 24),
+                  _buildTextField(
+                    controller: classNameController,
+                    labelText: 'Class Name',
+                    validator: (value) => value?.isEmpty ?? true
+                        ? 'Please enter a class name'
+                        : null,
+                    theme: theme,
+                  ),
+                  const SizedBox(height: 16),
+                  _buildDropdownField(
+                    value: status.value,
+                    labelText: 'Status',
+                    items: const [
+                      DropdownMenuItem(value: 'ACTIVE', child: Text('Active')),
+                      DropdownMenuItem(
+                          value: 'COMPLETED', child: Text('Completed')),
+                      DropdownMenuItem(
+                          value: 'UPCOMING', child: Text('Upcoming')),
+                    ],
+                    onChanged: (value) => status.value = value ?? status.value,
+                    validator: (value) =>
+                        value == null ? 'Please select a status' : null,
+                    theme: theme,
+                  ),
+                  const SizedBox(height: 16),
+                  _DatePickerField(
+                    labelText: 'Start Date',
+                    selectedDate: startDate.value,
+                    onDateSelected: (date) => startDate.value = date,
+                    theme: theme,
+                  ),
+                  const SizedBox(height: 16),
+                  _DatePickerField(
+                    labelText: 'End Date',
+                    selectedDate: endDate.value,
+                    onDateSelected: (date) => endDate.value = date,
+                    theme: theme,
+                  ),
+                  const SizedBox(height: 32),
+                  ElevatedButton(
+                    onPressed: isLoading.value ? null : handleEditClass,
+                    child: isLoading.value
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Text('Save Changes'),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),
