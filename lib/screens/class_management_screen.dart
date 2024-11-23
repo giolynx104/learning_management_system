@@ -5,7 +5,6 @@ import 'package:learning_management_system/routes/routes.dart';
 import 'package:learning_management_system/models/class_list_model.dart';
 import 'package:learning_management_system/services/class_service.dart';
 import 'package:learning_management_system/providers/auth_provider.dart';
-import 'package:learning_management_system/providers/app_bar_provider.dart';
 import 'package:learning_management_system/exceptions/api_exceptions.dart';
 import 'dart:async';
 
@@ -36,7 +35,7 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
 
     try {
       final authState = ref.read(authProvider);
-      debugPrint('ClassManagementScreen - authState read');
+      debugPrint('ClassManagementScreen - authState: $authState');
 
       return authState.when(
         data: (user) async {
@@ -73,8 +72,9 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
           }
         },
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
       debugPrint('ClassManagementScreen - initialization error: $e');
+      debugPrint('ClassManagementScreen - stack trace: $stackTrace');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error initializing: $e')),
@@ -318,7 +318,8 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
     );
   }
 
-  Future<void> _handleClassAction(String action, ClassListItem classItem) async {
+  Future<void> _handleClassAction(
+      String action, ClassListItem classItem) async {
     switch (action) {
       case 'edit':
         debugPrint(

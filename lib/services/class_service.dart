@@ -6,8 +6,6 @@ import 'package:learning_management_system/models/class_list_model.dart';
 import 'package:learning_management_system/utils/api_client.dart';
 import 'package:learning_management_system/exceptions/api_exceptions.dart';
 import 'package:learning_management_system/providers/auth_provider.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
 
 part 'class_service.g.dart';
 
@@ -69,7 +67,6 @@ class ClassService extends _$ClassService {
       }
 
       debugPrint('ClassService - Class created successfully');
-
     } on DioException catch (e) {
       debugPrint('ClassService - DioException: ${e.message}');
       debugPrint('ClassService - Response: ${e.response?.data}');
@@ -85,42 +82,50 @@ class ClassService extends _$ClassService {
     }
   }
 
-  Future<List<ClassListItem>> getClassList(String token) async {
+  Future<List<ClassListItem>> getClassList(
+    String token, {
+    String? role,
+    int? page,
+    int? pageSize,
+  }) async {
     try {
+      debugPrint('ClassService - Fetching class list with token: $token');
+      
+      final Map<String, dynamic> requestData = {
+        'token': token,
+        if (role != null) 'role': role,
+        if (page != null || pageSize != null)
+          'pageable_request': {
+            'page': (page ?? 0).toString(),
+            'page_size': (pageSize ?? 10).toString(),
+          },
+      };
+
       final response = await ref.read(apiClientProvider).post(
         '/it5023e/get_class_list',
-        data: {'token': token},
+        data: requestData,
       );
+      debugPrint('ClassService - Raw response: ${response.data}');
 
       final responseData = response.data as Map<String, dynamic>;
       final meta = responseData['meta'] as Map<String, dynamic>;
 
       if (meta['code'] == 9998) {
-        // Token invalid code
-        // Sign out user if token is invalid
         ref.read(authProvider.notifier).signOut();
-        throw UnauthorizedException(
-            'Session expired. Please sign in again.');
+        throw UnauthorizedException('Session expired. Please sign in again.');
       }
 
-      if (meta['code'] != 1000) {
+      if (meta['code'] != '1000') {
         throw Exception(meta['message'] ?? 'Failed to get class list');
       }
 
-      final List<dynamic> classListData = responseData['data'];
-      return classListData.map((json) => ClassListItem.fromJson(json)).toList();
-    } on DioException catch (e) {
-      final responseData = e.response?.data as Map<String, dynamic>?;
-      final meta = responseData?['meta'] as Map<String, dynamic>?;
-
-      if (meta?['code'] == 9998) {
-        // Token invalid code
-        ref.read(authProvider.notifier).signOut();
-        throw UnauthorizedException(
-            'Session expired. Please sign in again.');
-      }
-
-      throw Exception(meta?['message'] ?? 'Failed to get class list');
+      final data = responseData['data'] as Map<String, dynamic>;
+      final pageContent = data['page_content'] as List<dynamic>;
+      
+      return pageContent.map((json) => ClassListItem.fromJson(json)).toList();
+    } catch (e) {
+      debugPrint('ClassService - Error fetching class list: $e');
+      return []; // Return empty list on error
     }
   }
 
@@ -153,8 +158,7 @@ class ClassService extends _$ClassService {
       if (meta['code'] == 9998) {
         // Token invalid code
         ref.read(authProvider.notifier).signOut();
-        throw UnauthorizedException(
-            'Session expired. Please sign in again.');
+        throw UnauthorizedException('Session expired. Please sign in again.');
       }
 
       if (meta['code'] != 1000) {
@@ -169,8 +173,7 @@ class ClassService extends _$ClassService {
       if (meta?['code'] == 9998) {
         // Token invalid code
         ref.read(authProvider.notifier).signOut();
-        throw UnauthorizedException(
-            'Session expired. Please sign in again.');
+        throw UnauthorizedException('Session expired. Please sign in again.');
       }
 
       throw Exception(meta?['message'] ?? 'Failed to edit class');
@@ -198,8 +201,7 @@ class ClassService extends _$ClassService {
 
       if (meta['code'] == 9998) {
         ref.read(authProvider.notifier).signOut();
-        throw UnauthorizedException(
-            'Session expired. Please sign in again.');
+        throw UnauthorizedException('Session expired. Please sign in again.');
       }
 
       if (meta['code'] != 1000) {
@@ -217,8 +219,7 @@ class ClassService extends _$ClassService {
 
       if (meta?['code'] == 9998) {
         ref.read(authProvider.notifier).signOut();
-        throw UnauthorizedException(
-            'Session expired. Please sign in again.');
+        throw UnauthorizedException('Session expired. Please sign in again.');
       }
 
       return null; // Return null for any other error
@@ -263,8 +264,7 @@ class ClassService extends _$ClassService {
       if (meta['code'] == 9998) {
         // Token invalid code
         ref.read(authProvider.notifier).signOut();
-        throw UnauthorizedException(
-            'Session expired. Please sign in again.');
+        throw UnauthorizedException('Session expired. Please sign in again.');
       }
 
       if (meta['code'] != 1000) {
@@ -277,8 +277,7 @@ class ClassService extends _$ClassService {
       if (meta?['code'] == 9998) {
         // Token invalid code
         ref.read(authProvider.notifier).signOut();
-        throw UnauthorizedException(
-            'Session expired. Please sign in again.');
+        throw UnauthorizedException('Session expired. Please sign in again.');
       }
 
       throw Exception(meta?['message'] ?? 'Failed to delete class');
@@ -313,8 +312,7 @@ class ClassService extends _$ClassService {
 
       if (meta?['code'] == 9998) {
         ref.read(authProvider.notifier).signOut();
-        throw UnauthorizedException(
-            'Session expired. Please sign in again.');
+        throw UnauthorizedException('Session expired. Please sign in again.');
       }
 
       return null; // Return null for any other error
@@ -359,8 +357,7 @@ class ClassService extends _$ClassService {
 
       if (meta?['code'] == 9998) {
         ref.read(authProvider.notifier).signOut();
-        throw UnauthorizedException(
-            'Session expired. Please sign in again.');
+        throw UnauthorizedException('Session expired. Please sign in again.');
       }
 
       throw Exception(meta?['message'] ?? 'Failed to register classes');
@@ -388,8 +385,7 @@ class ClassService extends _$ClassService {
 
       if (meta['code'] == 9998) {
         ref.read(authProvider.notifier).signOut();
-        throw UnauthorizedException(
-            'Session expired. Please sign in again.');
+        throw UnauthorizedException('Session expired. Please sign in again.');
       }
 
       if (meta['code'] != 1000) {
@@ -407,8 +403,7 @@ class ClassService extends _$ClassService {
 
       if (meta?['code'] == 9998) {
         ref.read(authProvider.notifier).signOut();
-        throw UnauthorizedException(
-            'Session expired. Please sign in again.');
+        throw UnauthorizedException('Session expired. Please sign in again.');
       }
 
       return null;

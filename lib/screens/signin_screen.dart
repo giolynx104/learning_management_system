@@ -69,6 +69,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
           user,
           result['token'] as String,
         );
+        debugPrint('SignInScreen - Successfully signed in with token: ${result['token']}');
       }
     } catch (e) {
       if (!mounted) return;
