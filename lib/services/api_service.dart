@@ -20,7 +20,7 @@ class ApiService {
     // Add interceptor for better error handling
     _dio.interceptors.add(InterceptorsWrapper(
       onError: (DioException e, handler) {
-        if (e.response?.statusCode == 401 || 
+        if (e.response?.statusCode == 401 ||
             (e.response?.data is Map && e.response?.data['code'] == 9998)) {
           // Only throw UnauthorizedException for actual auth errors
           handler.reject(

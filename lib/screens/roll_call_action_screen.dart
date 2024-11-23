@@ -2,12 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:learning_management_system/routes/routes.dart';
+import 'package:learning_management_system/providers/attendance_provider.dart';
 import 'package:go_router/go_router.dart';
-import 'package:learning_management_system/providers/app_bar_provider.dart';
-import 'package:learning_management_system/services/attendance_service.dart';
-import 'package:learning_management_system/models/attendance_model.dart';
-import 'package:learning_management_system/providers/auth_provider.dart';
 
 class RollCallActionScreen extends HookConsumerWidget {
   final String classId;
@@ -19,23 +15,142 @@ class RollCallActionScreen extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isSubmitting = useState(false);
-    final students = useState<List<Student>>(
-      List.generate(
+    final selectedDate = useState(DateTime.now());
+    final students = useState<List<Student>>([]);
+    final showOnlyAbsent = useState(false);
+    
+    final attendanceState = ref.watch(takeAttendanceProvider);
+
+    useEffect(() {
+      // TODO: Fetch students for this class
+      students.value = List.generate(
         30,
         (index) => Student(
+          id: (index + 1).toString(),
           name: 'Student ${index + 1}',
-          id: 'S${(index + 1).toString().padLeft(3, '0')}',
           isPresent: true,
         ),
-      ),
-    );
-    final showOnlyAbsent = useState(false);
+      );
+      return null;
+    }, []);
 
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Take Attendance'),
+        actions: [
+          IconButton(
+            icon: Icon(
+              showOnlyAbsent.value ? Icons.person_off_outlined : Icons.people,
+            ),
+            onPressed: () => showOnlyAbsent.value = !showOnlyAbsent.value,
+          ),
+        ],
+      ),
       body: Column(
         children: [
-          // ... rest of your implementation
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Date: ${DateFormat('yyyy-MM-dd').format(selectedDate.value)}',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.calendar_today),
+                  onPressed: () async {
+                    final date = await showDatePicker(
+                      context: context,
+                      initialDate: selectedDate.value,
+                      firstDate: DateTime.now().subtract(
+                        const Duration(days: 7),
+                      ),
+                      lastDate: DateTime.now(),
+                    );
+                    if (date != null) {
+                      selectedDate.value = date;
+                    }
+                  },
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: attendanceState.when(
+              data: (_) => ListView.builder(
+                itemCount: students.value.length,
+                itemBuilder: (context, index) {
+                  final student = students.value[index];
+                  if (showOnlyAbsent.value && student.isPresent) {
+                    return const SizedBox.shrink();
+                  }
+                  return CheckboxListTile(
+                    title: Text(student.name),
+                    subtitle: Text('ID: ${student.id}'),
+                    value: student.isPresent,
+                    onChanged: (value) {
+                      final newStudents = [...students.value];
+                      newStudents[index] = Student(
+                        id: student.id,
+                        name: student.name,
+                        isPresent: value ?? true,
+                      );
+                      students.value = newStudents;
+                    },
+                  );
+                },
+              ),
+              loading: () => const Center(
+                child: CircularProgressIndicator(),
+              ),
+              error: (error, stack) => Center(
+                child: SelectableText.rich(
+                  TextSpan(
+                    text: 'Error: ',
+                    children: [
+                      TextSpan(
+                        text: error.toString(),
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: ElevatedButton(
+              onPressed: attendanceState.isLoading
+                  ? null
+                  : () async {
+                      final absentStudents = students.value
+                          .where((s) => !s.isPresent)
+                          .map((s) => s.id)
+                          .toList();
+
+                      await ref
+                          .read(takeAttendanceProvider.notifier)
+                          .submit(
+                            classId: classId,
+                            date: selectedDate.value,
+                            absentStudentIds: absentStudents,
+                          )
+                          .then((_) {
+                        context.pop();
+                      }).catchError((error) {
+                        // Error is handled by the attendanceState
+                      });
+                    },
+              child: Text(
+                attendanceState.isLoading ? 'Submitting...' : 'Submit Attendance',
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -45,23 +160,11 @@ class RollCallActionScreen extends HookConsumerWidget {
 class Student {
   final String name;
   final String id;
-  bool isPresent;
+  final bool isPresent;
 
-  Student({
+  const Student({
     required this.name,
     required this.id,
     required this.isPresent,
-  });
-}
-
-class ClassInfo {
-  final String name;
-  final String id;
-  final int totalStudents;
-
-  const ClassInfo({
-    required this.name,
-    required this.id,
-    required this.totalStudents,
   });
 }

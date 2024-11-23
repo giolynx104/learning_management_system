@@ -1,48 +1,30 @@
-import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:learning_management_system/utils/api_client.dart';
-import 'package:learning_management_system/exceptions/api_exceptions.dart';
-import 'package:learning_management_system/providers/auth_provider.dart';
+import 'package:learning_management_system/services/api_service.dart';
 
-part 'attendance_service.g.dart';
+class AttendanceService {
+  final ApiService _apiService;
 
-@riverpod
-class AttendanceService extends _$AttendanceService {
-  @override
-  FutureOr<void> build() {}
+  AttendanceService(this._apiService);
 
-  Future<void> submitAttendance({
-    required String token,
+  Future<void> takeAttendance({
     required String classId,
-    required String date,
-    required List<int> attendanceList,
+    required DateTime date,
+    required List<String> absentStudentIds,
   }) async {
     try {
-      final response = await ref.read(apiClientProvider).post(
+      final response = await _apiService.dio.post(
         '/it5023e/take_attendance',
         data: {
-          'token': token,
           'class_id': classId,
-          'date': date,
-          'attendance_list': attendanceList,
+          'date': date.toIso8601String().split('T')[0],
+          'attendance_list': absentStudentIds,
         },
       );
 
-      final responseData = response.data as Map<String, dynamic>;
-      final meta = responseData['meta'] as Map<String, dynamic>;
-
-      if (meta['code'] == 9998) {
-        // Token invalid code
-        ref.read(authProvider.notifier).signOut();
-        throw UnauthorizedException(
-            'Session expired. Please sign in again.');
-      }
-
-      if (meta['code'] != 1000) {
-        throw Exception(meta['message'] ?? 'Failed to submit attendance');
+      if (response.statusCode != 200) {
+        throw Exception(response.data['message'] ?? 'Failed to submit attendance');
       }
     } catch (e) {
-      if (e is UnauthorizedException) rethrow;
-      throw Exception('Failed to submit attendance: $e');
+      throw Exception('Failed to submit attendance: ${e.toString()}');
     }
   }
 }

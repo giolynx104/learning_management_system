@@ -143,6 +143,7 @@ final routerProvider = Provider<GoRouter>((ref) {
                     ),
                   ),
                   GoRoute(
+                    name: Routes.rollCallAction,
                     path: 'roll-call-action/:classId',
                     builder: (context, state) => RollCallActionScreen(
                       classId: state.pathParameters['classId'] ?? '',
