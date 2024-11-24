@@ -7,14 +7,19 @@ import 'package:intl/intl.dart';  // Ensure this import is there
 import 'package:go_router/go_router.dart';
 import 'package:learning_management_system/routes/routes.dart';
 
-class SurveyListScreen extends ConsumerStatefulWidget {
-  const SurveyListScreen({super.key});
+
+class StudentSurveyListScreen extends ConsumerStatefulWidget {
+  final String classId;
+  const StudentSurveyListScreen({
+    super.key,
+    required this.classId,
+  });
 
   @override
-  SurveyListScreenState createState() => SurveyListScreenState();
+  StudentSurveyListScreenState createState() => StudentSurveyListScreenState();
 }
 
-class SurveyListScreenState extends ConsumerState<SurveyListScreen> {
+class StudentSurveyListScreenState extends ConsumerState<StudentSurveyListScreen> {
   List<Survey> surveys = [];
 
   Future<void> _fetchSurveys() async {
@@ -26,8 +31,8 @@ class SurveyListScreenState extends ConsumerState<SurveyListScreen> {
 
     try {
       final fetchedSurveys = await surveyService.getAllSurveys(
-        token: authState.token,
-        classId: '000002', // Replace with actual class ID
+        token: authState.token!,
+        classId: widget.classId, // Replace with actual class ID
       );
 
       print('Fetched Surveys: $fetchedSurveys');
@@ -38,7 +43,7 @@ class SurveyListScreenState extends ConsumerState<SurveyListScreen> {
       try {
         for (var survey in surveyList) {
           final isSubmitted = await surveyService.checkSubmissionStatus(
-            token: authState.token,
+            token: authState.token!,
             assignmentId: survey.id,
           );
           survey.isSubmitted = isSubmitted;
@@ -92,23 +97,7 @@ class SurveyListScreenState extends ConsumerState<SurveyListScreen> {
       length: 3,
       child: Scaffold(
         appBar: AppBar(
-          title: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'SURVEY LIST',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontFamily: 'Times New Roman',
-                ),
-              ),
-              Image.asset(
-                'assets/images/HUST_white.png',
-                height: 30,
-                fit: BoxFit.contain,
-              ),
-            ],
-          ),
+          title: const Text('Assignment List'),
           leading: IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.white),
             onPressed: () => Navigator.of(context).pop(),
@@ -170,8 +159,8 @@ class SurveyTabContent extends StatelessWidget {
           margin: const EdgeInsets.only(bottom: 12),
           child: InkWell(
             onTap: () {
-              context.push(
-                Routes.nestedSubmitSurvey,
+              context.pushNamed(
+                Routes.submitSurveyName,
                 extra: survey
               );
             }, // Your onTap logic here if needed

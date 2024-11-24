@@ -1,31 +1,35 @@
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+/// StorageService handles persistent token storage for the application using SharedPreferences.
+///
+/// This service is responsible for:
+/// - Saving the authentication token
+/// - Retrieving the stored token
+/// - Clearing the token on logout
 class StorageService {
-  static const String _tokenKey = 'auth_token';
+  final _storage = const FlutterSecureStorage();
+  static const _tokenKey = 'auth_token';
 
-  Future<void> saveToken(String token) async {
-    print('Debug - StorageService - Saving token: $token');
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_tokenKey, token);
-    final savedToken = await prefs.getString(_tokenKey);
-    print('Debug - StorageService - Verification of saved token: $savedToken');
+  /// Saves the authentication token to persistent storage.
+  ///
+  /// [token] The JWT or authentication token to be stored.
+  /// This token will persist even if the app is closed and reopened.
+  Future<void> setToken(String token) async {
+    await _storage.write(key: _tokenKey, value: token);
   }
 
+  /// Retrieves the stored authentication token.
+  ///
+  /// Returns the stored token as a String, or null if no token is stored.
+  /// This is typically used when the app starts to check if a user is already logged in.
   Future<String?> getToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString(_tokenKey);
-    print('Debug - StorageService - Retrieved token: $token');
-    return token;
+    return await _storage.read(key: _tokenKey);
   }
 
+  /// Clears the stored authentication token.
+  ///
+  /// This is typically called when the user logs out or the session expires.
   Future<void> clearToken() async {
-    print('Debug - StorageService - Clearing token');
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_tokenKey);
-  }
-
-  Future<void> clearUserSession() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_tokenKey);
+    await _storage.delete(key: _tokenKey);
   }
 }

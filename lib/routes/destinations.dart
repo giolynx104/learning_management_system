@@ -1,25 +1,49 @@
 import 'package:flutter/material.dart';
 
-class Destination {
-  final String label;
-  final IconData icon;
-  final IconData onPressedIcon;
-  const Destination({
-    required this.label,
-    required this.icon,
-    required this.onPressedIcon });
-  
+class Destination extends NavigationDestination {
+  Destination({
+    required String label,
+    required IconData icon,
+  }) : super(
+          icon: Icon(icon),
+          label: label,
+        );
 }
 
-const studentDestinations = [
-  Destination(label: 'Home', icon: Icons.home_outlined, onPressedIcon: Icons.home_filled),
-  Destination(label: 'Notification', icon: Icons.notifications_outlined, onPressedIcon: Icons.notifications_active),
-  Destination(label: 'Classes', icon: Icons.class_outlined,onPressedIcon: Icons.class_sharp),
-  Destination(label: 'Chat', icon: Icons.messenger_outline,onPressedIcon: Icons.messenger),
+final List<Destination> studentDestinations = [
+  Destination(
+    icon: Icons.home,
+    label: 'Home',
+  ),
+  Destination(
+    icon: Icons.class_,
+    label: 'Classes',
+  ),
+  Destination(
+    icon: Icons.chat,
+    label: 'Chat',
+  ),
+  Destination(
+    icon: Icons.person,
+    label: 'Profile',
+  ),
 ];
-const teacherDestinations = [
-  Destination(label: 'Home', icon: Icons.home_outlined, onPressedIcon: Icons.home_filled),
-  Destination(label: 'Notification', icon: Icons.notifications_outlined, onPressedIcon: Icons.notifications_active),
-  Destination(label: 'Classes', icon: Icons.class_outlined,onPressedIcon: Icons.class_sharp),
-  Destination(label: 'Chat', icon: Icons.messenger_outline,onPressedIcon: Icons.messenger),
+
+final List<Destination> teacherDestinations = [
+  Destination(
+    icon: Icons.home,
+    label: 'Home',
+  ),
+  Destination(
+    icon: Icons.class_,
+    label: 'Classes',
+  ),
+  Destination(
+    icon: Icons.chat,
+    label: 'Chat',
+  ),
+  Destination(
+    icon: Icons.person,
+    label: 'Profile',
+  ),
 ];

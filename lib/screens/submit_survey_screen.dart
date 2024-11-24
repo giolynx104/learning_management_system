@@ -58,7 +58,7 @@ class SubmitSurveyScreenState extends ConsumerState<SubmitSurveyScreen> {
       }
       final surveyService = ref.read(surveyServiceProvider.notifier);
       final submission = await surveyService.getSubmission(
-        token: authState.token,
+        token: authState.token!,
         assignmentId: survey.id,
       );
 
@@ -100,27 +100,7 @@ class SubmitSurveyScreenState extends ConsumerState<SubmitSurveyScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        toolbarHeight: 100,
-        backgroundColor: Colors.red[900],
-        centerTitle: true,
-        title: Column(
-          mainAxisSize: MainAxisSize.min, // Use min size to fit the content
-          children: [
-            Image.asset(
-              'assets/images/HUST_white.png', // Replace with your image path
-              height: 40, // Set the height as needed
-              fit: BoxFit.contain, // Adjust the fit as needed
-            ),
-            const SizedBox(height: 5.0),
-            const Text(
-              'SUBMIT SURVEY',
-              style: TextStyle(
-                color: Colors.white,
-                fontFamily: 'Times New Roman',
-              ),
-            ),
-          ],
-        ),
+        title: const Text('Submit Assignment'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {
@@ -283,7 +263,7 @@ class SubmitSurveyScreenState extends ConsumerState<SubmitSurveyScreen> {
                         }
                         final surveyService = ref.read(surveyServiceProvider.notifier);
                         await surveyService.submitSurvey(
-                          token: authState.token,
+                          token: authState.token!,
                           assignmentId: survey.id,
                           file: _selectedFile!,
                           textResponse: _descriptionController.text,
@@ -291,7 +271,7 @@ class SubmitSurveyScreenState extends ConsumerState<SubmitSurveyScreen> {
 
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                            content: Text("Nộp bài kiểm tra thành công"),
+                            content: Text("Submit Assignment Successfully"),
                           ),
                         );
 

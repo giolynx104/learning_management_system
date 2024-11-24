@@ -47,7 +47,7 @@ class ClassRegistrationScreenState extends ConsumerState<ClassRegistrationScreen
       }
 
       final classInfo = await ref.read(classServiceProvider.notifier).getBasicClassInfo(
-        token: authState.token,
+        token: authState.token ?? '',
         classId: classCode,
       );
 
@@ -93,7 +93,7 @@ class ClassRegistrationScreenState extends ConsumerState<ClassRegistrationScreen
       }
 
       final results = await ref.read(classServiceProvider.notifier).registerClasses(
-        token: authState.token,
+        token: authState.token ?? '',
         classIds: _selectedClassCodes,
       );
 

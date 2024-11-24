@@ -9,11 +9,13 @@ import 'package:learning_management_system/providers/auth_provider.dart';
 import 'dart:io';
 
 class EditSurveyScreen extends ConsumerStatefulWidget {
+  final String surveyId;
   final TeacherSurvey survey;
 
   const EditSurveyScreen({
     super.key,
-    required this.survey, // Make survey a required parameter
+    required this.surveyId,
+    required this.survey,
   });
 
   @override
@@ -80,30 +82,7 @@ class EditSurveyScreenState extends ConsumerState<EditSurveyScreen> {
       child: Scaffold(
         backgroundColor: Colors.white,
         appBar: AppBar(
-          toolbarHeight: 100,
-          backgroundColor: Colors.red[900],
-          centerTitle: true,
-          title: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Image.asset(
-                'assets/images/HUST_white.png',
-                height: 40,
-                fit: BoxFit.contain,
-                errorBuilder: (context, error, stackTrace) {
-                  return const Icon(Icons.error, color: Colors.white);
-                },
-              ),
-              const SizedBox(height: 5.0),
-              const Text(
-                'EDIT SURVEY',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontFamily: 'Times New Roman',
-                ),
-              ),
-            ],
-          ),
+          title: const Text('Edit Assignment'),
           leading: IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.white),
             onPressed: () => Navigator.pop(context),
@@ -193,7 +172,7 @@ class EditSurveyScreenState extends ConsumerState<EditSurveyScreen> {
             foregroundColor: Colors.white,
           ),
           child: Text(
-            _fileUrl != null ? 'Link đề bài: ${_fileUrl?.split('/').last}' : 'Tải tài liệu lên ▲',
+            _fileUrl != null ? 'Link đề bài' : 'Tải tài liệu lên ▲',
             style: const TextStyle(
               fontSize: 16.0,
               fontStyle: FontStyle.italic,
@@ -327,15 +306,15 @@ class EditSurveyScreenState extends ConsumerState<EditSurveyScreen> {
         );
         final surveyService = ref.read(surveyServiceProvider.notifier);
         await surveyService.editSurvey(
-          token: token,
+          token: token!,
           assignmentId: assignmentId,
           deadline: deadline,
           description: description,
           file: file,
         );
-        _showSnackBar('Survey updated successfully!');
+        _showSnackBar('Assignment updated successfully!');
         Future.delayed(Duration(milliseconds: 500));
-        Navigator.pop(context);
+        Navigator.pop(context, true);
       } catch (e) {
         _showSnackBar('Error updating survey: ${e.toString()}');
       }

@@ -8,7 +8,11 @@ import 'package:go_router/go_router.dart';
 import 'package:learning_management_system/routes/routes.dart';
 
 class TeacherSurveyListScreen extends ConsumerStatefulWidget {
-  const TeacherSurveyListScreen({super.key});
+  final String classId;
+  const TeacherSurveyListScreen({
+    super.key,
+    required this.classId,
+  });
 
   @override
   TeacherSurveyListScreenState createState() => TeacherSurveyListScreenState();
@@ -32,8 +36,8 @@ class TeacherSurveyListScreenState extends ConsumerState<TeacherSurveyListScreen
 
     try {
       final fetchedSurveys = await surveyService.getAllSurveys(
-        token: authState.token,
-        classId: '000253', // Replace with actual class ID
+        token: authState.token!,
+        classId: widget.classId, // Replace with actual class ID
       );
 
       final surveyList = fetchedSurveys.map((json) => TeacherSurvey.teacherFromJson(json as Map<String, dynamic>)).toList();
@@ -77,7 +81,7 @@ class TeacherSurveyListScreenState extends ConsumerState<TeacherSurveyListScreen
 
       // Call the deleteSurvey method
       await surveyService.deleteSurvey(
-        token: authState.token,
+        token: authState.token!,
         survey_id: surveyId,
       );
 
@@ -100,20 +104,10 @@ class TeacherSurveyListScreenState extends ConsumerState<TeacherSurveyListScreen
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-          title: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text('Survey Management'),
-              Image.asset(
-                'assets/images/HUST_white.png',
-                height: 30,
-                fit: BoxFit.contain,
-              ),
-            ],
-          ),
+          title: const Text('Manage Assignment'),
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
-            onPressed: () => context.pop(),
+            onPressed: () => Navigator.of(context).pop(),
           ),
           bottom: TabBar(
             labelColor: theme.colorScheme.onPrimary,
@@ -130,16 +124,27 @@ class TeacherSurveyListScreenState extends ConsumerState<TeacherSurveyListScreen
               title: 'Active',
               surveys: getUpcomingSurveys(),
               deleteSurvey: _deleteSurvey, // Pass delete function to the tab
+              fetchSurveys: _fetchSurveys,
             ),
             SurveyTabContent(
               title: 'Expired',
               surveys: getOverdueSurveys(),
               deleteSurvey: _deleteSurvey, // Pass delete function to the tab
+              fetchSurveys: _fetchSurveys,
             ),
           ],
         ),
         floatingActionButton: FloatingActionButton(
-          onPressed: () => context.push(Routes.nestedCreateSurvey, extra: '000253'),
+          onPressed: () async {
+            final result = await context.pushNamed(
+              Routes.createSurveyName,
+              pathParameters: {'classId': widget.classId},
+            );
+
+            if (result == true) {
+              _fetchSurveys(); // Reload surveys
+            }
+          },
           child: const Icon(Icons.add),
         ),
       ),
@@ -151,12 +156,13 @@ class SurveyTabContent extends StatelessWidget {
   final String title;
   final List<TeacherSurvey> surveys;
   final Future<void> Function(String surveyId) deleteSurvey;
-
+  final Future<void> Function() fetchSurveys;
   const SurveyTabContent({
     super.key,
     required this.title,
     required this.surveys,
     required this.deleteSurvey,
+    required this.fetchSurveys,
   });
 
   @override
@@ -235,13 +241,24 @@ class SurveyTabContent extends StatelessWidget {
                       onSelected: (value) async {
                         switch (value) {
                           case 'edit':
-                            context.push(Routes.nestedEditSurvey, extra: survey);
+                            final result = await context.pushNamed(
+                              Routes.editSurveyName,
+                              pathParameters: {'surveyId': survey.id},
+                              extra: survey,
+                            );
+
+                            if (result == true) {
+                              fetchSurveys(); // Reload surveys after editing
+                            }
                             break;
                           case 'delete':
                             await deleteSurvey(survey.id);
                             break;
                           case 'responses':
-                          // TODO: Implement view responses
+                            context.pushNamed(
+                              Routes.responseSurveyName,
+                              pathParameters: {'surveyId': survey.id},
+                            );
                             break;
                         }
                       },

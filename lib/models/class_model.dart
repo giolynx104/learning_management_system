@@ -23,5 +23,6 @@ class ClassModel with _$ClassModel {
     @JsonKey(name: 'attendance_list') @Default([]) List<dynamic> attendanceList,
   }) = _ClassModel;
 
-  factory ClassModel.fromJson(Map<String, dynamic> json) => _$ClassModelFromJson(json);
+  factory ClassModel.fromJson(Map<String, dynamic> json) =>
+      _$ClassModelFromJson(json);
 }

@@ -50,30 +50,7 @@ class CreateSurveyScreenState extends ConsumerState<CreateSurveyScreen> {
       child: Scaffold(
         backgroundColor: Colors.white,
         appBar: AppBar(
-          toolbarHeight: 100,
-          backgroundColor: Colors.red[900],
-          centerTitle: true,
-          title: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Image.asset(
-                'assets/images/HUST_white.png',
-                height: 40,
-                fit: BoxFit.contain,
-                errorBuilder: (context, error, stackTrace) {
-                  return const Icon(Icons.error, color: Colors.white);
-                },
-              ),
-              const SizedBox(height: 5.0),
-              const Text(
-                'CREATE SURVEY',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontFamily: 'Times New Roman',
-                ),
-              ),
-            ],
-          ),
+          title: const Text('Create Assignment'),
           leading: IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.white),
             onPressed: () => Navigator.pop(context),
@@ -299,18 +276,18 @@ class CreateSurveyScreenState extends ConsumerState<CreateSurveyScreen> {
     try {
       final surveyService = ref.read(surveyServiceProvider.notifier);
       await surveyService.createSurvey(
-        token: authState.token,
+        token: authState.token!,
         classId: widget.classId,
         title: surveyName,
         deadline: formattedDeadline,
         description: _descriptionController.text,
         file: _selectedFile!,
       );
-      _showSnackBar("Tạo bài kiểm tra thành công!");
+      _showSnackBar("Assignment created successfully!");
       Future.delayed(Duration(milliseconds: 500));
-      Navigator.pop(context);
+      Navigator.pop(context, true);
     } catch (e) {
-      _showSnackBar("Lỗi khi tạo bài kiểm tra: $e");
+      _showSnackBar("Error creating assignment: $e");
     }
   }
 

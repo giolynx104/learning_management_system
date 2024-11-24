@@ -1,11 +1,147 @@
-import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-import 'package:learning_management_system/models/user.dart';
+import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:learning_management_system/services/api_service.dart';
+import 'package:learning_management_system/exceptions/api_exceptions.dart';
 
+part 'auth_service.g.dart';
+
+/// Service responsible for making authentication-related API calls.
+///
+/// Handles all direct communication with the authentication server including:
+/// - Sign in
+/// - Sign up
+/// - Verification code requests
+/// - Token validation
 class AuthService {
-  static const String _baseUrl = 'http://160.30.168.228:8080/it4788';
+  /// Dio instance for making HTTP requests
+  final Dio _dio;
 
+  /// Creates an AuthService instance using the provided Dio client
+  AuthService(this._dio);
+
+  /// Attempts to sign in a user with email and password.
+  ///
+  /// Makes a POST request to the login endpoint and processes the response.
+  /// If the account needs verification, it will return the verification code.
+  ///
+  /// @param email The user's email address
+  /// @param password The user's password
+  /// @return A Map containing:
+  ///   - success: boolean indicating if the sign-in was successful
+  ///   - user: user data if sign-in was successful
+  ///   - token: authentication token if sign-in was successful
+  ///   - needs_verification: boolean indicating if verification is needed
+  ///   - verify_code: verification code if verification is needed
+  Future<Map<String, dynamic>> signIn({
+    required String email,
+    required String password,
+  }) async {
+    try {
+      debugPrint('Attempting sign in for email: $email');
+      final response = await _dio.post(
+        '/it4788/login',
+        data: {
+          'email': email,
+          'password': password,
+          'device_id': "1",
+        },
+      );
+      debugPrint('Login response: ${response.data}');
+
+      // Handle verification required case
+      if (response.statusCode == 403 && response.data['code'] == 9991) {
+        final verifyCodeResponse = await _dio.post(
+          '/it4788/get_verify_code',
+          data: {
+            'email': email,
+            'password': password,
+          },
+        );
+
+        if (verifyCodeResponse.statusCode == 200 &&
+            verifyCodeResponse.data['code'] == 1000) {
+          return {
+            'success': false,
+            'needs_verification': true,
+            'verify_code': verifyCodeResponse.data['verify_code'],
+            'email': email,
+          };
+        }
+        throw Exception('Failed to get verification code');
+      }
+
+      // Handle successful login
+      if (response.statusCode == 200 &&
+          (response.data['message'] == 'OK' || response.data['code'] == 1000)) {
+        final userData = response.data['data'];
+        debugPrint('User data from login: $userData');
+
+        // Convert string ID to int if necessary
+        if (userData['id'] is String) {
+          userData['id'] = int.parse(userData['id']);
+        }
+
+        // Map the response data to match User model fields
+        final mappedUserData = {
+          'id': userData['id'],
+          'firstName': userData['ho'] ?? '',
+          'lastName': userData['ten'] ?? '',
+          'email': userData['email'] ?? '',
+          'role': userData['role'] ?? '',
+          'avatar': userData['avatar'],
+          'token': userData['token'],
+        };
+        debugPrint('Mapped user data: $mappedUserData');
+
+        return {
+          'success': true,
+          'user': mappedUserData,
+          'token': userData['token'],
+          'needs_verification': false,
+        };
+      }
+
+      throw Exception(response.data['message'] ?? 'Unknown error');
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 401 || e.response?.data['code'] == 9998) {
+        throw UnauthorizedException('Invalid credentials or session expired');
+      } else if (e.response?.statusCode == 422) {
+        throw ValidationException(
+          message: 'Invalid input data',
+          validationErrors: _parseValidationErrors(e.response?.data),
+        );
+      } else if (e.type == DioExceptionType.connectionTimeout) {
+        throw NetworkException(
+          message: 'Connection timeout. Please check your internet connection.',
+        );
+      }
+      throw ApiException(
+        statusCode: e.response?.statusCode,
+        message: e.message ?? 'Unknown error occurred',
+        data: e.response?.data,
+      );
+    }
+  }
+
+  Map<String, List<String>> _parseValidationErrors(Map<String, dynamic>? data) {
+    final errors = <String, List<String>>{};
+    // Parse validation errors from response
+    // Implementation depends on your API error format
+    return errors;
+  }
+
+  /// Registers a new user with the provided information.
+  ///
+  /// @param firstName User's first name
+  /// @param lastName User's last name
+  /// @param email User's email address
+  /// @param password User's password
+  /// @param role User's role (e.g., 'STUDENT', 'LECTURER')
+  /// @return A Map containing:
+  ///   - success: boolean indicating if the sign-up was successful
+  ///   - verify_code: verification code for the new account
   Future<Map<String, dynamic>> signUp({
     required String firstName,
     required String lastName,
@@ -14,149 +150,62 @@ class AuthService {
     required String role,
   }) async {
     try {
-      final response = await http.post(
-        Uri.parse('$_baseUrl/signup'),
-        headers: {
-          'Content-Type': 'application/json',
-          'User-Agent': 'PostmanRuntime/7.42.0',
-        },
-        body: jsonEncode({
+      final response = await _dio.post(
+        '/it4788/signup',
+        data: {
           'ho': firstName,
           'ten': lastName,
           'email': email,
           'password': password,
           'role': role,
-        }),
-      );
-
-      final responseBody = jsonDecode(response.body);
-
-      if (response.statusCode == 200) {
-        if (responseBody['code'] == 1000) {
-          return {
-            'success': true,
-            'verify_code': responseBody['verify_code'],
-          };
-        } else {
-          throw Exception('Signup failed: ${responseBody['message']}');
-        }
-      } else if (response.statusCode == 409) {
-        throw Exception('User already exists: ${responseBody['message']}');
-      } else {
-        throw Exception('Failed to sign up: ${response.body}');
-      }
-    } catch (e) {
-      throw Exception('Error during sign up: $e');
-    }
-  }
-
-  Future<Map<String, dynamic>> signIn({
-    required String email,
-    required String password,
-  }) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$_baseUrl/login'),
-        headers: {
-          'Content-Type': 'application/json',
-          'User-Agent': 'PostmanRuntime/7.42.0',
         },
-        body: jsonEncode({
-          'email': email,
-          'password': password,
-          'deviceId': 1,
-        }),
       );
 
-      if (response.statusCode == 200) {
-        final responseData = jsonDecode(response.body);
-        print('Debug - Raw response data: $responseData');
-        
-        if (responseData['code'] == 1000) {
-          final userData = responseData['data'];
-          final user = User.fromJson(userData);
-          
-          return {
-            'success': true,
-            'user': userData,
-            'token': userData['token'],
-            'needs_verification': false,
-          };
-        } else {
-          throw Exception('Login failed: ${responseData['message'] ?? 'Unknown error'}');
-        }
-      } else {
-        throw Exception('Failed to sign in: ${response.body}');
+      if (response.statusCode == 200 && response.data['code'] == 1000) {
+        return {
+          'success': true,
+          'verify_code': response.data['verify_code'],
+        };
       }
-    } catch (e) {
-      print('Debug - Sign in error: $e');
-      throw Exception('Error during sign in: $e');
+
+      throw Exception(response.data['message'] ?? 'Failed to sign up');
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 409) {
+        throw Exception('User already exists: ${e.response?.data['message']}');
+      }
+      throw Exception('Error during sign up: ${e.message}');
     }
   }
 
-  Future<String> getVerifyCode({
-    required String email,
-    required String password,
-  }) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$_baseUrl/get_verify_code'),
-        headers: {
-          'Content-Type': 'application/json',
-          'User-Agent': 'PostmanRuntime/7.42.0',
-        },
-        body: jsonEncode({
-          'email': email,
-          'password': password,
-        }),
-      );
-
-      final responseBody = jsonDecode(response.body);
-
-      if (response.statusCode == 200) {
-        return responseBody['verify_code'];
-      } else {
-        throw Exception(
-            'Failed to get verification code: ${responseBody['message']}');
-      }
-    } catch (e) {
-      throw Exception('Error getting verification code: $e');
-    }
-  }
-
+  /// Verifies a user's account using the provided verification code.
+  ///
+  /// @param email User's email address
+  /// @param verifyCode Verification code sent to the user
+  /// @return bool indicating if verification was successful
   Future<bool> checkVerifyCode({
     required String email,
     required String verifyCode,
   }) async {
     try {
-      debugPrint('Sending verification request with email: $email, code: $verifyCode');
-      
-      final response = await http.post(
-        Uri.parse('$_baseUrl/check_verify_code'),
-        headers: {
-          'Content-Type': 'application/json',
-          'User-Agent': 'PostmanRuntime/7.42.0',
-        },
-        body: jsonEncode({
+      final response = await _dio.post(
+        '/it4788/check_verify_code',
+        data: {
           'email': email,
           'verify_code': verifyCode,
-        }),
+        },
       );
 
-      debugPrint('Verification response status: ${response.statusCode}');
-      debugPrint('Verification response body: ${response.body}');
-
-      final responseBody = jsonDecode(response.body);
-      
-      if (response.statusCode == 200) {
-        // Simply check if code is 1000
-        return responseBody['code'] == 1000;
-      }
-      
+      return response.statusCode == 200 &&
+          (response.data['message'] == 'OK' || response.data['code'] == 1000);
+    } on DioException {
       return false;
-    } catch (e) {
-      debugPrint('Verification error: $e');
-      throw Exception('Error verifying code: $e');
     }
   }
+}
+
+/// Provider for the AuthService instance
+@riverpod
+AuthService authService(Ref ref) {
+  final apiService = ref.watch(apiServiceProvider);
+  return AuthService(apiService.dio);
 }

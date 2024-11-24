@@ -1,96 +1,87 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:intl/intl.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
+import 'package:go_router/go_router.dart';
+import 'package:learning_management_system/models/absence_request_model.dart';
+import 'package:learning_management_system/providers/absence_request_provider.dart';
 
-class AbsenceRequestScreen extends StatefulWidget {
-  const AbsenceRequestScreen({super.key});
+class AbsenceRequestScreen extends HookConsumerWidget {
+  final String classId;
+
+  const AbsenceRequestScreen({
+    super.key,
+    required this.classId,
+  });
 
   @override
-  State<AbsenceRequestScreen> createState() => _AbsenceRequestScreenState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final selectedDate = useState<DateTime?>(null);
+    final selectedFile = useState<String?>(null);
+    final titleController = useTextEditingController();
+    final reasonController = useTextEditingController();
+    final requestState = ref.watch(submitAbsenceRequestProvider);
 
-class _AbsenceRequestScreenState extends State<AbsenceRequestScreen> {
-  DateTime? _selectedDate;
-  String? _selectedFile;
-  final TextEditingController _titleController = TextEditingController();
-  final TextEditingController _reasonController = TextEditingController();
-
-  Future<void> _pickDate() async {
-    final DateTime? pickedDate = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2101),
-    );
-    if (pickedDate != null && pickedDate != _selectedDate) {
-      setState(() {
-        _selectedDate = pickedDate;
-      });
-    }
-  }
-
-  Future<void> _pickFile() async {
-    final result = await FilePicker.platform.pickFiles();
-    if (result != null) {
-      setState(() {
-        _selectedFile = result.files.single.name;
-      });
-    }
-  }
-
-  Future<void> _submit() async {
-    if (_selectedDate == null || _selectedFile == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Please select a date and upload proof file')),
+    Future<void> pickDate() async {
+      final DateTime? pickedDate = await showDatePicker(
+        context: context,
+        initialDate: DateTime.now(),
+        firstDate: DateTime(2000),
+        lastDate: DateTime(2101),
       );
-      return;
-    }
-
-    final String reason = _reasonController.text;
-    final String formattedDate =
-        DateFormat('yyyy-MM-dd').format(_selectedDate!);
-
-    try {
-      final response = await http.post(
-        Uri.parse('http://160.30.168.228:8080/it5023e/request_absence'),
-        headers: {
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
-        body: jsonEncode({
-          'token': 'ZeLxSs', // TODO: Get from auth provider
-          'class_id': '783226', // TODO: Get from class context
-          'date': formattedDate,
-          'reason': reason,
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Absence request submitted successfully')),
-        );
-      } else {
-        throw Exception('Failed to submit request');
+      if (pickedDate != null) {
+        selectedDate.value = pickedDate;
       }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${e.toString()}')),
-      );
     }
-  }
 
-  @override
-  Widget build(BuildContext context) {
-    Theme.of(context);
+    Future<void> pickFile() async {
+      final result = await FilePicker.platform.pickFiles();
+      if (result != null) {
+        selectedFile.value = result.files.single.name;
+      }
+    }
+
+    Future<void> submit() async {
+      if (selectedDate.value == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please select a date')),
+        );
+        return;
+      }
+
+      final request = AbsenceRequest(
+        classId: classId,
+        title: titleController.text,
+        reason: reasonController.text,
+        date: DateFormat('yyyy-MM-dd').format(selectedDate.value!),
+        proofFile: selectedFile.value,
+      );
+
+      try {
+        await ref.read(submitAbsenceRequestProvider.notifier).submit(request);
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Absence request submitted successfully')),
+          );
+          context.pop();
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error: ${e.toString()}')),
+          );
+        }
+      }
+    }
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Absence Request'),
-        centerTitle: true,
+        title: const Text('Request Absence'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.pop(),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -104,7 +95,7 @@ class _AbsenceRequestScreenState extends State<AbsenceRequestScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     TextField(
-                      controller: _titleController,
+                      controller: titleController,
                       decoration: const InputDecoration(
                         labelText: 'Title',
                         border: OutlineInputBorder(),
@@ -112,7 +103,7 @@ class _AbsenceRequestScreenState extends State<AbsenceRequestScreen> {
                     ),
                     const SizedBox(height: 16),
                     TextField(
-                      controller: _reasonController,
+                      controller: reasonController,
                       maxLines: 3,
                       decoration: const InputDecoration(
                         labelText: 'Reason',
@@ -124,8 +115,8 @@ class _AbsenceRequestScreenState extends State<AbsenceRequestScreen> {
                     TextField(
                       readOnly: true,
                       controller: TextEditingController(
-                        text: _selectedDate != null
-                            ? DateFormat('yyyy-MM-dd').format(_selectedDate!)
+                        text: selectedDate.value != null
+                            ? DateFormat('yyyy-MM-dd').format(selectedDate.value!)
                             : '',
                       ),
                       decoration: InputDecoration(
@@ -133,20 +124,20 @@ class _AbsenceRequestScreenState extends State<AbsenceRequestScreen> {
                         border: const OutlineInputBorder(),
                         suffixIcon: IconButton(
                           icon: const Icon(Icons.calendar_today),
-                          onPressed: _pickDate,
+                          onPressed: pickDate,
                         ),
                       ),
                     ),
                     const SizedBox(height: 16),
                     FilledButton.tonalIcon(
-                      onPressed: _pickFile,
+                      onPressed: pickFile,
                       icon: const Icon(Icons.attach_file),
                       label: const Text('Upload Proof'),
                     ),
-                    if (_selectedFile != null)
+                    if (selectedFile.value != null)
                       Padding(
                         padding: const EdgeInsets.only(top: 8.0),
-                        child: Text('Selected file: $_selectedFile'),
+                        child: Text('Selected file: ${selectedFile.value}'),
                       ),
                   ],
                 ),
@@ -154,8 +145,10 @@ class _AbsenceRequestScreenState extends State<AbsenceRequestScreen> {
             ),
             const SizedBox(height: 16),
             FilledButton(
-              onPressed: _submit,
-              child: const Text('Submit Request'),
+              onPressed: requestState.isLoading ? null : submit,
+              child: requestState.isLoading
+                  ? const CircularProgressIndicator()
+                  : const Text('Submit Request'),
             ),
           ],
         ),
