@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:learning_management_system/models/survey.dart';
 import 'package:learning_management_system/providers/auth_provider.dart';
 import 'package:learning_management_system/routes/custom_layout_scaffold.dart';
 import 'package:learning_management_system/routes/destinations.dart';
@@ -28,6 +29,7 @@ import 'package:learning_management_system/screens/profile_screen.dart';
 import 'package:learning_management_system/screens/detailed_attendance_list_screen.dart';
 import 'package:learning_management_system/screens/student_attendance_screen.dart';
 import 'package:learning_management_system/screens/material_list_screen.dart';
+import 'package:learning_management_system/screens/edit_survey_screen.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
 final _shellNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'shell');
@@ -223,6 +225,14 @@ final routerProvider = Provider<GoRouter>((ref) {
                     name: Routes.uploadMaterialName,
                     builder: (context, state) => UploadMaterialScreen(
                       classId: state.pathParameters['classId'] ?? '',
+                    ),
+                  ),
+                  GoRoute(
+                    path: Routes.editSurvey,
+                    name: Routes.editSurveyName,
+                    builder: (context, state) => EditSurveyScreen(
+                      surveyId: state.pathParameters['surveyId'] ?? '',
+                      survey: state.extra as TeacherSmallSurvey,
                     ),
                   ),
                 ],

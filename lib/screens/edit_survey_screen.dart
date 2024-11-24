@@ -4,11 +4,13 @@ import 'package:file_picker/file_picker.dart';
 import 'package:learning_management_system/models/survey.dart';
 
 class EditSurveyScreen extends StatefulWidget {
+  final String surveyId;
   final TeacherSmallSurvey survey;
 
   const EditSurveyScreen({
     super.key,
-    required this.survey, // Make survey a required parameter
+    required this.surveyId,
+    required this.survey,
   });
 
   @override

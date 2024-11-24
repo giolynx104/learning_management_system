@@ -47,6 +47,7 @@ class Routes {
   static const String uploadMaterialName = 'uploadMaterial';
   static const String chatName = 'chat';
   static const String profileName = 'profile';
+  static const String editSurveyName = 'editSurvey';
 
   // Helper methods for generating full paths
   static String getRollCallPath(String classId) => '/classes/roll-call/$classId';
