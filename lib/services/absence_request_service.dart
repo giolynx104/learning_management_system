@@ -140,4 +140,39 @@ class AbsenceRequestService {
       throw Exception('Failed to get absence requests: $e');
     }
   }
+
+  Future<void> reviewAbsenceRequest({
+    required String token,
+    required int requestId,
+    required String status,
+  }) async {
+    try {
+      debugPrint('AbsenceRequestService - Starting review request');
+      debugPrint('AbsenceRequestService - Request data:');
+      debugPrint('  Request ID: $requestId');
+      debugPrint('  Status: $status');
+      debugPrint('  Token: $token');
+
+      final response = await _apiService.dio.post(
+        '/it5023e/review_absence_request',
+        data: {
+          'token': token,
+          'request_id': requestId.toString(),
+          'status': status,
+        },
+      );
+
+      debugPrint('AbsenceRequestService - Response status: ${response.statusCode}');
+      debugPrint('AbsenceRequestService - Response data: ${response.data}');
+
+      if (response.statusCode != 200) {
+        throw Exception(response.data['message'] ?? 'Failed to review absence request');
+      }
+
+      debugPrint('AbsenceRequestService - Request reviewed successfully');
+    } catch (e) {
+      debugPrint('AbsenceRequestService - Error reviewing request: $e');
+      throw Exception('Failed to review absence request: $e');
+    }
+  }
 } 

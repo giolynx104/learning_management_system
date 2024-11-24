@@ -29,6 +29,35 @@ class AbsenceRequestListScreen extends HookConsumerWidget {
       ),
     );
 
+    final reviewState = ref.watch(reviewAbsenceRequestProvider);
+
+    Future<void> handleReviewRequest(int requestId, String status) async {
+      try {
+        await ref.read(reviewAbsenceRequestProvider.notifier).submit(
+          requestId: requestId,
+          status: status,
+        );
+        
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Request ${status.toLowerCase()} successfully'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error: ${e.toString()}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Absence Requests'),
@@ -41,26 +70,32 @@ class AbsenceRequestListScreen extends HookConsumerWidget {
         children: [
           Padding(
             padding: const EdgeInsets.all(16.0),
-            child: Row(
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              alignment: WrapAlignment.start,
               children: [
-                DropdownButton<AbsenceRequestStatus?>(
-                  value: selectedStatus.value,
-                  hint: const Text('Filter by status'),
-                  items: [
-                    const DropdownMenuItem(
-                      value: null,
-                      child: Text('All'),
-                    ),
-                    ...AbsenceRequestStatus.values.map((status) {
-                      return DropdownMenuItem(
-                        value: status,
-                        child: Text(status.name.toUpperCase()),
-                      );
-                    }),
-                  ],
-                  onChanged: (value) => selectedStatus.value = value,
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 200),
+                  child: DropdownButton<AbsenceRequestStatus?>(
+                    isExpanded: true,
+                    value: selectedStatus.value,
+                    hint: const Text('Filter by status'),
+                    items: [
+                      const DropdownMenuItem(
+                        value: null,
+                        child: Text('All'),
+                      ),
+                      ...AbsenceRequestStatus.values.map((status) {
+                        return DropdownMenuItem(
+                          value: status,
+                          child: Text(status.name.toUpperCase()),
+                        );
+                      }),
+                    ],
+                    onChanged: (value) => selectedStatus.value = value,
+                  ),
                 ),
-                const SizedBox(width: 16),
                 TextButton.icon(
                   onPressed: () async {
                     final date = await showDatePicker(
@@ -104,37 +139,119 @@ class AbsenceRequestListScreen extends HookConsumerWidget {
                         horizontal: 16,
                         vertical: 8,
                       ),
-                      child: ListTile(
-                        title: Text(request.title),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Date: ${request.absenceDate}'),
-                            Text('Reason: ${request.reason}'),
-                            Text('Status: ${request.status.name.toUpperCase()}'),
-                            if (isTeacher)
-                              Text(
-                                'Student: ${request.studentAccount.firstName} ${request.studentAccount.lastName} (${request.studentAccount.studentId})',
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          ListTile(
+                            title: Text(
+                              request.title,
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                            subtitle: Padding(
+                              padding: const EdgeInsets.only(top: 8.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('Date: ${request.absenceDate}'),
+                                  const SizedBox(height: 4),
+                                  Text('Reason: ${request.reason}'),
+                                  const SizedBox(height: 4),
+                                  if (isTeacher) ...[
+                                    Text(
+                                      'Student: ${request.studentAccount.firstName} '
+                                      '${request.studentAccount.lastName} '
+                                      '(${request.studentAccount.studentId})',
+                                    ),
+                                    const SizedBox(height: 4),
+                                  ],
+                                ],
                               ),
-                          ],
-                        ),
-                        trailing: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: _getStatusColor(request.status),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            request.status.name.toUpperCase(),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
                             ),
                           ),
-                        ),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: _getStatusColor(request.status),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    request.status.name.toUpperCase(),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                                if (isTeacher && request.status == AbsenceRequestStatus.pending)
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      SizedBox(
+                                        width: 100,
+                                        child: ElevatedButton(
+                                          onPressed: reviewState.isLoading
+                                              ? null
+                                              : () => handleReviewRequest(request.id, 'ACCEPTED'),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.green,
+                                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                                          ),
+                                          child: reviewState.isLoading
+                                              ? const SizedBox(
+                                                  width: 20,
+                                                  height: 20,
+                                                  child: CircularProgressIndicator(
+                                                    strokeWidth: 2,
+                                                    color: Colors.white,
+                                                  ),
+                                                )
+                                              : const Text(
+                                                  'Accept',
+                                                  style: TextStyle(color: Colors.white),
+                                                ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      SizedBox(
+                                        width: 100,
+                                        child: ElevatedButton(
+                                          onPressed: reviewState.isLoading
+                                              ? null
+                                              : () => handleReviewRequest(request.id, 'REJECTED'),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.red,
+                                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                                          ),
+                                          child: reviewState.isLoading
+                                              ? const SizedBox(
+                                                  width: 20,
+                                                  height: 20,
+                                                  child: CircularProgressIndicator(
+                                                    strokeWidth: 2,
+                                                    color: Colors.white,
+                                                  ),
+                                                )
+                                              : const Text(
+                                                  'Reject',
+                                                  style: TextStyle(color: Colors.white),
+                                                ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                        ],
                       ),
                     );
                   },

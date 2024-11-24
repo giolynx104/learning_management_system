@@ -72,3 +72,41 @@ class GetAbsenceRequests extends _$GetAbsenceRequests {
     }
   }
 }
+
+@riverpod
+class ReviewAbsenceRequest extends _$ReviewAbsenceRequest {
+  @override
+  FutureOr<void> build() {
+    return null;
+  }
+
+  Future<void> submit({
+    required int requestId,
+    required String status,
+  }) async {
+    try {
+      debugPrint('ReviewAbsenceRequest Provider - Starting submission');
+      
+      final token = ref.read(authProvider).value?.token;
+      if (token == null) {
+        throw Exception('No authentication token found');
+      }
+      
+      state = const AsyncLoading();
+      
+      state = await AsyncValue.guard(() async {
+        await ref.read(absenceRequestServiceProvider).reviewAbsenceRequest(
+          requestId: requestId,
+          status: status,
+          token: token,
+        );
+        
+        // Refresh the absence requests list
+        ref.invalidate(getAbsenceRequestsProvider);
+      });
+    } catch (e) {
+      debugPrint('ReviewAbsenceRequest Provider - Error: $e');
+      rethrow;
+    }
+  }
+}
