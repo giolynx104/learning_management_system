@@ -70,6 +70,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
           result['token'] as String,
         );
         debugPrint('SignInScreen - Successfully signed in with token: ${result['token']}');
+        context.goNamed(Routes.homeName);
       }
     } catch (e) {
       if (!mounted) return;
@@ -197,15 +198,10 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   Widget _buildSignUpLink() {
     return Center(
       child: TextButton(
-        onPressed: () => context.push(Routes.signup),
-        child: Text(
-          'Create a new account',
-          style: TextStyle(
-            color: Theme.of(context).colorScheme.onPrimary,
-            decoration: TextDecoration.underline,
-            decorationColor: Colors.white,
-          ),
-        ),
+        onPressed: () {
+          context.goNamed(Routes.signupName);
+        },
+        child: const Text('Sign Up'),
       ),
     );
   }

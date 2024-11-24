@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:learning_management_system/models/survey.dart';
 import 'package:learning_management_system/providers/auth_provider.dart';
 import 'package:learning_management_system/routes/custom_layout_scaffold.dart';
 import 'package:learning_management_system/routes/destinations.dart';
 import 'package:learning_management_system/routes/routes.dart';
 import 'package:learning_management_system/screens/absence_request_list_screen.dart';
 import 'package:learning_management_system/screens/absence_request_screen.dart';
+import 'package:learning_management_system/screens/class_registration_screen.dart';
 import 'package:learning_management_system/screens/screen_chat.dart';
 import 'package:learning_management_system/screens/signin_screen.dart';
 import 'package:learning_management_system/screens/signup_screen.dart';
@@ -27,6 +29,7 @@ import 'package:learning_management_system/screens/profile_screen.dart';
 import 'package:learning_management_system/screens/detailed_attendance_list_screen.dart';
 import 'package:learning_management_system/screens/student_attendance_screen.dart';
 import 'package:learning_management_system/screens/material_list_screen.dart';
+import 'package:learning_management_system/screens/edit_survey_screen.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
 final _shellNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'shell');
@@ -66,10 +69,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       );
     },
     routes: [
-      // Auth routes
+      // Auth routes (outside shell)
       GoRoute(
         path: Routes.signin,
-        name: 'signin',
+        name: Routes.signinName,
         builder: (context, state) => const CustomLayoutScaffold(
           hideAppBar: true,
           child: SignInScreen(),
@@ -77,10 +80,19 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: Routes.signup,
-        name: 'signup',
+        name: Routes.signupName,
         builder: (context, state) => const CustomLayoutScaffold(
           hideAppBar: true,
           child: SignUpScreen(),
+        ),
+      ),
+
+      // Notification route (outside shell)
+      GoRoute(
+        path: Routes.notification,
+        name: Routes.notificationName,
+        builder: (context, state) => const CustomLayoutScaffold(
+          child: NotificationScreen(),
         ),
       ),
 
@@ -88,15 +100,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
           final container = ProviderScope.containerOf(context);
-          final isStudent =
-              container.read(authProvider).value?.role.toLowerCase() ==
-                  'student';
+          final isStudent = container.read(authProvider).value?.role.toLowerCase() == 'student';
 
           return CustomLayoutScaffold(
             child: ScaffoldWithNavigation(
               navigationShell: navigationShell,
-              destinations:
-                  isStudent ? studentDestinations : teacherDestinations,
+              destinations: isStudent ? studentDestinations : teacherDestinations,
             ),
           );
         },
@@ -106,147 +115,153 @@ final routerProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: Routes.home,
-                name: 'home',
+                name: Routes.homeName,
                 builder: (context, state) {
                   final container = ProviderScope.containerOf(context);
-                  final isStudent =
-                      container.read(authProvider).value?.role.toLowerCase() ==
-                          'student';
-                  return isStudent
-                      ? const StudentHomeScreen()
-                      : const TeacherHomeScreen();
+                  final isStudent = container.read(authProvider).value?.role.toLowerCase() == 'student';
+                  return isStudent ? const StudentHomeScreen() : const TeacherHomeScreen();
                 },
               ),
             ],
           ),
-          // Classes Branch
+
+          // Classes Branch with nested routes
           StatefulShellBranch(
             routes: [
               GoRoute(
                 path: Routes.classManagement,
-                name: 'classes',
+                name: Routes.classesName,
                 builder: (context, state) => const ClassManagementScreen(),
                 routes: [
                   GoRoute(
-                    path: 'create',
-                    name: 'createClass',
+                    path: Routes.classRegistration,
+                    name: Routes.classRegistrationName,
+                    builder: (context, state) => const ClassRegistrationScreen(),
+                  ),
+                  GoRoute(
+                    path: Routes.createClass,
+                    name: Routes.createClassName,
                     builder: (context, state) => const CreateClassScreen(),
                   ),
                   GoRoute(
                     path: Routes.modifyClass,
-                    name: 'modifyClass',
+                    name: Routes.modifyClassName,
                     builder: (context, state) => ModifyClassScreen(
                       classId: state.pathParameters['classId'] ?? '',
                     ),
                   ),
                   GoRoute(
                     path: Routes.rollCall,
-                    name: 'roll-call',
+                    name: Routes.rollCallName,
                     builder: (context, state) => RollCallScreen(
                       classId: state.pathParameters['classId'] ?? '',
                     ),
                   ),
                   GoRoute(
                     path: Routes.detailedRollCall,
-                    name: 'detailedRollCall',
+                    name: Routes.detailedRollCallName,
                     builder: (context, state) => DetailedRollCallInfoScreen(
                       classId: state.pathParameters['classId'] ?? '',
                     ),
                   ),
                   GoRoute(
-                    name: Routes.rollCallAction,
-                    path: 'roll-call-action/:classId',
+                    path: Routes.rollCallAction,
+                    name: Routes.rollCallActionName,
                     builder: (context, state) => RollCallActionScreen(
                       classId: state.pathParameters['classId'] ?? '',
                     ),
                   ),
                   GoRoute(
-                    name: Routes.detailedAttendanceList,
-                    path: 'detailed-attendance-list/:classId',
-                    builder: (context, state) => DetailedAttendanceListScreen(
-                      classId: state.pathParameters['classId'] ?? '',
-                    ),
-                  ),
-                  GoRoute(
                     path: Routes.studentSurveyList,
+                    name: Routes.studentSurveyListName,
                     builder: (context, state) => StudentSurveyListScreen(
                       classId: state.pathParameters['classId'] ?? '',
                     ),
                   ),
                   GoRoute(
                     path: Routes.teacherSurveyList,
+                    name: Routes.teacherSurveyListName,
                     builder: (context, state) => TeacherSurveyListScreen(
                       classId: state.pathParameters['classId'] ?? '',
                     ),
                   ),
                   GoRoute(
-                    name: Routes.materialList,
-                    path: 'materials/:classId',
+                    path: Routes.detailedAttendanceList,
+                    name: Routes.detailedAttendanceListName,
+                    builder: (context, state) => DetailedAttendanceListScreen(
+                      classId: state.pathParameters['classId'] ?? '',
+                    ),
+                  ),
+                  GoRoute(
+                    path: Routes.absenceRequestList,
+                    name: Routes.absenceRequestListName,
+                    builder: (context, state) => AbsenceRequestListScreen(
+                      classId: state.pathParameters['classId'] ?? '',
+                    ),
+                  ),
+                  GoRoute(
+                    path: Routes.studentAttendance,
+                    name: Routes.studentAttendanceName,
+                    builder: (context, state) => StudentAttendanceScreen(
+                      classId: state.pathParameters['classId'] ?? '',
+                    ),
+                  ),
+                  GoRoute(
+                    path: Routes.absenceRequest,
+                    name: Routes.absenceRequestName,
+                    builder: (context, state) => AbsenceRequestScreen(
+                      classId: state.pathParameters['classId'] ?? '',
+                    ),
+                  ),
+                  GoRoute(
+                    path: Routes.materialList,
+                    name: Routes.materialListName,
                     builder: (context, state) => MaterialListScreen(
                       classId: state.pathParameters['classId'] ?? '',
                     ),
                   ),
                   GoRoute(
                     path: Routes.uploadMaterial,
-                    name: 'uploadMaterial',
+                    name: Routes.uploadMaterialName,
                     builder: (context, state) => UploadMaterialScreen(
                       classId: state.pathParameters['classId'] ?? '',
                     ),
                   ),
                   GoRoute(
-                    name: Routes.absenceRequestList,
-                    path: 'absence-requests/:classId',
-                    builder: (context, state) => AbsenceRequestListScreen(
-                      classId: state.pathParameters['classId'] ?? '',
-                    ),
-                  ),
-                  GoRoute(
-                    name: Routes.studentAttendance,
-                    path: 'student-attendance/:classId',
-                    builder: (context, state) => StudentAttendanceScreen(
-                      classId: state.pathParameters['classId'] ?? '',
-                    ),
-                  ),
-                  GoRoute(
-                    name: Routes.absenceRequest,
-                    path: 'absence-request/:classId',
-                    builder: (context, state) => AbsenceRequestScreen(
-                      classId: state.pathParameters['classId'] ?? '',
+                    path: Routes.editSurvey,
+                    name: Routes.editSurveyName,
+                    builder: (context, state) => EditSurveyScreen(
+                      surveyId: state.pathParameters['surveyId'] ?? '',
+                      survey: state.extra as TeacherSmallSurvey,
                     ),
                   ),
                 ],
               ),
             ],
           ),
+
           // Chat Branch
           StatefulShellBranch(
             routes: [
               GoRoute(
                 path: '/chat',
-                name: 'chat',
+                name: Routes.chatName,
                 builder: (context, state) => const ChatScreen(),
               ),
             ],
           ),
+
           // Profile Branch
           StatefulShellBranch(
             routes: [
               GoRoute(
                 path: '/profile',
-                name: 'profile',
+                name: Routes.profileName,
                 builder: (context, state) => const ProfileScreen(),
               ),
             ],
           ),
         ],
-      ),
-      // Notification route
-      GoRoute(
-        path: Routes.notification,
-        name: 'notification',
-        builder: (context, state) => const CustomLayoutScaffold(
-          child: NotificationScreen(),
-        ),
       ),
     ],
   );

@@ -5,7 +5,7 @@ class TeacherSmallSurvey {
   final DateTime startTime;
   final DateTime endTime;
 
-  const TeacherSmallSurvey({
+  TeacherSmallSurvey({
     required this.name,
     this.description,
     this.file,

@@ -297,9 +297,9 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
                       ? FloatingActionButton.extended(
                           onPressed: () {
                             if (user.role == 'STUDENT') {
-                              context.push(Routes.classRegistration);
+                              context.pushNamed(Routes.classRegistrationName);
                             } else {
-                              context.push(Routes.createClass);
+                              context.pushNamed(Routes.createClassName);
                             }
                           },
                           icon: Icon(
@@ -322,9 +322,10 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
       String action, ClassListItem classItem) async {
     switch (action) {
       case 'edit':
-        debugPrint(
-            'ClassManagementScreen - ClassId: ${classItem.classId}, Type: ${classItem.classId.runtimeType}');
-        context.push('/classes/modify/${classItem.classId}').then((result) {
+        context.pushNamed(
+          Routes.modifyClassName,
+          pathParameters: {'classId': classItem.classId},
+        ).then((result) {
           if (result == true) {
             _refreshClassList();
           }
@@ -339,18 +340,21 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
 
         if (isStudent) {
           context.pushNamed(
-            Routes.studentSurveyList,
+            Routes.studentSurveyListName,
             pathParameters: {'classId': classItem.classId},
           );
         } else {
           context.pushNamed(
-            Routes.teacherSurveyList,
+            Routes.teacherSurveyListName,
             pathParameters: {'classId': classItem.classId},
           );
         }
         break;
       case 'files':
-        context.push(Routes.getMaterialListPath(classItem.classId));
+        context.pushNamed(
+          Routes.materialListName,
+          pathParameters: {'classId': classItem.classId},
+        );
         break;
       case 'attendance':
         try {
@@ -361,12 +365,12 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
 
           if (isStudent) {
             context.pushNamed(
-              'student-attendance',
+              Routes.studentAttendanceName,
               pathParameters: {'classId': classItem.classId},
             );
           } else {
             context.pushNamed(
-              'roll-call',
+              Routes.rollCallName,
               pathParameters: {'classId': classItem.classId},
             );
           }

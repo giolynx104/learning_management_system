@@ -183,8 +183,9 @@ class SurveyTabContent extends StatelessWidget {
                       onSelected: (value) {
                         switch (value) {
                           case 'edit':
-                            context.push(
-                              Routes.getEditSurveyPath(survey.id),
+                            context.pushNamed(
+                              Routes.editSurveyName,
+                              pathParameters: {'surveyId': survey.id},
                               extra: TeacherSmallSurvey(
                                 name: survey.name,
                                 description: survey.description,
