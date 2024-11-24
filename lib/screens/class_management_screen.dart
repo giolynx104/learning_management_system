@@ -46,15 +46,6 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
             return;
           }
 
-          // Set up the refresh timer only after confirming authentication
-          _refreshTimer?.cancel(); // Cancel any existing timer
-          _refreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
-            debugPrint('ClassManagementScreen - refresh timer triggered');
-            if (mounted) {
-              _refreshClassList();
-            }
-          });
-
           // Load the initial class list
           await _loadClassList();
         },
