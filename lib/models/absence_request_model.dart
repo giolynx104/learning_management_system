@@ -7,11 +7,11 @@ part 'absence_request_model.g.dart';
 @freezed
 class AbsenceRequest with _$AbsenceRequest {
   const factory AbsenceRequest({
-    required String classId,
+    @JsonKey(name: 'classId') required String classId,
     required String title,
     required String reason,
     required String date,
-    String? proofFile,  // Made optional
+    @JsonKey(name: 'proof_file') String? proofFile,
   }) = _AbsenceRequest;
 
   factory AbsenceRequest.fromJson(Map<String, dynamic> json) => 

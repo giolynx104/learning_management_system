@@ -18,6 +18,7 @@ AttendanceService attendanceService(Ref ref) {
 class TakeAttendance extends _$TakeAttendance {
   @override
   FutureOr<void> build() {
+    debugPrint('TakeAttendance Provider - Build started');
     return null;
   }
 
@@ -26,23 +27,29 @@ class TakeAttendance extends _$TakeAttendance {
     required DateTime date,
     required List<String> absentStudentIds,
   }) async {
-    debugPrint('TakeAttendance Provider - Starting submission');
-    
-    final token = ref.read(authProvider).value?.token;
-    if (token == null) {
-      throw Exception('No authentication token found');
+    try {
+      debugPrint('TakeAttendance Provider - Starting submission');
+      
+      final token = ref.read(authProvider).value?.token;
+      if (token == null) {
+        throw Exception('No authentication token found');
+      }
+      
+      state = const AsyncLoading();
+      
+      state = await AsyncValue.guard(() async {
+        await ref.read(attendanceServiceProvider).takeAttendance(
+          classId: classId,
+          date: date,
+          absentStudentIds: absentStudentIds,
+          token: token,
+        );
+      });
+    } catch (e, stackTrace) {
+      debugPrint('TakeAttendance Provider - Error: $e');
+      debugPrint('TakeAttendance Provider - Stack trace: $stackTrace');
+      rethrow;
     }
-    
-    state = const AsyncLoading();
-    
-    state = await AsyncValue.guard(() async {
-      await ref.read(attendanceServiceProvider).takeAttendance(
-            classId: classId,
-            date: date,
-            absentStudentIds: absentStudentIds,
-            token: token,
-          );
-    });
   }
 }
 

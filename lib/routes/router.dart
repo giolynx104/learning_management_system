@@ -5,6 +5,8 @@ import 'package:learning_management_system/providers/auth_provider.dart';
 import 'package:learning_management_system/routes/custom_layout_scaffold.dart';
 import 'package:learning_management_system/routes/destinations.dart';
 import 'package:learning_management_system/routes/routes.dart';
+import 'package:learning_management_system/screens/absence_request_list_screen.dart';
+import 'package:learning_management_system/screens/absence_request_screen.dart';
 import 'package:learning_management_system/screens/screen_chat.dart';
 import 'package:learning_management_system/screens/signin_screen.dart';
 import 'package:learning_management_system/screens/signup_screen.dart';
@@ -23,14 +25,14 @@ import 'package:learning_management_system/screens/upload_file_screen.dart';
 import 'package:learning_management_system/widgets/scaffold_with_navigation.dart';
 import 'package:learning_management_system/screens/profile_screen.dart';
 import 'package:learning_management_system/screens/detailed_attendance_list_screen.dart';
-import 'package:learning_management_system/screens/absence_request_screen.dart';
+import 'package:learning_management_system/screens/student_attendance_screen.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
 final _shellNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'shell');
 
 final routerProvider = Provider<GoRouter>((ref) {
   final router = RouterNotifier(ref);
-  
+
   return GoRouter(
     navigatorKey: _rootNavigatorKey,
     initialLocation: Routes.signin,
@@ -42,18 +44,18 @@ final routerProvider = Provider<GoRouter>((ref) {
       return authState.when(
         data: (user) {
           debugPrint('👤 User in redirect: ${user?.toJson()}');
-          
+
           if (user == null) {
-            if (state.uri.path == Routes.signin || 
+            if (state.uri.path == Routes.signin ||
                 state.uri.path == Routes.signup) {
               return null;
             }
             return Routes.signin;
           }
 
-          if (state.uri.path == Routes.signin || 
+          if (state.uri.path == Routes.signin ||
               state.uri.path == Routes.signup) {
-            return '/';
+            return Routes.home;
           }
 
           return null;
@@ -66,6 +68,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       // Auth routes
       GoRoute(
         path: Routes.signin,
+        name: 'signin',
         builder: (context, state) => const CustomLayoutScaffold(
           hideAppBar: true,
           child: SignInScreen(),
@@ -73,22 +76,26 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: Routes.signup,
+        name: 'signup',
         builder: (context, state) => const CustomLayoutScaffold(
           hideAppBar: true,
           child: SignUpScreen(),
         ),
       ),
-      
+
       // Main app shell
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
           final container = ProviderScope.containerOf(context);
-          final isStudent = container.read(authProvider).value?.role.toLowerCase() == 'student';
+          final isStudent =
+              container.read(authProvider).value?.role.toLowerCase() ==
+                  'student';
 
           return CustomLayoutScaffold(
             child: ScaffoldWithNavigation(
               navigationShell: navigationShell,
-              destinations: isStudent ? studentDestinations : teacherDestinations,
+              destinations:
+                  isStudent ? studentDestinations : teacherDestinations,
             ),
           );
         },
@@ -97,12 +104,15 @@ final routerProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: '/',
+                path: Routes.home,
+                name: 'home',
                 builder: (context, state) {
                   final container = ProviderScope.containerOf(context);
-                  final isStudent = container.read(authProvider).value?.role.toLowerCase() == 'student';
-                  return isStudent 
-                      ? const StudentHomeScreen() 
+                  final isStudent =
+                      container.read(authProvider).value?.role.toLowerCase() ==
+                          'student';
+                  return isStudent
+                      ? const StudentHomeScreen()
                       : const TeacherHomeScreen();
                 },
               ),
@@ -112,27 +122,32 @@ final routerProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: '/classes',
+                path: Routes.classManagement,
+                name: 'classes',
                 builder: (context, state) => const ClassManagementScreen(),
                 routes: [
                   GoRoute(
                     path: 'create',
+                    name: 'createClass',
                     builder: (context, state) => const CreateClassScreen(),
                   ),
                   GoRoute(
-                    path: 'modify/:classId',
+                    path: Routes.modifyClass,
+                    name: 'modifyClass',
                     builder: (context, state) => ModifyClassScreen(
                       classId: state.pathParameters['classId'] ?? '',
                     ),
                   ),
                   GoRoute(
-                    path: 'roll-call/:classId',
+                    path: Routes.rollCall,
+                    name: 'roll-call',
                     builder: (context, state) => RollCallScreen(
                       classId: state.pathParameters['classId'] ?? '',
                     ),
                   ),
                   GoRoute(
-                    path: 'detailed-roll-call/:classId',
+                    path: Routes.detailedRollCall,
+                    name: 'detailedRollCall',
                     builder: (context, state) => DetailedRollCallInfoScreen(
                       classId: state.pathParameters['classId'] ?? '',
                     ),
@@ -152,24 +167,39 @@ final routerProvider = Provider<GoRouter>((ref) {
                     ),
                   ),
                   GoRoute(
-                    path: 'student-assignments/:classId',
+                    path: Routes.studentSurveyList,
                     builder: (context, state) => StudentSurveyListScreen(
                       classId: state.pathParameters['classId'] ?? '',
                     ),
                   ),
                   GoRoute(
-                    path: 'teacher-assignments/:classId',
+                    path: Routes.teacherSurveyList,
                     builder: (context, state) => TeacherSurveyListScreen(
                       classId: state.pathParameters['classId'] ?? '',
                     ),
                   ),
                   GoRoute(
-                    path: 'files/:classId',
+                    path: Routes.uploadFile,
                     builder: (context, state) => UploadFileScreen(
                       classId: state.pathParameters['classId'] ?? '',
                     ),
                   ),
                   GoRoute(
+                    name: Routes.absenceRequestList,
+                    path: 'absence-requests/:classId',
+                    builder: (context, state) => AbsenceRequestListScreen(
+                      classId: state.pathParameters['classId'] ?? '',
+                    ),
+                  ),
+                  GoRoute(
+                    name: Routes.studentAttendance,
+                    path: 'student-attendance/:classId',
+                    builder: (context, state) => StudentAttendanceScreen(
+                      classId: state.pathParameters['classId'] ?? '',
+                    ),
+                  ),
+                  GoRoute(
+                    name: Routes.absenceRequest,
                     path: 'absence-request/:classId',
                     builder: (context, state) => AbsenceRequestScreen(
                       classId: state.pathParameters['classId'] ?? '',
@@ -184,6 +214,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: '/chat',
+                name: 'chat',
                 builder: (context, state) => const ChatScreen(),
               ),
             ],
@@ -193,6 +224,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: '/profile',
+                name: 'profile',
                 builder: (context, state) => const ProfileScreen(),
               ),
             ],
@@ -202,6 +234,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       // Notification route
       GoRoute(
         path: Routes.notification,
+        name: 'notification',
         builder: (context, state) => const CustomLayoutScaffold(
           child: NotificationScreen(),
         ),

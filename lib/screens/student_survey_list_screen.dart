@@ -78,7 +78,7 @@ class StudentSurveyListScreen extends HookConsumerWidget {
 
     void _navigateToSubmitSurvey(Survey survey) {
       context.push(
-        Routes.nestedSubmitSurvey,
+        Routes.getSubmitSurveyPath(),
         extra: SmallSurvey(
           name: survey.name,
           description: survey.description,
