@@ -21,11 +21,12 @@ import 'package:learning_management_system/screens/student_home_screen.dart';
 import 'package:learning_management_system/screens/student_survey_list_screen.dart';
 import 'package:learning_management_system/screens/teacher_home_screen.dart';
 import 'package:learning_management_system/screens/teacher_survey_list_screen.dart';
-import 'package:learning_management_system/screens/upload_file_screen.dart';
+import 'package:learning_management_system/screens/upload_material_screen.dart';
 import 'package:learning_management_system/widgets/scaffold_with_navigation.dart';
 import 'package:learning_management_system/screens/profile_screen.dart';
 import 'package:learning_management_system/screens/detailed_attendance_list_screen.dart';
 import 'package:learning_management_system/screens/student_attendance_screen.dart';
+import 'package:learning_management_system/screens/material_list_screen.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
 final _shellNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'shell');
@@ -179,8 +180,16 @@ final routerProvider = Provider<GoRouter>((ref) {
                     ),
                   ),
                   GoRoute(
-                    path: Routes.uploadFile,
-                    builder: (context, state) => UploadFileScreen(
+                    name: Routes.materialList,
+                    path: 'materials/:classId',
+                    builder: (context, state) => MaterialListScreen(
+                      classId: state.pathParameters['classId'] ?? '',
+                    ),
+                  ),
+                  GoRoute(
+                    path: Routes.uploadMaterial,
+                    name: 'uploadMaterial',
+                    builder: (context, state) => UploadMaterialScreen(
                       classId: state.pathParameters['classId'] ?? '',
                     ),
                   ),
