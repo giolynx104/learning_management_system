@@ -17,7 +17,6 @@ class Routes {
   static const String rollCall = 'roll-call/:classId';
   static const String detailedRollCall = 'detailed-roll-call/:classId';
   static const String rollCallAction = 'roll-call-action/:classId';
-  static const String uploadFile = 'files/:classId';
 
   // Survey/Assignment routes
   static const String studentSurveyList = 'student-assignments/:classId';
@@ -32,6 +31,10 @@ class Routes {
   static const String studentAttendance = 'student-attendance/:classId';
   static const String absenceRequest = 'absence-request/:classId';
 
+  // Material routes
+  static const String materialList = 'materials/:classId';
+  static const String uploadMaterial = 'materials/:classId/upload';
+
   // Helper methods for generating full paths
   static String getRollCallPath(String classId) => '/classes/roll-call/$classId';
   static String getModifyClassPath(String classId) => '/classes/modify/$classId';
@@ -39,4 +42,8 @@ class Routes {
   static String getSubmitSurveyPath() => '/classes/submit-survey';
   static String getCreateSurveyPath() => '/classes/create-survey';
   static String getEditSurveyPath(String surveyId) => '/classes/edit-survey/$surveyId';
+
+  // Add helper methods for material routes
+  static String getMaterialListPath(String classId) => '/classes/materials/$classId';
+  static String getUploadMaterialPath(String classId) => '/classes/materials/$classId/upload';
 }

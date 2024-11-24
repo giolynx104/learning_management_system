@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:learning_management_system/models/class_model.dart';
 import 'package:learning_management_system/models/class_list_model.dart';
-import 'package:learning_management_system/utils/api_client.dart';
+import 'package:learning_management_system/services/api_service.dart';
 import 'package:learning_management_system/exceptions/api_exceptions.dart';
 import 'package:learning_management_system/providers/auth_provider.dart';
 import 'package:learning_management_system/models/class_detail_model.dart';
@@ -14,6 +14,8 @@ part 'class_service.g.dart';
 class ClassService extends _$ClassService {
   @override
   FutureOr<void> build() {}
+
+  ApiService get _apiService => ref.read(apiServiceProvider);
 
   Future<void> createClass({
     required String token,
@@ -36,7 +38,7 @@ class ClassService extends _$ClassService {
       debugPrint('MaxStudentAmount: $maxStudentAmount');
       debugPrint('AttachedCode: $attachedCode');
 
-      final response = await ref.read(apiClientProvider).post(
+      final response = await _apiService.dio.post(
         '/it5023e/create_class',
         data: {
           'token': token,
@@ -118,10 +120,10 @@ class ClassService extends _$ClassService {
           },
       };
 
-      final response = await ref.read(apiClientProvider).post(
-            '/it5023e/get_class_list',
-            data: requestData,
-          );
+      final response = await _apiService.dio.post(
+        '/it5023e/get_class_list',
+        data: requestData,
+      );
       debugPrint('ClassService - Raw response: ${response.data}');
 
       final responseData = response.data as Map<String, dynamic>;
@@ -178,10 +180,10 @@ class ClassService extends _$ClassService {
         'end_date': endDate.toIso8601String().split('T')[0],
       };
 
-      final response = await ref.read(apiClientProvider).post(
-            '/it5023e/edit_class',
-            data: data,
-          );
+      final response = await _apiService.dio.post(
+        '/it5023e/edit_class',
+        data: data,
+      );
 
       final responseData = response.data as Map<String, dynamic>;
       final meta = responseData['meta'] as Map<String, dynamic>;
@@ -217,7 +219,7 @@ class ClassService extends _$ClassService {
   }) async {
     try {
       debugPrint('ClassService - Fetching basic class info for ID: $classId');
-      final response = await ref.read(apiClientProvider).post(
+      final response = await _apiService.dio.post(
         '/it5023e/get_basic_class_info',
         data: {
           'token': token,
@@ -284,10 +286,10 @@ class ClassService extends _$ClassService {
         'class_id': classId,
       };
 
-      final response = await ref.read(apiClientProvider).post(
-            '/it5023e/delete_class',
-            data: data,
-          );
+      final response = await _apiService.dio.post(
+        '/it5023e/delete_class',
+        data: data,
+      );
 
       final responseData = response.data as Map<String, dynamic>;
       final meta = responseData['meta'] as Map<String, dynamic>;
@@ -320,7 +322,7 @@ class ClassService extends _$ClassService {
     required String classId,
   }) async {
     try {
-      final response = await ref.read(apiClientProvider).post(
+      final response = await _apiService.dio.post(
         '/it5023e/get_class_info',
         data: {
           'token': token,
@@ -355,7 +357,7 @@ class ClassService extends _$ClassService {
     required List<String> classIds,
   }) async {
     try {
-      final response = await ref.read(apiClientProvider).post(
+      final response = await _apiService.dio.post(
         '/it5023e/register_class',
         data: {
           'token': token,
@@ -401,7 +403,7 @@ class ClassService extends _$ClassService {
   }) async {
     try {
       debugPrint('ClassService - Fetching class info for ID: $classId');
-      final response = await ref.read(apiClientProvider).post(
+      final response = await _apiService.dio.post(
         '/it5023e/get_basic_class_info', // Using the basic info endpoint
         data: {
           'token': token,
@@ -449,8 +451,9 @@ class ClassService extends _$ClassService {
     required String classId,
   }) async {
     try {
-      debugPrint('ClassService - Fetching detailed class info for ID: $classId');
-      final response = await ref.read(apiClientProvider).post(
+      debugPrint(
+          'ClassService - Fetching detailed class info for ID: $classId');
+      final response = await _apiService.dio.post(
         '/it5023e/get_class_info',
         data: {
           'token': token,

@@ -250,7 +250,7 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
                                               ),
                                               const PopupMenuItem(
                                                 value: 'files',
-                                                child: Text('Files'),
+                                                child: Text('Materials'),
                                               ),
                                               const PopupMenuItem(
                                                 value: 'attendance',
@@ -350,10 +350,7 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
         }
         break;
       case 'files':
-        context.pushNamed(
-          Routes.uploadFile,
-          pathParameters: {'classId': classItem.classId},
-        );
+        context.push(Routes.getMaterialListPath(classItem.classId));
         break;
       case 'attendance':
         try {

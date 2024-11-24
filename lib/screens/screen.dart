@@ -13,4 +13,3 @@ export 'student_home_screen.dart';
 export 'teacher_home_screen.dart';
 export 'submit_survey_screen.dart';
 export 'student_survey_list_screen.dart';
-export 'upload_file_screen.dart';
