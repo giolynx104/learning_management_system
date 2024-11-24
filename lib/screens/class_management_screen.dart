@@ -336,24 +336,46 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
       case 'assignment':
         final authState = ref.read(authProvider);
         final isStudent = authState.value?.role.toLowerCase() == 'student';
-        
+
         if (isStudent) {
-          context.push('/classes/student-assignments/${classItem.classId}');
+          context.pushNamed(
+            Routes.studentSurveyList,
+            pathParameters: {'classId': classItem.classId},
+          );
         } else {
-          context.push('/classes/teacher-assignments/${classItem.classId}');
+          context.pushNamed(
+            Routes.teacherSurveyList,
+            pathParameters: {'classId': classItem.classId},
+          );
         }
         break;
       case 'files':
-        context.push('/classes/files/${classItem.classId}');
+        context.pushNamed(
+          Routes.uploadFile,
+          pathParameters: {'classId': classItem.classId},
+        );
         break;
       case 'attendance':
-        final authState = ref.read(authProvider);
-        final isStudent = authState.value?.role.toLowerCase() == 'student';
-        
-        if (isStudent) {
-          context.push('/classes/absence-request/${classItem.classId}');
-        } else {
-          context.push(Routes.nestedRollCall.replaceAll(':classId', classItem.classId));
+        try {
+          debugPrint('ClassManagementScreen - Handling attendance action');
+          final authState = ref.read(authProvider);
+          final isStudent = authState.value?.role.toLowerCase() == 'student';
+          debugPrint('ClassManagementScreen - User is student: $isStudent');
+
+          if (isStudent) {
+            context.pushNamed(
+              'student-attendance',
+              pathParameters: {'classId': classItem.classId},
+            );
+          } else {
+            context.pushNamed(
+              'roll-call',
+              pathParameters: {'classId': classItem.classId},
+            );
+          }
+        } catch (e, stackTrace) {
+          debugPrint('ClassManagementScreen - Navigation error: $e');
+          debugPrint('ClassManagementScreen - Stack trace: $stackTrace');
         }
         break;
     }

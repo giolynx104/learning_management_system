@@ -4,6 +4,7 @@ import 'package:learning_management_system/models/user.dart';
 import 'package:learning_management_system/services/storage_service.dart';
 import 'package:learning_management_system/services/user_service.dart';
 import 'package:learning_management_system/providers/user_service_provider.dart';
+import 'package:learning_management_system/providers/storage_provider.dart';
 
 part 'auth_provider.g.dart';
 
@@ -15,66 +16,44 @@ part 'auth_provider.g.dart';
 /// - Sign in/out operations
 @riverpod
 class Auth extends _$Auth {
-  late final StorageService _storage = StorageService();
-  late final UserService _userService = ref.read(userServiceProvider);
-
   @override
   FutureOr<User?> build() async {
-    // Always return the current state if it exists
-    if (state case AsyncData(value: final user)) {
-      return user;
-    }
+    debugPrint('Auth provider building...');
     
-    // Otherwise try to restore from storage
-    final token = await _storage.getToken();
+    // Check for stored token
+    final storage = ref.read(secureStorageProvider);
+    final token = await storage.getToken();
+    
     if (token == null) {
+      debugPrint('No token found in storage');
       return null;
     }
 
     try {
-      final user = await _userService.getUserInfo(token);
+      // Try to get user info with stored token
+      final userService = ref.read(userServiceProvider);
+      final user = await userService.getUserInfo(token);
+      debugPrint('Successfully retrieved user info: ${user.toJson()}');
       return user;
     } catch (e) {
-      debugPrint('Auth build error: $e');
-      await _storage.clearToken();
+      debugPrint('Error getting user info: $e');
+      // Clear invalid token
+      await storage.clearToken();
       return null;
     }
   }
 
-  /// Signs in a user with the provided credentials.
   Future<void> signIn(User user, String token) async {
     debugPrint('AuthProvider signIn called with token: $token');
-    
-    try {
-      // Save token first
-      await _storage.saveToken(token);
-      
-      // Set state directly with user+token
-      state = AsyncValue.data(user.copyWith(token: token));
-      
-      debugPrint('Sign in successful with token: $token');
-    } catch (e) {
-      debugPrint('Error in AuthProvider signIn: $e');
-      state = AsyncValue.error(e, StackTrace.current);
-      await _storage.clearToken();
-    }
+    final storage = ref.read(secureStorageProvider);
+    await storage.setToken(token);
+    state = AsyncData(user);
   }
 
-  /// Signs out the current user.
-  ///
-  /// Clears the stored token and resets the state.
   Future<void> signOut() async {
-    await _storage.clearToken();
-    state = const AsyncValue.data(null);
-  }
-
-  /// Updates the current user's information.
-  ///
-  /// Useful when user data changes but authentication remains valid.
-  void updateUserInfo(User updatedUser) {
-    if (!state.isLoading) {
-      state = AsyncValue.data(updatedUser);
-    }
+    final storage = ref.read(secureStorageProvider);
+    await storage.clearToken();
+    state = const AsyncData(null);
   }
 }
 

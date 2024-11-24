@@ -20,6 +20,7 @@ class TeacherSurveyListScreen extends HookConsumerWidget {
 
     final List<TeacherSurvey> surveys = [
       TeacherSurvey(
+        id: '1',
         name: 'Survey 1',
         description: 'Description for Survey 1',
         file: 'path/to/survey1.docx',
@@ -29,6 +30,7 @@ class TeacherSurveyListScreen extends HookConsumerWidget {
         className: 'Math 101',
       ),
       TeacherSurvey(
+        id: '2',
         name: 'Survey 2',
         description: 'Description for Survey 2',
         file: 'path/to/survey2.docx',
@@ -79,7 +81,7 @@ class TeacherSurveyListScreen extends HookConsumerWidget {
           ],
         ),
         floatingActionButton: FloatingActionButton(
-          onPressed: () => context.push(Routes.nestedCreateSurvey),
+          onPressed: () => context.push(Routes.getCreateSurveyPath()),
           backgroundColor: Theme.of(context).colorScheme.primary,
           foregroundColor: Theme.of(context).colorScheme.onPrimary,
           child: const Icon(Icons.add),
@@ -182,7 +184,7 @@ class SurveyTabContent extends StatelessWidget {
                         switch (value) {
                           case 'edit':
                             context.push(
-                              Routes.nestedEditSurvey,
+                              Routes.getEditSurveyPath(survey.id),
                               extra: TeacherSmallSurvey(
                                 name: survey.name,
                                 description: survey.description,
@@ -231,6 +233,7 @@ class SurveyTabContent extends StatelessWidget {
 }
 
 class TeacherSurvey {
+  final String id;
   final String name;
   final String? description;
   final String? file;
@@ -240,6 +243,7 @@ class TeacherSurvey {
   final String className;
 
   TeacherSurvey({
+    required this.id,
     required this.name,
     this.description,
     this.file,
