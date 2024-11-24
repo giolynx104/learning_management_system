@@ -17,7 +17,19 @@ class MaterialListScreen extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final shouldRefresh = useState(false);
+    
     final materialListState = ref.watch(materialListProvider(classId));
+
+    useEffect(() {
+      if (shouldRefresh.value) {
+        debugPrint('MaterialListScreen - Refreshing material list');
+        ref.invalidate(materialListProvider(classId));
+        ref.invalidate(materialListNotifierProvider(classId));
+        shouldRefresh.value = false;
+      }
+      return null;
+    }, [shouldRefresh.value]);
 
     return Scaffold(
       appBar: AppBar(
@@ -26,6 +38,14 @@ class MaterialListScreen extends HookConsumerWidget {
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.pop(),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () {
+              shouldRefresh.value = true;
+            },
+          ),
+        ],
       ),
       body: materialListState.when(
         data: (response) {
@@ -59,7 +79,23 @@ class MaterialListScreen extends HookConsumerWidget {
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.push(Routes.getUploadMaterialPath(classId)),
+        onPressed: () async {
+          final result = await context.push<bool>(Routes.getUploadMaterialPath(classId));
+          if (result == true) {
+            debugPrint('MaterialListScreen - Upload successful, refreshing list');
+            ref.invalidate(materialListProvider(classId));
+            await ref.read(materialListProvider(classId).future);
+            
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Material uploaded successfully'),
+                  backgroundColor: Colors.green,
+                ),
+              );
+            }
+          }
+        },
         icon: const Icon(Icons.upload_file),
         label: const Text('Upload Material'),
       ),

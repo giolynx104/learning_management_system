@@ -5,15 +5,17 @@ import 'package:learning_management_system/models/material_model.dart';
 import 'package:learning_management_system/services/api_service.dart';
 import 'package:learning_management_system/exceptions/api_exceptions.dart';
 import 'package:learning_management_system/providers/auth_provider.dart';
+import 'dart:io';
+import 'package:http_parser/http_parser.dart';
 
 part 'material_service.g.dart';
 
 @riverpod
 class MaterialService extends _$MaterialService {
+  ApiService get _apiService => ref.read(apiServiceProvider);
+
   @override
   FutureOr<void> build() {}
-
-  ApiService get _apiService => ref.read(apiServiceProvider);
 
   Future<MaterialListResponse> getMaterialList({
     required String token,
@@ -76,7 +78,7 @@ class MaterialService extends _$MaterialService {
     }
   }
 
-  Future<MaterialResponse> uploadMaterial({
+  Future<void> uploadMaterial({
     required String token,
     required String classId,
     required String title,
@@ -84,23 +86,40 @@ class MaterialService extends _$MaterialService {
     required String materialType,
     required String filePath,
   }) async {
-    try {
-      debugPrint('MaterialService - Uploading material for class: $classId');
+    // Validate file type
+    final extension = filePath.split('.').last.toLowerCase();
+    final mimeType = switch (extension) {
+      'pdf' => 'application/pdf',
+      'jpg' || 'jpeg' => 'image/jpeg',
+      'png' => 'image/png',
+      _ => throw Exception('Unsupported file type: $extension'),
+    };
 
-      final file = await MultipartFile.fromFile(
+    // Ensure materialType matches the actual file type
+    final validatedMaterialType = switch (extension) {
+      'pdf' => 'PDF',
+      'jpg' || 'jpeg' || 'png' => 'IMAGE',
+      _ => materialType,
+    };
+
+    final file = File(filePath);
+    if (!await file.exists()) {
+      throw Exception('File not found: $filePath');
+    }
+
+    final formData = FormData.fromMap({
+      'file': await MultipartFile.fromFile(
         filePath,
-        filename: filePath.split('/').last,
-      );
+        contentType: MediaType.parse(mimeType),
+      ),
+      'token': token,
+      'classId': classId,
+      'title': title,
+      'description': description,
+      'materialType': validatedMaterialType,
+    });
 
-      final formData = FormData.fromMap({
-        'token': token,
-        'class_id': classId,
-        'material_name': title,
-        'description': description,
-        'material_type': materialType,
-        'file': file,
-      });
-
+    try {
       final response = await _apiService.dio.post(
         '/it5023e/upload_material',
         data: formData,
@@ -109,36 +128,23 @@ class MaterialService extends _$MaterialService {
           headers: {
             'Accept': '*/*',
           },
+          validateStatus: (status) => status! < 500,
         ),
+        onSendProgress: (sent, total) {
+          final progress = (sent / total * 100).toStringAsFixed(2);
+          debugPrint('Upload progress: $progress%');
+        },
       );
 
       debugPrint('MaterialService - Upload response: ${response.data}');
-
+      
       final responseData = response.data as Map<String, dynamic>;
-      if (responseData['code'] == '9998') {
-        ref.read(authProvider.notifier).signOut();
-        throw UnauthorizedException('Session expired. Please sign in again.');
-      }
-
       if (responseData['code'] != '1000') {
         throw Exception(responseData['message'] ?? 'Failed to upload material');
       }
-
-      debugPrint('MaterialService - Material uploaded successfully');
-      return MaterialResponse.fromJson(responseData);
-    } on DioException catch (e) {
-      debugPrint('MaterialService - DioException: ${e.message}');
-      final responseData = e.response?.data as Map<String, dynamic>?;
-      
-      if (responseData?['code'] == '9998') {
-        ref.read(authProvider.notifier).signOut();
-        throw UnauthorizedException('Session expired. Please sign in again.');
-      }
-
-      throw Exception(responseData?['message'] ?? 'Failed to upload material');
     } catch (e) {
-      debugPrint('MaterialService - Error uploading material: $e');
-      rethrow;
+      debugPrint('MaterialService - Error during upload: $e');
+      throw Exception('Failed to upload material: $e');
     }
   }
 
