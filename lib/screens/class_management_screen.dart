@@ -339,18 +339,21 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
 
         if (isStudent) {
           context.pushNamed(
-            Routes.studentSurveyList,
+            Routes.studentSurveyListName,
             pathParameters: {'classId': classItem.classId},
           );
         } else {
           context.pushNamed(
-            Routes.teacherSurveyList,
+            Routes.teacherSurveyListName,
             pathParameters: {'classId': classItem.classId},
           );
         }
         break;
       case 'files':
-        context.push(Routes.getMaterialListPath(classItem.classId));
+        context.pushNamed(
+          Routes.materialListName,
+          pathParameters: {'classId': classItem.classId},
+        );
         break;
       case 'attendance':
         try {
@@ -361,12 +364,12 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
 
           if (isStudent) {
             context.pushNamed(
-              'student-attendance',
+              Routes.studentAttendanceName,
               pathParameters: {'classId': classItem.classId},
             );
           } else {
             context.pushNamed(
-              'roll-call',
+              Routes.rollCallName,
               pathParameters: {'classId': classItem.classId},
             );
           }

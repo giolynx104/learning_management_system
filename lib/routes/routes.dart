@@ -1,15 +1,11 @@
 class Routes {
   Routes._();
 
-  // Auth routes
+  // Route paths
   static const String signin = '/signin';
   static const String signup = '/signup';
-
-  // Main navigation routes
   static const String home = '/';
   static const String notification = '/notification';
-
-  // Class management routes
   static const String classManagement = '/classes';
   static const String classRegistration = 'register';
   static const String createClass = 'create';
@@ -17,23 +13,40 @@ class Routes {
   static const String rollCall = 'roll-call/:classId';
   static const String detailedRollCall = 'detailed-roll-call/:classId';
   static const String rollCallAction = 'roll-call-action/:classId';
-
-  // Survey/Assignment routes
   static const String studentSurveyList = 'student-assignments/:classId';
   static const String teacherSurveyList = 'teacher-assignments/:classId';
   static const String submitSurvey = 'submit-survey';
   static const String createSurvey = 'create-survey';
   static const String editSurvey = 'edit-survey/:surveyId';
-
-  // Attendance routes
   static const String detailedAttendanceList = 'detailed-attendance-list/:classId';
   static const String absenceRequestList = 'absence-requests/:classId';
   static const String studentAttendance = 'student-attendance/:classId';
   static const String absenceRequest = 'absence-request/:classId';
-
-  // Material routes
   static const String materialList = 'materials/:classId';
   static const String uploadMaterial = 'materials/:classId/upload';
+
+  // Route names
+  static const String signinName = 'signin';
+  static const String signupName = 'signup';
+  static const String homeName = 'home';
+  static const String notificationName = 'notification';
+  static const String classesName = 'classes';
+  static const String classRegistrationName = 'classRegistration';
+  static const String createClassName = 'createClass';
+  static const String modifyClassName = 'modifyClass';
+  static const String rollCallName = 'rollCall';
+  static const String detailedRollCallName = 'detailedRollCall';
+  static const String rollCallActionName = 'rollCallAction';
+  static const String studentSurveyListName = 'studentSurveyList';
+  static const String teacherSurveyListName = 'teacherSurveyList';
+  static const String detailedAttendanceListName = 'detailedAttendanceList';
+  static const String absenceRequestListName = 'absenceRequestList';
+  static const String studentAttendanceName = 'studentAttendance';
+  static const String absenceRequestName = 'absenceRequest';
+  static const String materialListName = 'materialList';
+  static const String uploadMaterialName = 'uploadMaterial';
+  static const String chatName = 'chat';
+  static const String profileName = 'profile';
 
   // Helper methods for generating full paths
   static String getRollCallPath(String classId) => '/classes/roll-call/$classId';
@@ -42,8 +55,19 @@ class Routes {
   static String getSubmitSurveyPath() => '/classes/submit-survey';
   static String getCreateSurveyPath() => '/classes/create-survey';
   static String getEditSurveyPath(String surveyId) => '/classes/edit-survey/$surveyId';
-
-  // Add helper methods for material routes
   static String getMaterialListPath(String classId) => '/classes/materials/$classId';
   static String getUploadMaterialPath(String classId) => '/classes/materials/$classId/upload';
+  static String getStudentSurveyListPath(String classId) => '/classes/student-assignments/$classId';
+  static String getTeacherSurveyListPath(String classId) => '/classes/teacher-assignments/$classId';
+  static String getDetailedRollCallPath(String classId) => '/classes/detailed-roll-call/$classId';
+  static String getRollCallActionPath(String classId) => '/classes/roll-call-action/$classId';
+  static String getDetailedAttendanceListPath(String classId) => '/classes/detailed-attendance-list/$classId';
+  static String getAbsenceRequestListPath(String classId) => '/classes/absence-requests/$classId';
+  static String getStudentAttendancePath(String classId) => '/classes/student-attendance/$classId';
+  static String getAbsenceRequestPath(String classId) => '/classes/absence-request/$classId';
+  static String getClassRegistrationPath() => '/classes/register';
+  static String getSignInPath() => signin;
+  static String getSignUpPath() => signup;
+  static String getHomePath() => home;
+  static String getNotificationPath() => notification;
 }
