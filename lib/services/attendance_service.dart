@@ -46,7 +46,7 @@ class AttendanceService {
     }
   }
 
-  Future<AttendanceListResponse> getAttendanceList({
+  Future<AttendanceListResponse?> getAttendanceList({
     required String classId,
     required DateTime date,
     required String token,
@@ -70,12 +70,19 @@ class AttendanceService {
         data: data,
       );
 
+      final responseData = response.data;
+      final meta = responseData['meta'] as Map<String, dynamic>;
+
+      if (meta['code'] == '9994') {
+        return null;
+      }
+
       if (response.statusCode != 200) {
         throw Exception(response.data['message'] ?? 'Failed to get attendance list');
       }
 
-      final responseData = response.data['data'] as Map<String, dynamic>;
-      return AttendanceListResponse.fromJson(responseData);
+      final returnedData = responseData['data'] as Map<String, dynamic>;
+      return AttendanceListResponse.fromJson(returnedData);
     } catch (e) {
       throw Exception('Failed to get attendance list: ${e.toString()}');
     }

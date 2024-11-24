@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:learning_management_system/providers/attendance_provider.dart';
 import 'package:learning_management_system/providers/auth_provider.dart';
 import 'package:learning_management_system/models/attendance_list_model.dart';
+import 'package:go_router/go_router.dart';
 
 class DetailedAttendanceListScreen extends HookConsumerWidget {
   final String classId;
@@ -17,39 +18,17 @@ class DetailedAttendanceListScreen extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedDate = useState(DateTime.now());
-    final attendanceState = ref.watch(getAttendanceListProvider);
-    final token = ref.watch(authProvider).value?.token;
-
-    Future<void> fetchAttendance() async {
-      if (token == null) {
-        throw Exception('No authentication token found');
-      }
-
-      await ref.read(getAttendanceListProvider.notifier).fetch(
-            classId: classId,
-            date: selectedDate.value,
-            token: token,
-      );
-    }
-
-    useEffect(() {
-      Future(() {
-        fetchAttendance();
-      });
-      return null;
-    }, [selectedDate.value, token]);
-
-    if (token == null) {
-      return const Scaffold(
-        body: Center(
-          child: Text('Please sign in to view attendance'),
-        ),
-      );
-    }
+    final attendanceState = ref.watch(
+      getAttendanceListProvider(classId, selectedDate.value),
+    );
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Attendance List'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.pop(),
+        ),
       ),
       body: Column(
         children: [
@@ -57,14 +36,11 @@ class DetailedAttendanceListScreen extends HookConsumerWidget {
             padding: const EdgeInsets.all(16.0),
             child: Row(
               children: [
-                Expanded(
+                const Text('Date: '),
+                TextButton(
                   child: Text(
-                    'Date: ${DateFormat('yyyy-MM-dd').format(selectedDate.value)}',
-                    style: Theme.of(context).textTheme.titleMedium,
+                    DateFormat('yyyy-MM-dd').format(selectedDate.value),
                   ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.calendar_today),
                   onPressed: () async {
                     final date = await showDatePicker(
                       context: context,
@@ -108,7 +84,9 @@ class DetailedAttendanceListScreen extends HookConsumerWidget {
                   },
                 );
               },
-              loading: () => const Center(child: CircularProgressIndicator()),
+              loading: () => const Center(
+                child: CircularProgressIndicator(),
+              ),
               error: (error, stack) => Center(
                 child: Text(
                   'Error: ${error.toString()}',

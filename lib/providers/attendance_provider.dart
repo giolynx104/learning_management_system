@@ -47,25 +47,19 @@ class TakeAttendance extends _$TakeAttendance {
 }
 
 @riverpod
-class GetAttendanceList extends _$GetAttendanceList {
-  @override
-  FutureOr<AttendanceListResponse?> build() {
-    return null;
+Future<AttendanceListResponse?> getAttendanceList(
+  Ref ref,
+  String classId,
+  DateTime date,
+) async {
+  final token = ref.read(authProvider).value?.token;
+  if (token == null) {
+    throw Exception('No authentication token found');
   }
 
-  Future<void> fetch({
-    required String classId,
-    required DateTime date,
-    required String token,
-  }) async {
-    state = const AsyncLoading();
-    
-    state = await AsyncValue.guard(() => ref
-        .read(attendanceServiceProvider)
-        .getAttendanceList(
-          classId: classId,
-          date: date,
-          token: token,
-        ));
-  }
+  return ref.read(attendanceServiceProvider).getAttendanceList(
+    classId: classId,
+    date: date,
+    token: token,
+  );
 } 

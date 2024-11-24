@@ -21,6 +21,7 @@ class RollCallScreen extends HookConsumerWidget {
     final isLoading = useState(true);
     final error = useState<String?>(null);
     final token = ref.watch(authProvider).value?.token;
+    final selectedDate = useState(DateTime.now());
 
     useEffect(() {
       Future<void> loadClassInfo() async {
@@ -86,6 +87,13 @@ class RollCallScreen extends HookConsumerWidget {
     final attendanceRate = totalStudents > 0 ? info.studentAccounts.length / totalStudents : 0.0;
 
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Roll Call Management'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.pop(),
+        ),
+      ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
