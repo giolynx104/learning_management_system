@@ -62,8 +62,21 @@ class Auth extends _$Auth {
   }
 
   Future<void> signOut() async {
-    await _storage.delete(key: 'auth_token');
-    state = const AsyncData(null);
+    try {
+      final currentToken = await _storage.read(key: 'auth_token');
+      if (currentToken != null) {
+        // Attempt to logout on server
+        final authService = ref.read(authServiceProvider);
+        await authService.signOut(currentToken);
+      }
+    } catch (e) {
+      debugPrint('Error during server logout: $e');
+      // Continue with local logout even if server logout fails
+    } finally {
+      // Always clear local auth state
+      await _storage.delete(key: 'auth_token');
+      state = const AsyncData(null);
+    }
   }
 
   Future<User> _getUserInfo(String token) async {

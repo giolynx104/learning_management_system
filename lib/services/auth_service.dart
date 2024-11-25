@@ -47,7 +47,8 @@ class AuthService {
       debugPrint('Login response: ${response.data}');
 
       // Handle verification required case
-      if (response.statusCode == 403 && response.data['code'].toString() == '9991') {
+      if (response.statusCode == 403 &&
+          response.data['code'].toString() == '9991') {
         final verifyCodeResponse = await _apiService.dio.post(
           '/it4788/get_verify_code',
           data: {
@@ -73,13 +74,14 @@ class AuthService {
 
       // Handle successful login
       if (response.statusCode == 200 &&
-          (response.data['message'] == 'OK' || response.data['code'].toString() == '1000')) {
+          (response.data['message'] == 'OK' ||
+              response.data['code'].toString() == '1000')) {
         final userData = response.data['data'];
         debugPrint('User data from login: $userData');
 
         // Convert string ID to int if necessary
-        final id = userData['id'] is String 
-            ? int.parse(userData['id']) 
+        final id = userData['id'] is String
+            ? int.parse(userData['id'])
             : userData['id'] as int;
 
         // Map the response data to match User model fields
@@ -153,9 +155,8 @@ class AuthService {
           'role': role,
         },
       );
-      if (response.statusCode == 200 && 
+      if (response.statusCode == 200 &&
           response.data['code'].toString() == '1000') {
-
         return {
           'success': true,
           'verify_code': response.data['verify_code'],
@@ -195,12 +196,34 @@ class AuthService {
       );
 
       return response.statusCode == 200 &&
-          (response.data['message'] == 'OK' || response.data['code'].toString() == '1000');
+          (response.data['message'] == 'OK' ||
+              response.data['code'].toString() == '1000');
     } on DioException catch (e) {
       throw ApiException(
         statusCode: e.response?.statusCode,
         message: 'Error verifying code: ${e.message}',
       );
+    }
+  }
+
+  /// Signs out the user by invalidating their token on the server
+  ///
+  /// @param token The authentication token to invalidate
+  /// @return bool indicating if logout was successful
+  Future<bool> signOut(String token) async {
+    try {
+      final response = await _apiService.dio.post(
+        '/it4788/logout',
+        data: {
+          'token': token,
+        },
+      );
+
+      return response.statusCode == 200 && response.data['code'] == '1000';
+    } on DioException catch (e) {
+      debugPrint('Error during logout: ${e.message}');
+      // We'll still clear local auth state even if server logout fails
+      return false;
     }
   }
 }
