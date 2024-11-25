@@ -149,6 +149,13 @@ class CreateClassScreen extends HookConsumerWidget {
     }
 
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Create Class'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.pop(),
+        ),
+      ),
       backgroundColor: theme.colorScheme.onPrimary,
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -157,16 +164,6 @@ class CreateClassScreen extends HookConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
-                'Create New Class',
-                style: TextStyle(
-                  fontSize: 24.0,
-                  fontWeight: FontWeight.bold,
-                  color: theme.colorScheme.primary,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
               _buildTextField(
                 controller: classCodeController,
                 labelText: 'Class Code (6 digits)',
@@ -446,6 +443,8 @@ class _DatePickerField extends HookWidget {
         suffixIcon: IconButton(
           icon: Icon(Icons.calendar_today, color: theme.colorScheme.primary),
           onPressed: () async {
+            FocusScope.of(context).unfocus();
+            
             final pickedDate = await showDatePicker(
               context: context,
               initialDate: selectedDate ?? DateTime.now(),
