@@ -161,7 +161,7 @@ class AuthService {
         },
       );
 
-      if (response.statusCode == 200 && response.data['code'] == 1000) {
+      if (response.statusCode == 200 && response.data['code'] == "1000") {
         return {
           'success': true,
           'verify_code': response.data['verify_code'],
