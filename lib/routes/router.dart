@@ -38,7 +38,6 @@ import 'package:learning_management_system/screens/assignment_list_screen.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
 final _shellNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'shell');
-
 final routerProvider = Provider<GoRouter>((ref) {
   final notifier = RouterNotifier(ref);
   

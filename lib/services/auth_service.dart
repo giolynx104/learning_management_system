@@ -153,9 +153,9 @@ class AuthService {
           'role': role,
         },
       );
-
       if (response.statusCode == 200 && 
           response.data['code'].toString() == '1000') {
+
         return {
           'success': true,
           'verify_code': response.data['verify_code'],

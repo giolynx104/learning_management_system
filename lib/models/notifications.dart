@@ -1,47 +1,47 @@
 import 'package:intl/intl.dart';
-class NotificationModel{
+class NotificationModels{
     String title;
     String? content;
     String fromClass;
     String createDate;
-    NotificationModel({
+    NotificationModels({
       required this.title,
       required this.fromClass,
       required this.content,
       required this.createDate,
     });
    
-    static List<NotificationModel> getNotifications(){
-      List<NotificationModel> notifications =[];
-      notifications.add(NotificationModel(
+    static List<NotificationModels> getNotifications(){
+      List<NotificationModels> notifications =[];
+      notifications.add(NotificationModels(
         title: 'Grade for 2nd test',
          fromClass: 'TKXDPM', 
          content: 'Hello, this is the noti', 
          createDate: DateFormat('dd/MM/yyyy').format(DateTime.now()),
          )
          );
-      notifications.add(NotificationModel(
+      notifications.add(NotificationModels(
         title: 'Grade for 2nd test',
          fromClass: 'TKXDPM', 
          content: 'Hello, this is the noti', 
          createDate: DateFormat('dd/MM/yyyy').format(DateTime.now()),
          )
       );
-      notifications.add(NotificationModel(
+      notifications.add(NotificationModels(
         title: 'Grade for 2nd test',
          fromClass: 'TKXDPM', 
          content: 'Hello, this is the noti', 
          createDate: DateFormat('dd/MM/yyyy').format(DateTime.now()),
          )
       );
-        notifications.add(NotificationModel(
+        notifications.add(NotificationModels(
         title: 'Grade for 2nd test',
          fromClass: 'TKXDPM', 
          content: 'Hello, this is the noti', 
          createDate: DateFormat('dd/MM/yyyy').format(DateTime.now()),
          )
       );
-        notifications.add(NotificationModel(
+        notifications.add(NotificationModels(
         title: 'Grade for 2nd test',
          fromClass: 'TKXDPM', 
          content: 'Hello, this is the noti', 
