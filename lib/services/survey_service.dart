@@ -81,34 +81,69 @@ class SurveyService extends _$SurveyService {
     required String assignmentId,
   }) async {
     try {
+      final data = <String, dynamic>{
+        'token': token,
+        'assignment_id': assignmentId,
+      };
+      
+      developer.log(
+        'Sending to /it5023e/get_submission: $data',
+        name: 'SurveyService.checkSubmissionStatus',
+      );
+      
       final response = await _apiService.dio.post(
         '/it5023e/get_submission',
-        data: {
-          'token': token,
-          'assignment_id': assignmentId,
-        },
+        data: data,
+        options: Options(
+          validateStatus: (status) => 
+            status != null && (status < 500 || status == 400),
+        ),
+      );
+      
+      developer.log(
+        'Response from /it5023e/get_submission: ${response.data}',
+        name: 'SurveyService.checkSubmissionStatus',
       );
 
-      return _handleResponse<bool>(
-        response,
-        (data) => data != null,
+      // Check if response contains meta information
+      final meta = response.data['meta'] as Map<String, dynamic>;
+      
+      // If code is 9994, it means no submission found
+      if (meta['code'] == '9994') {
+        return false;
+      }
+      
+      // If code is 1000 and we have data, submission exists
+      if (meta['code'] == '1000' && response.data['data'] != null) {
+        return true;
+      }
+
+      return false;
+    } catch (e, stack) {
+      developer.log(
+        'Error checking submission status: $e',
+        name: 'SurveyService.checkSubmissionStatus',
+        error: e,
+        stackTrace: stack,
       );
-    } on DioException catch (e) {
-      throw ApiException.fromDioError(e);
+      return false;
     }
   }
+
+
 
   Future<Map<String, dynamic>?> getSubmission({
     required String token,
     required String assignmentId,
   }) async {
     try {
+      final data = <String, dynamic>{
+        'token': token,
+        'assignment_id': assignmentId,
+      };
       final response = await _apiService.dio.post(
         '/it5023e/get_submission',
-        data: {
-          'token': token,
-          'assignment_id': assignmentId,
-        },
+        data: data,
       );
 
       final responseData = response.data as Map<String, dynamic>;

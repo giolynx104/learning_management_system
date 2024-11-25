@@ -16,46 +16,80 @@ class SurveyList extends _$SurveyList {
     final authState = await ref.read(authProvider.future);
     if (authState == null) throw Exception('Not authenticated');
     
+    developer.log(
+      'Building SurveyList provider for class $classId',
+      name: 'SurveyListProvider',
+    );
+    
     final surveys = await _surveyService.getAllSurveys(
       token: authState.token!,
       classId: classId,
     );
     
-    await _updateSubmissionStatuses(surveys, authState.token!);
-    return surveys;
-  }
-
-  Future<void> _updateSubmissionStatuses(List<Survey> surveys, String token) async {
-    await Future.wait(
-      surveys.map((survey) => _updateSubmissionStatus(survey, token)),
+    developer.log(
+      'Got ${surveys.length} surveys from service',
+      name: 'SurveyListProvider',
     );
-  }
-
-  Future<void> _updateSubmissionStatus(Survey survey, String token) async {
-    try {
+    
+    // Update submission statuses one by one to avoid race conditions
+    for (final survey in surveys) {
       final isSubmitted = await _surveyService.checkSubmissionStatus(
-        token: token,
+        token: authState.token!,
         assignmentId: survey.id,
       );
-      state = AsyncValue.data(state.value!.map((s) => 
-        s.id == survey.id ? survey.copyWith(isSubmitted: isSubmitted) : s
-      ).toList());
-    } catch (e, stack) {
+      
       developer.log(
-        'Error checking submission status: $e',
+        'Initial submission status for survey ${survey.id}: $isSubmitted',
         name: 'SurveyListProvider',
-        error: e,
-        stackTrace: stack,
       );
+      
+      if (isSubmitted) {
+        final index = surveys.indexWhere((s) => s.id == survey.id);
+        if (index != -1) {
+          surveys[index] = surveys[index].copyWith(isSubmitted: true);
+          developer.log(
+            'Updated initial state for survey ${survey.id}: isSubmitted=true',
+            name: 'SurveyListProvider',
+          );
+        }
+      }
     }
+    
+    return surveys;
   }
 
   List<Survey> getUpcomingSurveys(List<Survey> surveys) {
     final now = DateTime.now();
-    return surveys
-        .where((s) => s.deadline.isAfter(now) && !s.isSubmitted)
+    developer.log(
+      'Filtering upcoming surveys. Total surveys: ${surveys.length}',
+      name: 'SurveyListProvider',
+    );
+    
+    // Log all surveys and their submission status
+    for (final survey in surveys) {
+      developer.log(
+        'Survey ${survey.id}: isSubmitted=${survey.isSubmitted}',
+        name: 'SurveyListProvider',
+      );
+    }
+    
+    final upcomingSurveys = surveys
+        .where((s) {
+          final isUpcoming = s.deadline.isAfter(now) && !s.isSubmitted;
+          developer.log(
+            'Survey ${s.id}: deadline: ${s.deadline}, isSubmitted: ${s.isSubmitted}, isUpcoming: $isUpcoming',
+            name: 'SurveyListProvider',
+          );
+          return isUpcoming;
+        })
         .toList()
       ..sort((a, b) => a.deadline.compareTo(b.deadline));
+    
+    developer.log(
+      'Found ${upcomingSurveys.length} upcoming surveys',
+      name: 'SurveyListProvider',
+    );
+    return upcomingSurveys;
   }
 
   List<Survey> getOverdueSurveys(List<Survey> surveys) {
@@ -63,14 +97,14 @@ class SurveyList extends _$SurveyList {
     return surveys
         .where((s) => s.deadline.isBefore(now) && !s.isSubmitted)
         .toList()
-      ..sort((a, b) => a.deadline.compareTo(b.deadline));
+      ..sort((a, b) => b.deadline.compareTo(a.deadline));
   }
 
   List<Survey> getCompletedSurveys(List<Survey> surveys) {
     return surveys
         .where((s) => s.isSubmitted)
         .toList()
-      ..sort((a, b) => a.deadline.compareTo(b.deadline));
+      ..sort((a, b) => b.deadline.compareTo(a.deadline));
   }
 
   Future<void> refresh() async {
@@ -102,12 +136,13 @@ class SubmitSurvey extends _$SubmitSurvey {
         file: file,
         textResponse: textResponse,
       );
-    });
-
-    if (!state.hasError) {
-      // Refresh survey list after successful submission
+      
+      // Invalidate the survey list to force a refresh
       ref.invalidate(surveyListProvider);
-    }
+      
+      // Wait a moment for the submission status to be updated
+      await Future.delayed(const Duration(milliseconds: 500));
+    });
   }
 }
 

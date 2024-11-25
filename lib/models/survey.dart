@@ -6,13 +6,14 @@ part 'survey.freezed.dart';
 part 'survey.g.dart';
 
 @freezed
+@JsonSerializable()
 class Survey with _$Survey {
   const factory Survey({
     required String id,
     required String title,
     String? description,
     @JsonKey(name: 'file_url') String? file,
-    @Default(false) bool isSubmitted,
+    @JsonKey(includeFromJson: false) @Default(false) bool isSubmitted,
     required DateTime deadline,
     @JsonKey(name: 'class_id') required String classId,
   }) = _Survey;
@@ -25,18 +26,24 @@ class Survey with _$Survey {
     
     // Convert id to String if it's an int
     final id = json['id'] is int ? json['id'].toString() : json['id'];
-    // Convert class_id to String if it's an int
-    final classId = json['class_id'] is int ? json['class_id'].toString() : json['class_id'];
+    final classId = json['class_id'] is int ? 
+        json['class_id'].toString() : json['class_id'];
     
-    return Survey(
-      id: id as String,
-      title: json['title'] as String,
-      description: json['description'] as String?,
-      file: json['file_url'] as String?,
-      isSubmitted: false,
-      deadline: DateTime.parse(json['deadline'] as String),
-      classId: classId as String,
+    final survey = _$SurveyFromJson({
+      'id': id,
+      'title': json['title'],
+      'description': json['description'],
+      'file_url': json['file_url'],
+      'deadline': json['deadline'],
+      'class_id': classId,
+    });
+
+    developer.log(
+      'Created Survey object: ${survey.toString()}',
+      name: 'Survey.fromJson',
     );
+
+    return survey;
   }
 }
 

@@ -40,14 +40,17 @@ class StudentSurveyListScreen extends HookConsumerWidget {
               SurveyTabContent(
                 title: 'Upcoming',
                 surveys: surveysNotifier.getUpcomingSurveys(surveys),
+                surveysNotifier: surveysNotifier,
               ),
               SurveyTabContent(
                 title: 'Overdue',
                 surveys: surveysNotifier.getOverdueSurveys(surveys),
+                surveysNotifier: surveysNotifier,
               ),
               SurveyTabContent(
                 title: 'Completed',
                 surveys: surveysNotifier.getCompletedSurveys(surveys),
+                surveysNotifier: surveysNotifier,
               ),
             ],
           ),
@@ -76,11 +79,13 @@ class StudentSurveyListScreen extends HookConsumerWidget {
 class SurveyTabContent extends StatelessWidget {
   final String title;
   final List<Survey> surveys;
+  final SurveyList surveysNotifier;
 
   const SurveyTabContent({
     super.key,
     required this.title,
     required this.surveys,
+    required this.surveysNotifier,
   });
 
   @override
@@ -93,16 +98,41 @@ class SurveyTabContent extends StatelessWidget {
         final endTimeFormatted = 
             DateFormat('HH:mm dd-MM-yyyy').format(survey.deadline);
 
-        return SurveyCard(
-          endTimeFormatted: endTimeFormatted,
-          name: survey.title,
-          description: survey.description,
-          onTap: () {
-            context.pushNamed(
-              Routes.submitSurveyName,
-              extra: survey,
-            );
-          },
+        return Card(
+          child: ListTile(
+            title: Text(
+              survey.title,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (survey.description != null)
+                  Text(survey.description!),
+                Text(
+                  'Due: $endTimeFormatted',
+                  style: TextStyle(
+                    color: survey.deadline.isBefore(DateTime.now())
+                        ? Colors.red
+                        : Colors.grey[600],
+                  ),
+                ),
+              ],
+            ),
+            trailing: survey.isSubmitted
+                ? const Icon(Icons.check_circle, color: Colors.green)
+                : const Icon(Icons.arrow_forward_ios),
+            onTap: () async {
+              final result = await context.pushNamed(
+                Routes.submitSurveyName,
+                extra: survey,
+              );
+
+              if (result == true) {
+                surveysNotifier.refresh();
+              }
+            },
+          ),
         );
       },
     );

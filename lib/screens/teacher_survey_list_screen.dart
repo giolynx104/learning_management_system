@@ -73,14 +73,14 @@ class TeacherSurveyListScreen extends HookConsumerWidget {
                 surveys: surveysNotifier.getUpcomingSurveys(surveys),
                 onDelete: deleteSurvey,
                 onRefresh: () => surveysNotifier.refresh(),
-                onTap: (survey) => _handleSurveyTap(context, survey),
+                onTap: (survey) => _handleSurveyTap(context, survey, surveysNotifier),
               ),
               SurveyTabContent(
                 title: 'Expired',
                 surveys: surveysNotifier.getOverdueSurveys(surveys),
                 onDelete: deleteSurvey,
                 onRefresh: () => surveysNotifier.refresh(),
-                onTap: (survey) => _handleSurveyTap(context, survey),
+                onTap: (survey) => _handleSurveyTap(context, survey, surveysNotifier),
               ),
             ],
           ),
@@ -109,7 +109,7 @@ class TeacherSurveyListScreen extends HookConsumerWidget {
     );
   }
 
-  void _handleSurveyTap(BuildContext context, Survey survey) {
+  void _handleSurveyTap(BuildContext context, Survey survey, SurveyList surveysNotifier) {
     showModalBottomSheet(
       context: context,
       builder: (context) => Column(
@@ -118,24 +118,30 @@ class TeacherSurveyListScreen extends HookConsumerWidget {
           ListTile(
             leading: const Icon(Icons.edit),
             title: const Text('Edit Assignment'),
-            onTap: () {
+            onTap: () async {
               context.pop();
-              context.pushNamed(
+              final result = await context.pushNamed(
                 Routes.editSurveyName,
                 pathParameters: {'surveyId': survey.id},
                 extra: survey,
               );
+              if (result == true) {
+                surveysNotifier.refresh();
+              }
             },
           ),
           ListTile(
             leading: const Icon(Icons.assessment),
             title: const Text('View Responses'),
-            onTap: () {
+            onTap: () async {
               context.pop();
-              context.pushNamed(
+              final result = await context.pushNamed(
                 Routes.responseSurveyName,
                 pathParameters: {'surveyId': survey.id},
               );
+              if (result == true) {
+                surveysNotifier.refresh();
+              }
             },
           ),
         ],
