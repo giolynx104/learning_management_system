@@ -36,7 +36,8 @@ class AttendanceService {
 
       if (response.statusCode != 200) {
         debugPrint('AttendanceService - Error: Non-200 status code');
-        throw Exception(response.data['message'] ?? 'Failed to submit attendance');
+        throw Exception(
+            response.data['message'] ?? 'Failed to submit attendance');
       }
 
       debugPrint('AttendanceService - Attendance submitted successfully');
@@ -78,7 +79,8 @@ class AttendanceService {
       }
 
       if (response.statusCode != 200) {
-        throw Exception(response.data['message'] ?? 'Failed to get attendance list');
+        throw Exception(
+            response.data['message'] ?? 'Failed to get attendance list');
       }
 
       final returnedData = responseData['data'] as Map<String, dynamic>;

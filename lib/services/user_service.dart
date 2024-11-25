@@ -10,7 +10,7 @@ class UserService {
   UserService(this._apiService);
 
   /// Fetches user information using the provided token.
-  /// 
+  ///
   /// Throws:
   /// - [UnauthorizedException] if token is invalid
   /// - [UserNotFoundException] if user doesn't exist
@@ -24,7 +24,7 @@ class UserService {
           message: 'Token cannot be empty',
         );
       }
-      
+
       final response = await _apiService.dio.post(
         '/it4788/get_user_info',
         data: {'token': token},
@@ -33,11 +33,17 @@ class UserService {
 
       final responseData = response.data as Map<String, dynamic>;
       debugPrint('Response data code: ${responseData['code']}');
-      
-      if (responseData['code'] == 1000 && responseData['data'] != null) {
+
+      if (responseData['code'].toString() == '1000' && responseData['data'] != null) {
         final userData = responseData['data'];
+        
+        // Convert ID to int if it's a string
+        final id = userData['id'] is String 
+            ? int.parse(userData['id']) 
+            : userData['id'] as int;
+            
         final mappedData = {
-          'id': userData['id'],
+          'id': id,
           'firstName': userData['ho'] ?? '',
           'lastName': userData['ten'] ?? '',
           'email': userData['email'] ?? '',
@@ -47,7 +53,7 @@ class UserService {
         };
         return User.fromJson(mappedData);
       }
-      
+
       throw ApiException(
         statusCode: response.statusCode,
         message: responseData['message'] ?? 'Failed to get user info',

@@ -30,47 +30,44 @@ import 'package:learning_management_system/screens/detailed_attendance_list_scre
 import 'package:learning_management_system/screens/student_attendance_screen.dart';
 import 'package:learning_management_system/screens/material_list_screen.dart';
 import 'package:learning_management_system/screens/edit_survey_screen.dart';
-
-import '../screens/create_survey_screen.dart';
-import '../screens/response_survey_screen.dart';
-import '../screens/submit_survey_screen.dart';
+import 'package:learning_management_system/screens/create_survey_screen.dart';
+import 'package:learning_management_system/screens/response_survey_screen.dart';
+import 'package:learning_management_system/screens/submit_survey_screen.dart';
+import 'package:learning_management_system/routes/router_notifier.dart';
+import 'package:learning_management_system/screens/assignment_list_screen.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
 final _shellNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'shell');
-
 final routerProvider = Provider<GoRouter>((ref) {
-  final router = RouterNotifier(ref);
-
-  return GoRouter(
+  final notifier = RouterNotifier(ref);
+  
+  final router = GoRouter(
     navigatorKey: _rootNavigatorKey,
     initialLocation: Routes.signin,
-    refreshListenable: router,
-    redirect: (BuildContext context, GoRouterState state) {
+    refreshListenable: notifier,
+    redirect: (context, state) {
       final authState = ref.read(authProvider);
-      debugPrint('🚦 Router redirect - Current path: ${state.uri.path}');
+      
+      // Handle loading state
+      if (authState is AsyncLoading) {
+        return null;
+      }
+      
+      final isAuth = authState.value != null;
+      final isSignInPage = state.matchedLocation == '/signin';
+      final isSignUpPage = state.matchedLocation == '/signup';
 
-      return authState.when(
-        data: (user) {
-          debugPrint('👤 User in redirect: ${user?.toJson()}');
+      // Allow access to both signin and signup pages when not authenticated
+      if (!isAuth && !isSignInPage && !isSignUpPage) {
+        return '/signin';
+      }
 
-          if (user == null) {
-            if (state.uri.path == Routes.signin ||
-                state.uri.path == Routes.signup) {
-              return null;
-            }
-            return Routes.signin;
-          }
+      // Redirect to home if authenticated and trying to access auth pages
+      if (isAuth && (isSignInPage || isSignUpPage)) {
+        return '/';
+      }
 
-          if (state.uri.path == Routes.signin ||
-              state.uri.path == Routes.signup) {
-            return Routes.home;
-          }
-
-          return null;
-        },
-        loading: () => null,
-        error: (_, __) => Routes.signin,
-      );
+      return null;
     },
     routes: [
       // Auth routes (outside shell)
@@ -125,6 +122,13 @@ final routerProvider = Provider<GoRouter>((ref) {
                   final isStudent = container.read(authProvider).value?.role.toLowerCase() == 'student';
                   return isStudent ? const StudentHomeScreen() : const TeacherHomeScreen();
                 },
+                routes: [
+                  GoRoute(
+                    path: Routes.assignments,
+                    name: Routes.assignmentsName,
+                    builder: (context, state) => const AssignmentListScreen(),
+                  ),
+                ],
               ),
             ],
           ),
@@ -290,17 +294,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
     ],
   );
+
+  return router;
 });
-
-class RouterNotifier extends ChangeNotifier {
-  final Ref _ref;
-
-  RouterNotifier(this._ref) {
-    _ref.listen(authProvider, (previous, next) {
-      debugPrint('🔄 Auth state changed: $next');
-      notifyListeners();
-    });
-  }
-}
 
 final appRouter = routerProvider;
