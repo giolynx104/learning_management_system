@@ -30,10 +30,9 @@ import 'package:learning_management_system/screens/detailed_attendance_list_scre
 import 'package:learning_management_system/screens/student_attendance_screen.dart';
 import 'package:learning_management_system/screens/material_list_screen.dart';
 import 'package:learning_management_system/screens/edit_survey_screen.dart';
-
-import '../screens/create_survey_screen.dart';
-import '../screens/response_survey_screen.dart';
-import '../screens/submit_survey_screen.dart';
+import 'package:learning_management_system/screens/create_survey_screen.dart';
+import 'package:learning_management_system/screens/response_survey_screen.dart';
+import 'package:learning_management_system/screens/submit_survey_screen.dart';
 import 'package:learning_management_system/routes/router_notifier.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
@@ -51,17 +50,20 @@ final routerProvider = Provider<GoRouter>((ref) {
       
       // Handle loading state
       if (authState is AsyncLoading) {
-        return null; // Don't redirect while loading
+        return null;
       }
       
       final isAuth = authState.value != null;
       final isSignInPage = state.matchedLocation == '/signin';
+      final isSignUpPage = state.matchedLocation == '/signup';
 
-      if (!isAuth && !isSignInPage) {
+      // Allow access to both signin and signup pages when not authenticated
+      if (!isAuth && !isSignInPage && !isSignUpPage) {
         return '/signin';
       }
 
-      if (isAuth && isSignInPage) {
+      // Redirect to home if authenticated and trying to access auth pages
+      if (isAuth && (isSignInPage || isSignUpPage)) {
         return '/';
       }
 
