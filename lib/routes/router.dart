@@ -31,6 +31,10 @@ import 'package:learning_management_system/screens/student_attendance_screen.dar
 import 'package:learning_management_system/screens/material_list_screen.dart';
 import 'package:learning_management_system/screens/edit_survey_screen.dart';
 
+import '../screens/create_survey_screen.dart';
+import '../screens/response_survey_screen.dart';
+import '../screens/submit_survey_screen.dart';
+
 final _rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
 final _shellNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'shell');
 
@@ -232,7 +236,28 @@ final routerProvider = Provider<GoRouter>((ref) {
                     name: Routes.editSurveyName,
                     builder: (context, state) => EditSurveyScreen(
                       surveyId: state.pathParameters['surveyId'] ?? '',
-                      survey: state.extra as TeacherSmallSurvey,
+                      survey: state.extra as Survey,
+                    ),
+                  ),
+                  GoRoute(
+                    path: Routes.responseSurvey,
+                    name: Routes.responseSurveyName,
+                    builder: (context, state) => ResponseSurveyScreen(
+                      surveyId: state.pathParameters['surveyId'] ?? '',
+                    ),
+                  ),
+                  GoRoute(
+                    path: Routes.createSurvey,
+                    name: Routes.createSurveyName,
+                    builder: (context, state) => CreateSurveyScreen(
+                      classId: state.pathParameters['classId'] ?? '',
+                    ),
+                  ),
+                  GoRoute(
+                    path: Routes.submitSurvey,
+                    name: Routes.submitSurveyName,
+                    builder: (context, state) => SubmitSurveyScreen(
+                      survey: state.extra as Survey,
                     ),
                   ),
                 ],

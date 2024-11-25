@@ -16,8 +16,9 @@ class Routes {
   static const String studentSurveyList = 'student-assignments/:classId';
   static const String teacherSurveyList = 'teacher-assignments/:classId';
   static const String submitSurvey = 'submit-survey';
-  static const String createSurvey = 'create-survey';
+  static const String createSurvey = 'create-survey/:classId';
   static const String editSurvey = 'edit-survey/:surveyId';
+  static const String responseSurvey = 'response-survey/:surveyId';
   static const String detailedAttendanceList = 'detailed-attendance-list/:classId';
   static const String absenceRequestList = 'absence-requests/:classId';
   static const String studentAttendance = 'student-attendance/:classId';
@@ -48,14 +49,18 @@ class Routes {
   static const String chatName = 'chat';
   static const String profileName = 'profile';
   static const String editSurveyName = 'editSurvey';
+  static const String createSurveyName = 'createSurvey';
+  static const String submitSurveyName = 'submitSurvey';
+  static const String responseSurveyName = 'responseSurvey';
 
   // Helper methods for generating full paths
   static String getRollCallPath(String classId) => '/classes/roll-call/$classId';
   static String getModifyClassPath(String classId) => '/classes/modify/$classId';
   static String getCreateClassPath() => '/classes/create';
   static String getSubmitSurveyPath() => '/classes/submit-survey';
-  static String getCreateSurveyPath() => '/classes/create-survey';
+  static String getCreateSurveyPath(String classId) => '/classes/create-survey/$classId';
   static String getEditSurveyPath(String surveyId) => '/classes/edit-survey/$surveyId';
+  static String getResponseSurveyPath(String surveyId) => '/classes/response-survey/$surveyId';
   static String getMaterialListPath(String classId) => '/classes/materials/$classId';
   static String getUploadMaterialPath(String classId) => '/classes/materials/$classId/upload';
   static String getStudentSurveyListPath(String classId) => '/classes/student-assignments/$classId';

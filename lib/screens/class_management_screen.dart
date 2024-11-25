@@ -46,6 +46,15 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
             return;
           }
 
+          // Set up the refresh timer only after confirming authentication
+          _refreshTimer?.cancel(); // Cancel any existing timer
+          _refreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+            debugPrint('ClassManagementScreen - refresh timer triggered');
+            if (mounted) {
+              _refreshClassList();
+            }
+          });
+
           // Load the initial class list
           await _loadClassList();
         },
@@ -98,7 +107,7 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
       }
 
       final classes =
-          await ref.read(classServiceProvider.notifier).getClassList(token);
+      await ref.read(classServiceProvider.notifier).getClassList(token);
 
       if (mounted) {
         setState(() {
@@ -202,8 +211,7 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
                                 child: Padding(
                                   padding: const EdgeInsets.all(16.0),
                                   child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       Row(
@@ -223,8 +231,7 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
                                             onSelected: (value) =>
                                                 _handleClassAction(
                                                     value, classItem),
-                                            itemBuilder:
-                                                (BuildContext context) => [
+                                            itemBuilder: (BuildContext context) => [
                                               const PopupMenuItem(
                                                 value: 'edit',
                                                 child: Text('Edit Class'),
@@ -252,23 +259,22 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
                                         ],
                                       ),
                                       const SizedBox(height: 8),
-                                      _buildInfoRow(
-                                          'Class Code', classItem.classId),
+                                      _buildInfoRow('Class Code', classItem.classId),
                                       if (classItem.attachedCode != null &&
                                           classItem.attachedCode!.isNotEmpty)
                                         _buildInfoRow('Associated Code',
                                             classItem.attachedCode!),
-                                      _buildInfoRow(
-                                          'Type', classItem.classType),
+                                      _buildInfoRow('Type', classItem.classType),
                                       _buildInfoRow('Status', classItem.status),
-                                      _buildInfoRow('Students',
-                                          '${classItem.studentCount}'),
-                                      _buildInfoRow('Period',
+                                      _buildInfoRow(
+                                          'Students', '${classItem.studentCount}'),
+                                      _buildInfoRow(
+                                          'Period',
                                           '${classItem.startDate} - ${classItem.endDate}'),
                                       if (classItem.lecturerName != null &&
                                           classItem.lecturerName!.isNotEmpty)
-                                        _buildInfoRow('Lecturer',
-                                            classItem.lecturerName!),
+                                        _buildInfoRow(
+                                            'Lecturer', classItem.lecturerName!),
                                     ],
                                   ),
                                 ),
@@ -415,28 +421,28 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
                                       classId: classItem.classId,
                                     );
 
-                                if (!mounted) return;
-                                Navigator.of(dialogContext)
-                                    .pop(); // Close the dialog
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Class deleted successfully'),
-                                    backgroundColor: Colors.green,
-                                  ),
-                                );
-                                _refreshClassList();
-                              } catch (e) {
-                                setState(() => isDeleting =
-                                    false); // Reset loading state on error
-                                if (!mounted) return;
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text('Error deleting class: $e'),
-                                    backgroundColor: Colors.red,
-                                  ),
-                                );
-                              }
-                            },
+                          if (!mounted) return;
+                          Navigator.of(dialogContext)
+                              .pop(); // Close the dialog
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Class deleted successfully'),
+                              backgroundColor: Colors.green,
+                            ),
+                          );
+                          _refreshClassList();
+                        } catch (e) {
+                          setState(() => isDeleting =
+                          false); // Reset loading state on error
+                          if (!mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Error deleting class: $e'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      },
                       child: const Text('Delete',
                           style: TextStyle(color: Colors.red)),
                     ),
