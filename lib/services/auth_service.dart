@@ -1,11 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:learning_management_system/services/api_service.dart';
 import 'package:learning_management_system/exceptions/api_exceptions.dart';
-
-part 'auth_service.g.dart';
+import 'package:learning_management_system/services/api_service.dart';
 
 /// Service responsible for making authentication-related API calls.
 ///
@@ -15,11 +11,11 @@ part 'auth_service.g.dart';
 /// - Verification code requests
 /// - Token validation
 class AuthService {
-  /// Dio instance for making HTTP requests
-  final Dio _dio;
+  /// ApiService instance for making HTTP requests
+  final ApiService _apiService;
 
-  /// Creates an AuthService instance using the provided Dio client
-  AuthService(this._dio);
+  /// Creates an AuthService instance using the provided ApiService
+  AuthService(this._apiService);
 
   /// Attempts to sign in a user with email and password.
   ///
@@ -40,7 +36,7 @@ class AuthService {
   }) async {
     try {
       debugPrint('Attempting sign in for email: $email');
-      final response = await _dio.post(
+      final response = await _apiService.dio.post(
         '/it4788/login',
         data: {
           'email': email,
@@ -51,8 +47,8 @@ class AuthService {
       debugPrint('Login response: ${response.data}');
 
       // Handle verification required case
-      if (response.statusCode == 403 && response.data['code'] == 9991) {
-        final verifyCodeResponse = await _dio.post(
+      if (response.statusCode == 403 && response.data['code'].toString() == '9991') {
+        final verifyCodeResponse = await _apiService.dio.post(
           '/it4788/get_verify_code',
           data: {
             'email': email,
@@ -61,7 +57,7 @@ class AuthService {
         );
 
         if (verifyCodeResponse.statusCode == 200 &&
-            verifyCodeResponse.data['code'] == 1000) {
+            verifyCodeResponse.data['code'].toString() == '1000') {
           return {
             'success': false,
             'needs_verification': true,
@@ -69,23 +65,26 @@ class AuthService {
             'email': email,
           };
         }
-        throw Exception('Failed to get verification code');
+        throw ApiException(
+          statusCode: verifyCodeResponse.statusCode,
+          message: 'Failed to get verification code',
+        );
       }
 
       // Handle successful login
       if (response.statusCode == 200 &&
-          (response.data['message'] == 'OK' || response.data['code'] == 1000)) {
+          (response.data['message'] == 'OK' || response.data['code'].toString() == '1000')) {
         final userData = response.data['data'];
         debugPrint('User data from login: $userData');
 
         // Convert string ID to int if necessary
-        if (userData['id'] is String) {
-          userData['id'] = int.parse(userData['id']);
-        }
+        final id = userData['id'] is String 
+            ? int.parse(userData['id']) 
+            : userData['id'] as int;
 
         // Map the response data to match User model fields
         final mappedUserData = {
-          'id': userData['id'],
+          'id': id,
           'firstName': userData['ho'] ?? '',
           'lastName': userData['ten'] ?? '',
           'email': userData['email'] ?? '',
@@ -103,7 +102,10 @@ class AuthService {
         };
       }
 
-      throw Exception(response.data['message'] ?? 'Unknown error');
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: response.data['message'] ?? 'Unknown error',
+      );
     } on DioException catch (e) {
       if (e.response?.statusCode == 401 || e.response?.data['code'] == 9998) {
         throw UnauthorizedException('Invalid credentials or session expired');
@@ -133,15 +135,6 @@ class AuthService {
   }
 
   /// Registers a new user with the provided information.
-  ///
-  /// @param firstName User's first name
-  /// @param lastName User's last name
-  /// @param email User's email address
-  /// @param password User's password
-  /// @param role User's role (e.g., 'STUDENT', 'LECTURER')
-  /// @return A Map containing:
-  ///   - success: boolean indicating if the sign-up was successful
-  ///   - verify_code: verification code for the new account
   Future<Map<String, dynamic>> signUp({
     required String firstName,
     required String lastName,
@@ -150,7 +143,7 @@ class AuthService {
     required String role,
   }) async {
     try {
-      final response = await _dio.post(
+      final response = await _apiService.dio.post(
         '/it4788/signup',
         data: {
           'ho': firstName,
@@ -161,33 +154,39 @@ class AuthService {
         },
       );
 
-      if (response.statusCode == 200 && response.data['code'] == 1000) {
+      if (response.statusCode == 200 && 
+          response.data['code'].toString() == '1000') {
         return {
           'success': true,
           'verify_code': response.data['verify_code'],
         };
       }
 
-      throw Exception(response.data['message'] ?? 'Failed to sign up');
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: response.data['message'] ?? 'Failed to sign up',
+      );
     } on DioException catch (e) {
       if (e.response?.statusCode == 409) {
-        throw Exception('User already exists: ${e.response?.data['message']}');
+        throw ApiException(
+          statusCode: 409,
+          message: 'User already exists: ${e.response?.data['message']}',
+        );
       }
-      throw Exception('Error during sign up: ${e.message}');
+      throw ApiException(
+        statusCode: e.response?.statusCode,
+        message: 'Error during sign up: ${e.message}',
+      );
     }
   }
 
   /// Verifies a user's account using the provided verification code.
-  ///
-  /// @param email User's email address
-  /// @param verifyCode Verification code sent to the user
-  /// @return bool indicating if verification was successful
   Future<bool> checkVerifyCode({
     required String email,
     required String verifyCode,
   }) async {
     try {
-      final response = await _dio.post(
+      final response = await _apiService.dio.post(
         '/it4788/check_verify_code',
         data: {
           'email': email,
@@ -196,16 +195,12 @@ class AuthService {
       );
 
       return response.statusCode == 200 &&
-          (response.data['message'] == 'OK' || response.data['code'] == 1000);
-    } on DioException {
-      return false;
+          (response.data['message'] == 'OK' || response.data['code'].toString() == '1000');
+    } on DioException catch (e) {
+      throw ApiException(
+        statusCode: e.response?.statusCode,
+        message: 'Error verifying code: ${e.message}',
+      );
     }
   }
-}
-
-/// Provider for the AuthService instance
-@riverpod
-AuthService authService(Ref ref) {
-  final apiService = ref.watch(apiServiceProvider);
-  return AuthService(apiService.dio);
 }
