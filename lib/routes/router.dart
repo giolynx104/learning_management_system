@@ -236,7 +236,7 @@ final routerProvider = Provider<GoRouter>((ref) {
                     name: Routes.editSurveyName,
                     builder: (context, state) => EditSurveyScreen(
                       surveyId: state.pathParameters['surveyId'] ?? '',
-                      survey: state.extra as TeacherSurvey,
+                      survey: state.extra as Survey,
                     ),
                   ),
                   GoRoute(

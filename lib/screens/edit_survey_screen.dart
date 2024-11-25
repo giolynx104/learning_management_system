@@ -10,7 +10,7 @@ import 'dart:io';
 
 class EditSurveyScreen extends ConsumerStatefulWidget {
   final String surveyId;
-  final TeacherSurvey survey;
+  final Survey survey;
 
   const EditSurveyScreen({
     super.key,
@@ -23,7 +23,7 @@ class EditSurveyScreen extends ConsumerStatefulWidget {
 }
 
 class EditSurveyScreenState extends ConsumerState<EditSurveyScreen> {
-  late TeacherSurvey survey;
+  late Survey survey;
 
   final TextEditingController _surveyNameController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
@@ -38,11 +38,11 @@ class EditSurveyScreenState extends ConsumerState<EditSurveyScreen> {
   void initState() {
     super.initState();
     survey = widget.survey;
-    _surveyNameController.text = survey.name;
+    _surveyNameController.text = survey.title;
     _descriptionController.text = survey.description ?? '';
-    _fileName = survey.file; // Prefill file URL if exists
-    _fileUrl = survey.file; // Assuming the survey has a file URL
-    _endDateTime = survey.endTime; // Prefill end time
+    _fileName = survey.file;
+    _fileUrl = survey.file;
+    _endDateTime = survey.deadline;
 
     _surveyNameController.addListener(_validateForm);
     _descriptionController.addListener(_validateForm);
@@ -50,23 +50,19 @@ class EditSurveyScreenState extends ConsumerState<EditSurveyScreen> {
 
   void _validateForm() {
     setState(() {
-      // Check if fields are modified
       final isNameNotEmpty = _surveyNameController.text.isNotEmpty;
       final isDescriptionOrFileNotEmpty = (_descriptionController.text.isNotEmpty || _fileName != null);
 
-      // Check if the file has changed
       final isFileChanged = survey.file != _fileName;
 
-      // Check for changes
-      final isChanged = survey.name != _surveyNameController.text ||
+      final isChanged = survey.title != _surveyNameController.text ||
           survey.description != _descriptionController.text ||
           isFileChanged ||
-          survey.endTime != _endDateTime;
+          survey.deadline != _endDateTime;
 
       _isSubmitEnabled = isChanged && isNameNotEmpty && isDescriptionOrFileNotEmpty && isFileChanged;
     });
   }
-
 
   @override
   void dispose() {
@@ -209,7 +205,7 @@ class EditSurveyScreenState extends ConsumerState<EditSurveyScreen> {
     if (result != null) {
       setState(() {
         _fileName = result.files.single.name;
-        _fileUrl = result.files.single.path; // You can change this to the desired file URL logic
+        _fileUrl = result.files.single.path;
       });
       _validateForm();
     }
@@ -289,32 +285,35 @@ class EditSurveyScreenState extends ConsumerState<EditSurveyScreen> {
     if (authState == null) {
       throw Exception('Not authenticated');
     }
-    final token = authState.token;  // Replace with the actual token from your auth provider
-    final assignmentId = survey.id;  // Assuming survey.id is the ID you need to send
+    final token = authState.token;
+    final assignmentId = survey.id;
+    final title = _surveyNameController.text;
     final description = _descriptionController.text;
     final deadline = _endDateTime != null
         ? DateFormat("yyyy-MM-ddTHH:mm:ss").format(_endDateTime!)
         : '';
 
-    // Create the file to upload
     if (_fileUrl != null) {
       try {
         final file = PlatformFile(
-          path: _fileUrl!, // Ensure it's non-null by using '!'
+          path: _fileUrl!,
           name: _fileName!,
-          size: await File(_fileUrl!).length(),  // Calculate file size
+          size: await File(_fileUrl!).length(),
         );
         final surveyService = ref.read(surveyServiceProvider.notifier);
         await surveyService.editSurvey(
           token: token!,
           assignmentId: assignmentId,
+          title: title,
           deadline: deadline,
           description: description,
           file: file,
         );
         _showSnackBar('Assignment updated successfully!');
-        Future.delayed(Duration(milliseconds: 500));
-        Navigator.pop(context, true);
+        Future.delayed(const Duration(milliseconds: 500));
+        if (mounted) {
+          Navigator.pop(context, true);
+        }
       } catch (e) {
         _showSnackBar('Error updating survey: ${e.toString()}');
       }

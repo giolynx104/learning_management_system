@@ -41,7 +41,7 @@ class _SubmitSurveyScreenState extends ConsumerState<SubmitSurveyScreen> {
   void initState() {
     super.initState();
     survey = widget.survey;
-    _nameController.text = survey.name;
+    _nameController.text = survey.title;
     _surveyDescriptionController.text = survey.description ?? '';
     _answerDescriptionController.text = ''; // Initially empty
 
@@ -250,7 +250,7 @@ class _SubmitSurveyScreenState extends ConsumerState<SubmitSurveyScreen> {
                   ),
                 ),
                 const SizedBox(height: 16.0),
-                if (survey.endTime.isAfter(DateTime.now())) ...[
+                if (survey.deadline.isAfter(DateTime.now())) ...[
                   ElevatedButton(
                     onPressed: _isSubmitEnabled
                         ? () async {

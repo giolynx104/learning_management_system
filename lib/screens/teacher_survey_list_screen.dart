@@ -1,106 +1,56 @@
 import 'package:flutter/material.dart';
-import 'package:learning_management_system/services/survey_service.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:intl/intl.dart';
+import 'package:go_router/go_router.dart';
 import 'package:learning_management_system/models/survey.dart';
 import 'package:learning_management_system/providers/auth_provider.dart';
-import 'package:intl/intl.dart';  // Ensure this import is there
-import 'package:go_router/go_router.dart';
 import 'package:learning_management_system/routes/routes.dart';
+import 'package:learning_management_system/services/survey_service.dart';
 import 'package:learning_management_system/widgets/survey_tab_bar.dart';
 import 'package:learning_management_system/widgets/survey_card.dart';
+import 'package:learning_management_system/providers/survey_provider.dart';
+import 'dart:developer' as developer;
 
-class TeacherSurveyListScreen extends ConsumerStatefulWidget {
+class TeacherSurveyListScreen extends HookConsumerWidget {
   final String classId;
+  
   const TeacherSurveyListScreen({
     super.key,
     required this.classId,
   });
 
   @override
-  TeacherSurveyListScreenState createState() => TeacherSurveyListScreenState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final surveysAsync = ref.watch(surveyListProvider(classId));
+    final surveysNotifier = ref.read(surveyListProvider(classId).notifier);
 
-class TeacherSurveyListScreenState extends ConsumerState<TeacherSurveyListScreen> {
-  List<TeacherSurvey> surveys = [];
+    Future<void> deleteSurvey(String surveyId) async {
+      try {
+        final authState = await ref.read(authProvider.future);
+        if (authState == null) throw Exception('Not authenticated');
 
-  void _showSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
-  }
+        await ref.read(surveyServiceProvider.notifier).deleteSurvey(
+          token: authState.token!,
+          surveyId: surveyId,
+        );
 
-  Future<void> _fetchSurveys() async {
-    final authState = await ref.read(authProvider.future);
-    if (authState == null) {
-      throw Exception('Not authenticated');
-    }
-    final surveyService = ref.read(surveyServiceProvider.notifier);
-
-    try {
-      final fetchedSurveys = await surveyService.getAllSurveys(
-        token: authState.token!,
-        classId: widget.classId, // Replace with actual class ID
-      );
-
-      final surveyList = fetchedSurveys.map((json) => TeacherSurvey.teacherFromJson(json as Map<String, dynamic>)).toList();
-
-      setState(() {
-        surveys = surveyList; // Assign the updated list to the state
-      });
-    } catch (e) {
-      _showSnackBar('Error fetching surveys: $e');
-    }
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _fetchSurveys();
-  }
-
-    List<TeacherSurvey> getUpcomingSurveys() {
-      return surveys
-          .where((survey) => survey.endTime.isAfter(DateTime.now()))
-          .toList()
-        ..sort((a, b) => a.endTime.compareTo(b.endTime));
-    }
-
-  List<TeacherSurvey> getOverdueSurveys() {
-    return surveys
-        .where((survey) => survey.endTime.isBefore(DateTime.now()))
-        .toList()
-      ..sort((a, b) => a.endTime.compareTo(b.endTime));
-  }
-
-  Future<void> _deleteSurvey(String surveyId) async {
-    try {
-      final authState = await ref.read(authProvider.future);
-      if (authState == null) {
-        throw Exception('Not authenticated');
+        // Refresh survey list after deletion
+        surveysNotifier.refresh();
+      } catch (e, stack) {
+        developer.log(
+          'Error deleting survey: $e',
+          name: 'TeacherSurveyList',
+          error: e,
+          stackTrace: stack,
+        );
+        // Show error to user
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error deleting survey: $e')),
+          );
+        }
       }
-
-      final surveyService = ref.read(surveyServiceProvider.notifier);
-
-      // Call the deleteSurvey method
-      await surveyService.deleteSurvey(
-        token: authState.token!,
-        survey_id: surveyId,
-      );
-
-      // Reload surveys after deletion
-      await _fetchSurveys();
-
-      // Show success snackbar
-      _showSnackBar('Survey deleted successfully!');
-    } catch (e) {
-      // Show error snackbar
-      _showSnackBar('Error deleting survey: ${e.toString()}');
     }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
 
     return DefaultTabController(
       length: 2,
@@ -109,58 +59,120 @@ class TeacherSurveyListScreenState extends ConsumerState<TeacherSurveyListScreen
           title: const Text('Manage Assignment'),
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => context.pop(),
           ),
           bottom: const SurveyTabBar(
             tabLabels: ['Active', 'Expired'],
           ),
         ),
-        body: TabBarView(
-          children: [
-            SurveyTabContent(
-              title: 'Active',
-              surveys: getUpcomingSurveys(),
-              deleteSurvey: _deleteSurvey, // Pass delete function to the tab
-              fetchSurveys: _fetchSurveys,
+        body: surveysAsync.when(
+          data: (surveys) => TabBarView(
+            children: [
+              SurveyTabContent(
+                title: 'Active',
+                surveys: surveysNotifier.getUpcomingSurveys(surveys),
+                onDelete: deleteSurvey,
+                onRefresh: () => surveysNotifier.refresh(),
+                onTap: (survey) => _handleSurveyTap(context, survey),
+              ),
+              SurveyTabContent(
+                title: 'Expired',
+                surveys: surveysNotifier.getOverdueSurveys(surveys),
+                onDelete: deleteSurvey,
+                onRefresh: () => surveysNotifier.refresh(),
+                onTap: (survey) => _handleSurveyTap(context, survey),
+              ),
+            ],
+          ),
+          loading: () => const Center(
+            child: CircularProgressIndicator(),
+          ),
+          error: (error, stack) => Center(
+            child: SelectableText.rich(
+              TextSpan(
+                text: 'Error loading surveys: ',
+                children: [
+                  TextSpan(
+                    text: error.toString(),
+                    style: const TextStyle(color: Colors.red),
+                  ),
+                ],
+              ),
             ),
-            SurveyTabContent(
-              title: 'Expired',
-              surveys: getOverdueSurveys(),
-              deleteSurvey: _deleteSurvey, // Pass delete function to the tab
-              fetchSurveys: _fetchSurveys,
-            ),
-          ],
+          ),
         ),
         floatingActionButton: FloatingActionButton(
-          onPressed: () async {
-            final result = await context.pushNamed(
-              Routes.createSurveyName,
-              pathParameters: {'classId': widget.classId},
-            );
-
-            if (result == true) {
-              _fetchSurveys(); // Reload surveys
-            }
-          },
+          onPressed: () => _handleCreateSurvey(context, surveysNotifier),
           child: const Icon(Icons.add),
         ),
       ),
     );
   }
+
+  void _handleSurveyTap(BuildContext context, Survey survey) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading: const Icon(Icons.edit),
+            title: const Text('Edit Assignment'),
+            onTap: () {
+              context.pop();
+              context.pushNamed(
+                Routes.editSurveyName,
+                pathParameters: {'surveyId': survey.id},
+                extra: survey,
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.assessment),
+            title: const Text('View Responses'),
+            onTap: () {
+              context.pop();
+              context.pushNamed(
+                Routes.responseSurveyName,
+                pathParameters: {'surveyId': survey.id},
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _handleCreateSurvey(
+    BuildContext context,
+    SurveyList surveysNotifier,
+  ) async {
+    final result = await context.pushNamed(
+      Routes.createSurveyName,
+      pathParameters: {'classId': classId},
+    );
+
+    if (result == true) {
+      surveysNotifier.refresh();
+    }
+  }
 }
 
+// Update SurveyTabContent to include onTap handler
 class SurveyTabContent extends StatelessWidget {
   final String title;
-  final List<TeacherSurvey> surveys;
-  final Future<void> Function(String surveyId) deleteSurvey;
-  final Future<void> Function() fetchSurveys;
+  final List<Survey> surveys;
+  final Function(String)? onDelete;
+  final VoidCallback? onRefresh;
+  final Function(Survey) onTap;
 
   const SurveyTabContent({
     super.key,
     required this.title,
     required this.surveys,
-    required this.deleteSurvey,
-    required this.fetchSurveys,
+    this.onDelete,
+    this.onRefresh,
+    required this.onTap,
   });
 
   @override
@@ -171,69 +183,26 @@ class SurveyTabContent extends StatelessWidget {
       itemBuilder: (context, index) {
         final survey = surveys[index];
         final endTimeFormatted = 
-            DateFormat('HH:mm dd-MM-yyyy').format(survey.endTime);
+            DateFormat('HH:mm dd-MM-yyyy').format(survey.deadline);
 
         return SurveyCard(
           endTimeFormatted: endTimeFormatted,
-          name: survey.name,
+          name: survey.title,
           description: survey.description,
-          trailing: PopupMenuButton<String>(
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'edit',
-                child: Row(
-                  children: [
-                    Icon(Icons.edit),
-                    SizedBox(width: 8),
-                    Text('Edit'),
-                  ],
-                ),
-              ),
-              const PopupMenuItem(
-                value: 'delete',
-                child: Row(
-                  children: [
-                    Icon(Icons.delete, color: Colors.red),
-                    SizedBox(width: 8),
-                    Text('Delete', style: TextStyle(color: Colors.red)),
-                  ],
-                ),
-              ),
-              const PopupMenuItem(
-                value: 'responses',
-                child: Row(
-                  children: [
-                    Icon(Icons.assessment),
-                    SizedBox(width: 8),
-                    Text('View Responses'),
-                  ],
-                ),
-              ),
-            ],
-            onSelected: (value) async {
-              switch (value) {
-                case 'edit':
-                  final result = await context.pushNamed(
-                    Routes.editSurveyName,
-                    pathParameters: {'surveyId': survey.id},
-                    extra: survey,
-                  );
-                  if (result == true) {
-                    fetchSurveys();
-                  }
-                  break;
-                case 'delete':
-                  await deleteSurvey(survey.id);
-                  break;
-                case 'responses':
-                  context.pushNamed(
-                    Routes.responseSurveyName,
-                    pathParameters: {'surveyId': survey.id},
-                  );
-                  break;
-              }
-            },
-          ),
+          onDelete: onDelete != null ? () => onDelete!(survey.id) : null,
+          onEdit: () {
+            context.pushNamed(
+              Routes.editSurveyName,
+              pathParameters: {'surveyId': survey.id},
+              extra: survey,
+            );
+          },
+          onViewResponse: () {
+            context.pushNamed(
+              Routes.responseSurveyName,
+              pathParameters: {'surveyId': survey.id},
+            );
+          },
         );
       },
     );

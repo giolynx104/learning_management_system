@@ -1,12 +1,10 @@
-import 'dart:convert';
+import 'dart:developer' as developer;
 
 import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:learning_management_system/services/api_service.dart';
 import 'package:learning_management_system/exceptions/api_exceptions.dart';
-import 'package:learning_management_system/providers/auth_provider.dart';
 import 'package:learning_management_system/models/survey.dart';
 
 part 'survey_service.g.dart'; // This will hold the generated code.
@@ -17,11 +15,16 @@ class SurveyService extends _$SurveyService {
   FutureOr<void> build() {}
   ApiService get _apiService => ref.read(apiServiceProvider);
   // Existing API to fetch surveys
-  Future<List<dynamic>> getAllSurveys({
+  Future<List<Survey>> getAllSurveys({
     required String token,
     required String classId,
   }) async {
     try {
+      developer.log(
+        'Fetching surveys for class: $classId',
+        name: 'SurveyService',
+      );
+
       final response = await _apiService.dio.post(
         '/it5023e/get_all_surveys',
         data: {
@@ -30,21 +33,46 @@ class SurveyService extends _$SurveyService {
         },
       );
 
-      final responseData = response.data as Map<String, dynamic>;
-      final meta = responseData['meta'] as Map<String, dynamic>;
+      developer.log(
+        'Raw response data: ${response.data}',
+        name: 'SurveyService',
+      );
 
-      if (meta['code'] != '1000') { // Other errors
-        throw Exception(meta['message'] ?? 'Failed to fetch surveys');
-      }
-
-      return responseData['data'] as List<dynamic>;
+      return _handleResponse<List<Survey>>(
+        response,
+        (data) {
+          developer.log(
+            'Processing survey list data: $data',
+            name: 'SurveyService',
+          );
+          return (data as List)
+              .map((json) => Survey.fromJson(json as Map<String, dynamic>))
+              .toList();
+        },
+      );
     } on DioException catch (e) {
-      final responseData = e.response?.data as Map<String, dynamic>?;
-      final meta = responseData?['meta'] as Map<String, dynamic>?;
-
-
-      throw Exception(meta?['message'] ?? 'Failed to fetch surveys');
+      developer.log(
+        'Error fetching surveys: ${e.message}',
+        name: 'SurveyService',
+        error: e,
+      );
+      throw ApiException.fromDioError(e);
     }
+  }
+
+  T _handleResponse<T>(Response response, T Function(dynamic data) mapper) {
+    final responseData = response.data as Map<String, dynamic>;
+    final meta = responseData['meta'] as Map<String, dynamic>;
+
+    if (meta['code'] != '1000') {
+      throw ApiException(
+        message: meta['message'] ?? 'Unknown error',
+        statusCode: int.tryParse(meta['code']?.toString() ?? ''),
+        data: responseData,
+      );
+    }
+
+    return mapper(responseData['data']);
   }
 
   // New method to check if survey is submitted
@@ -61,19 +89,12 @@ class SurveyService extends _$SurveyService {
         },
       );
 
-      final responseData = response.data as Map<String, dynamic>;
-      final meta = responseData['meta'] as Map<String, dynamic>;
-
-      // Check the response data
-      if (meta['code'] == '9994') { // No submission found
-        return false;  // Not submitted
-      } else if (meta['code'] == '1000') {
-        return true;  // Submitted
-      } else {
-        throw Exception(meta['message'] ?? 'Error checking submission status');
-      }
+      return _handleResponse<bool>(
+        response,
+        (data) => data != null,
+      );
     } on DioException catch (e) {
-      throw Exception('Error checking submission status: ${e.message}');
+      throw ApiException.fromDioError(e);
     }
   }
 
@@ -110,33 +131,28 @@ class SurveyService extends _$SurveyService {
   Future<void> submitSurvey({
     required String token,
     required String assignmentId,
-    required PlatformFile file, // File selected using FilePicker
+    required PlatformFile file,
     required String textResponse,
   }) async {
     try {
       final formData = FormData.fromMap({
+        'token': token,
+        'assignmentId': assignmentId,
+        'textResponse': textResponse,
         'file': await MultipartFile.fromFile(
           file.path!,
           filename: file.name,
         ),
-        'token': token,
-        'assignmentId': assignmentId,
-        'textResponse': textResponse,
       });
 
       final response = await _apiService.dio.post(
-        '/it5023e/submit_survey?file',
+        '/it5023e/submit_survey',
         data: formData,
       );
 
-      final responseData = response.data as Map<String, dynamic>;
-      final meta = responseData['meta'] as Map<String, dynamic>;
-
-      if (meta['code'] != '1000') {
-        throw Exception(meta['message'] ?? 'Failed to submit survey');
-      }
+      _handleResponse<void>(response, (_) {});
     } on DioException catch (e) {
-      throw Exception('Error submitting survey: ${e.message}');
+      throw ApiException.fromDioError(e);
     }
   }
 
@@ -150,89 +166,76 @@ class SurveyService extends _$SurveyService {
   }) async {
     try {
       final formData = FormData.fromMap({
-        'file': await MultipartFile.fromFile(
-          file.path!,
-          filename: file.name,
-        ),
         'token': token,
         'classId': classId,
         'title': title,
         'deadline': deadline,
         'description': description,
+        'file': await MultipartFile.fromFile(
+          file.path!,
+          filename: file.name,
+        ),
       });
 
       final response = await _apiService.dio.post(
-        '/it5023e/create_survey?file',
+        '/it5023e/create_survey',
         data: formData,
       );
-      print('Response: ${response.data}');
-      final responseData = response.data as Map<String, dynamic>;
-      final meta = responseData['meta'] as Map<String, dynamic>;
 
-      if (meta['code'] != '1000') {
-        throw Exception(meta['message'] ?? 'Failed to create survey');
-      }
+      _handleResponse<void>(response, (_) {});
     } on DioException catch (e) {
-      throw Exception('Error creating survey: ${e.message}');
+      throw ApiException.fromDioError(e);
     }
   }
 
   Future<void> editSurvey({
     required String token,
     required String assignmentId,
+    required String title,
     required String deadline,
     required String description,
     required PlatformFile file,
   }) async {
     try {
       final formData = FormData.fromMap({
+        'token': token,
+        'assignmentId': assignmentId,
+        'title': title,
+        'deadline': deadline,
+        'description': description,
         'file': await MultipartFile.fromFile(
           file.path!,
           filename: file.name,
         ),
-        'token': token,
-        'assignmentId': assignmentId,
-        'deadline': deadline,
-        'description': description,
       });
 
       final response = await _apiService.dio.post(
-        '/it5023e/edit_survey?file',
+        '/it5023e/edit_survey',
         data: formData,
       );
-      print('Response: ${response.data}');
-      final responseData = response.data as Map<String, dynamic>;
-      final meta = responseData['meta'] as Map<String, dynamic>;
 
-      if (meta['code'] != '1000') {
-        throw Exception(meta['message'] ?? 'Failed to edit survey');
-      }
+      _handleResponse<void>(response, (_) {});
     } on DioException catch (e) {
-      throw Exception('Error editing survey: ${e.message}');
+      throw ApiException.fromDioError(e);
     }
   }
 
   Future<void> deleteSurvey({
     required String token,
-    required String survey_id,
+    required String surveyId,
   }) async {
     try {
       final response = await _apiService.dio.post(
         '/it5023e/delete_survey',
         data: {
           'token': token,
-          'survey_id': survey_id,
+          'survey_id': surveyId,
         },
       );
 
-      final responseData = response.data as Map<String, dynamic>;
-      final meta = responseData['meta'] as Map<String, dynamic>;
-
-      if (meta['code'] != '1000') {
-        throw Exception(meta['message'] ?? 'Failed to delete survey');
-      }
+      _handleResponse<void>(response, (_) {});
     } on DioException catch (e) {
-      throw Exception('Error editing survey: ${e.message}');
+      throw ApiException.fromDioError(e);
     }
   }
 
@@ -259,12 +262,18 @@ class SurveyService extends _$SurveyService {
         data['grade'] = grade; // Add the grade object to the data
       }
 
-      print('Post data by get_response_survey API call: ${data}');
+      developer.log(
+        'Post data by get_response_survey API call: ${data}',
+        name: 'SurveyService',
+      );
       final response = await _apiService.dio.post(
         '/it5023e/get_survey_response',
         data: data,
       );
-      print('Data fetched: $response');
+      developer.log(
+        'Data fetched: $response',
+        name: 'SurveyService',
+      );
 
       final responseData = response.data as Map<String, dynamic>;
       final meta = responseData['meta'] as Map<String, dynamic>;

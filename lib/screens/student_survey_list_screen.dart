@@ -1,100 +1,26 @@
 import 'package:flutter/material.dart';
-import 'package:learning_management_system/services/survey_service.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:learning_management_system/models/survey.dart';
-import 'package:learning_management_system/providers/auth_provider.dart';
-import 'package:intl/intl.dart';  // Ensure this import is there
+import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
+import 'package:learning_management_system/models/survey.dart';
 import 'package:learning_management_system/routes/routes.dart';
 import 'package:learning_management_system/widgets/survey_tab_bar.dart';
 import 'package:learning_management_system/widgets/survey_card.dart';
+import 'package:learning_management_system/providers/survey_provider.dart';
 
-
-class StudentSurveyListScreen extends ConsumerStatefulWidget {
+class StudentSurveyListScreen extends HookConsumerWidget {
   final String classId;
+  
   const StudentSurveyListScreen({
     super.key,
     required this.classId,
   });
 
   @override
-  StudentSurveyListScreenState createState() => StudentSurveyListScreenState();
-}
-
-class StudentSurveyListScreenState extends ConsumerState<StudentSurveyListScreen> {
-  List<Survey> surveys = [];
-
-  Future<void> _fetchSurveys() async {
-    final authState = await ref.read(authProvider.future);
-    if (authState == null) {
-      throw Exception('Not authenticated');
-    }
-    final surveyService = ref.read(surveyServiceProvider.notifier);
-
-    try {
-      final fetchedSurveys = await surveyService.getAllSurveys(
-        token: authState.token!,
-        classId: widget.classId, // Replace with actual class ID
-      );
-
-      print('Fetched Surveys: $fetchedSurveys');
-
-// Convert fetched data to `Survey` objects first
-      final surveyList = fetchedSurveys.map((json) => Survey.fromJson(json as Map<String, dynamic>)).toList();
-
-      try {
-        for (var survey in surveyList) {
-          final isSubmitted = await surveyService.checkSubmissionStatus(
-            token: authState.token!,
-            assignmentId: survey.id,
-          );
-          survey.isSubmitted = isSubmitted;
-        }
-      }catch (e) {
-        print('Error updating surveys: $e');}
-
-      print('Updated Fetched Surveys: $surveyList');
-
-      setState(() {
-        surveys = surveyList; // Assign the updated list to the state
-      });
-
-    } catch (e) {
-      print('Error fetching surveys: $e');
-    }
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _fetchSurveys();
-  }
-
-  List<Survey> getUpcomingSurveys() {
-    return surveys
-        .where((survey) => survey.endTime.isAfter(DateTime.now()) && !survey.isSubmitted)
-        .toList()
-      ..sort((a, b) => a.endTime.compareTo(b.endTime));
-  }
-
-  List<Survey> getOverdueSurveys() {
-    return surveys
-        .where((survey) => survey.endTime.isBefore(DateTime.now()) && !survey.isSubmitted)
-        .toList()
-      ..sort((a, b) => a.endTime.compareTo(b.endTime));
-  }
-
-  List<Survey> getCompletedSurveys() {
-    return surveys
-        .where((survey) => survey.isSubmitted)
-        .toList()
-      ..sort((a, b) => a.endTime.compareTo(b.endTime));
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
+  Widget build(BuildContext context, WidgetRef ref) {
+    final surveysAsync = ref.watch(surveyListProvider(classId));
+    final surveysNotifier = ref.read(surveyListProvider(classId).notifier);
+    
     return DefaultTabController(
       length: 3,
       child: Scaffold(
@@ -102,33 +28,50 @@ class StudentSurveyListScreenState extends ConsumerState<StudentSurveyListScreen
           title: const Text('Assignment List'),
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => context.pop(),
           ),
           bottom: const SurveyTabBar(
             tabLabels: ['Upcoming', 'Overdue', 'Completed'],
           ),
         ),
-        body: TabBarView(
-          children: [
-            SurveyTabContent(
-              title: 'Upcoming',
-              surveys: getUpcomingSurveys(),
+        body: surveysAsync.when(
+          data: (surveys) => TabBarView(
+            children: [
+              SurveyTabContent(
+                title: 'Upcoming',
+                surveys: surveysNotifier.getUpcomingSurveys(surveys),
+              ),
+              SurveyTabContent(
+                title: 'Overdue',
+                surveys: surveysNotifier.getOverdueSurveys(surveys),
+              ),
+              SurveyTabContent(
+                title: 'Completed',
+                surveys: surveysNotifier.getCompletedSurveys(surveys),
+              ),
+            ],
+          ),
+          loading: () => const Center(
+            child: CircularProgressIndicator(),
+          ),
+          error: (error, stack) => Center(
+            child: SelectableText.rich(
+              TextSpan(
+                text: 'Error loading surveys: ',
+                children: [
+                  TextSpan(
+                    text: error.toString(),
+                    style: const TextStyle(color: Colors.red),
+                  ),
+                ],
+              ),
             ),
-            SurveyTabContent(
-              title: 'Overdue',
-              surveys: getOverdueSurveys(),
-            ),
-            SurveyTabContent(
-              title: 'Completed',
-              surveys: getCompletedSurveys(),
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
 }
-
 
 class SurveyTabContent extends StatelessWidget {
   final String title;
@@ -148,11 +91,11 @@ class SurveyTabContent extends StatelessWidget {
       itemBuilder: (context, index) {
         final survey = surveys[index];
         final endTimeFormatted = 
-            DateFormat('HH:mm dd-MM-yyyy').format(survey.endTime);
+            DateFormat('HH:mm dd-MM-yyyy').format(survey.deadline);
 
         return SurveyCard(
           endTimeFormatted: endTimeFormatted,
-          name: survey.name,
+          name: survey.title,
           description: survey.description,
           onTap: () {
             context.pushNamed(
