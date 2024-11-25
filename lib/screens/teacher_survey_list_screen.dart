@@ -6,6 +6,8 @@ import 'package:learning_management_system/providers/auth_provider.dart';
 import 'package:intl/intl.dart';  // Ensure this import is there
 import 'package:go_router/go_router.dart';
 import 'package:learning_management_system/routes/routes.dart';
+import 'package:learning_management_system/widgets/survey_tab_bar.dart';
+import 'package:learning_management_system/widgets/survey_card.dart';
 
 class TeacherSurveyListScreen extends ConsumerStatefulWidget {
   final String classId;
@@ -152,6 +154,7 @@ class SurveyTabContent extends StatelessWidget {
   final List<TeacherSurvey> surveys;
   final Future<void> Function(String surveyId) deleteSurvey;
   final Future<void> Function() fetchSurveys;
+
   const SurveyTabContent({
     super.key,
     required this.title,
@@ -162,135 +165,77 @@ class SurveyTabContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return ListView.builder(
       itemCount: surveys.length,
       padding: const EdgeInsets.all(16),
       itemBuilder: (context, index) {
         final survey = surveys[index];
-        final endTimeFormatted = DateFormat('HH:mm dd-MM-yyyy').format(survey.endTime);
+        final endTimeFormatted = 
+            DateFormat('HH:mm dd-MM-yyyy').format(survey.endTime);
 
-        return Card(
-          margin: const EdgeInsets.only(bottom: 12),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+        return SurveyCard(
+          endTimeFormatted: endTimeFormatted,
+          name: survey.name,
+          description: survey.description,
+          trailing: PopupMenuButton<String>(
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'edit',
+                child: Row(
                   children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            endTimeFormatted,
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            survey.name,
-                            style: theme.textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    PopupMenuButton<String>(
-                      itemBuilder: (context) => [
-                        const PopupMenuItem(
-                          value: 'edit',
-                          child: Row(
-                            children: [
-                              Icon(Icons.edit),
-                              SizedBox(width: 8),
-                              Text('Edit'),
-                            ],
-                          ),
-                        ),
-                        const PopupMenuItem(
-                          value: 'delete',
-                          child: Row(
-                            children: [
-                              Icon(Icons.delete, color: Colors.red),
-                              SizedBox(width: 8),
-                              Text('Delete', style: TextStyle(color: Colors.red)),
-                            ],
-                          ),
-                        ),
-                        const PopupMenuItem(
-                          value: 'responses',
-                          child: Row(
-                            children: [
-                              Icon(Icons.assessment),
-                              SizedBox(width: 8),
-                              Text('View Responses'),
-                            ],
-                          ),
-                        ),
-                      ],
-                      onSelected: (value) async {
-                        switch (value) {
-                          case 'edit':
-                            final result = await context.pushNamed(
-                              Routes.editSurveyName,
-                              pathParameters: {'surveyId': survey.id},
-                              extra: survey,
-                            );
-
-                            if (result == true) {
-                              fetchSurveys(); // Reload surveys after editing
-                            }
-                            break;
-                          case 'delete':
-                            await deleteSurvey(survey.id);
-                            break;
-                          case 'responses':
-                            context.pushNamed(
-                              Routes.responseSurveyName,
-                              pathParameters: {'surveyId': survey.id},
-                            );
-                            break;
-                        }
-                      },
-                    ),
+                    Icon(Icons.edit),
+                    SizedBox(width: 8),
+                    Text('Edit'),
                   ],
                 ),
-                if (survey.description != null) ...[
-                  const SizedBox(height: 8),
-                  Text(
-                    survey.description!,
-                    style: theme.textTheme.bodyMedium,
-                  ),
-                ],
-              ],
-            ),
+              ),
+              const PopupMenuItem(
+                value: 'delete',
+                child: Row(
+                  children: [
+                    Icon(Icons.delete, color: Colors.red),
+                    SizedBox(width: 8),
+                    Text('Delete', style: TextStyle(color: Colors.red)),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'responses',
+                child: Row(
+                  children: [
+                    Icon(Icons.assessment),
+                    SizedBox(width: 8),
+                    Text('View Responses'),
+                  ],
+                ),
+              ),
+            ],
+            onSelected: (value) async {
+              switch (value) {
+                case 'edit':
+                  final result = await context.pushNamed(
+                    Routes.editSurveyName,
+                    pathParameters: {'surveyId': survey.id},
+                    extra: survey,
+                  );
+                  if (result == true) {
+                    fetchSurveys();
+                  }
+                  break;
+                case 'delete':
+                  await deleteSurvey(survey.id);
+                  break;
+                case 'responses':
+                  context.pushNamed(
+                    Routes.responseSurveyName,
+                    pathParameters: {'surveyId': survey.id},
+                  );
+                  break;
+              }
+            },
           ),
         );
       },
     );
   }
-}
-
-class SurveyTabBar extends StatelessWidget implements PreferredSizeWidget {
-  final List<String> tabLabels;
-
-  const SurveyTabBar({
-    super.key,
-    required this.tabLabels,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return TabBar(
-      tabs: tabLabels.map((label) => Tab(text: label)).toList(),
-    );
-  }
-
-  @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 }
