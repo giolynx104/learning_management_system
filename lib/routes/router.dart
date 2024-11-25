@@ -34,6 +34,7 @@ import 'package:learning_management_system/screens/create_survey_screen.dart';
 import 'package:learning_management_system/screens/response_survey_screen.dart';
 import 'package:learning_management_system/screens/submit_survey_screen.dart';
 import 'package:learning_management_system/routes/router_notifier.dart';
+import 'package:learning_management_system/screens/assignment_list_screen.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
 final _shellNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'shell');
@@ -122,6 +123,13 @@ final routerProvider = Provider<GoRouter>((ref) {
                   final isStudent = container.read(authProvider).value?.role.toLowerCase() == 'student';
                   return isStudent ? const StudentHomeScreen() : const TeacherHomeScreen();
                 },
+                routes: [
+                  GoRoute(
+                    path: Routes.assignments,
+                    name: Routes.assignmentsName,
+                    builder: (context, state) => const AssignmentListScreen(),
+                  ),
+                ],
               ),
             ],
           ),
