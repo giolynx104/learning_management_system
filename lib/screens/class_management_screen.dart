@@ -195,95 +195,92 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
                 child: _classList.isEmpty
                     ? const Center(child: Text('No classes available'))
                     : filteredClasses.isEmpty
-                    ? const Center(child: Text('No matching classes found'))
-                    : ListView.builder(
-                  padding: const EdgeInsets.only(
-                    left: 16,
-                    right: 16,
-                    top: 16,
-                    bottom: 80,
-                  ),
-                  itemCount: filteredClasses.length,
-                  itemBuilder: (context, index) {
-                    final classItem = filteredClasses[index];
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment:
-                          CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Row(
-                              mainAxisAlignment:
-                              MainAxisAlignment.spaceBetween,
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    classItem.className,
-                                    style: theme.textTheme.titleMedium
-                                        ?.copyWith(
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                        ? const Center(child: Text('No matching classes found'))
+                        : ListView.builder(
+                            padding: const EdgeInsets.only(
+                              left: 16,
+                              right: 16,
+                              top: 16,
+                              bottom: 80,
+                            ),
+                            itemCount: filteredClasses.length,
+                            itemBuilder: (context, index) {
+                              final classItem = filteredClasses[index];
+                              return Card(
+                                margin: const EdgeInsets.only(bottom: 12),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(16.0),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              classItem.className,
+                                              style: theme.textTheme.titleMedium
+                                                  ?.copyWith(
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                          PopupMenuButton<String>(
+                                            onSelected: (value) =>
+                                                _handleClassAction(
+                                                    value, classItem),
+                                            itemBuilder: (BuildContext context) => [
+                                              const PopupMenuItem(
+                                                value: 'edit',
+                                                child: Text('Edit Class'),
+                                              ),
+                                              const PopupMenuItem(
+                                                value: 'delete',
+                                                child: Text('Delete Class',
+                                                    style: TextStyle(
+                                                        color: Colors.red)),
+                                              ),
+                                              const PopupMenuItem(
+                                                value: 'assignment',
+                                                child: Text('Assignments'),
+                                              ),
+                                              const PopupMenuItem(
+                                                value: 'files',
+                                                child: Text('Materials'),
+                                              ),
+                                              const PopupMenuItem(
+                                                value: 'attendance',
+                                                child: Text('Attendance'),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 8),
+                                      _buildInfoRow('Class Code', classItem.classId),
+                                      if (classItem.attachedCode != null &&
+                                          classItem.attachedCode!.isNotEmpty)
+                                        _buildInfoRow('Associated Code',
+                                            classItem.attachedCode!),
+                                      _buildInfoRow('Type', classItem.classType),
+                                      _buildInfoRow('Status', classItem.status),
+                                      _buildInfoRow(
+                                          'Students', '${classItem.studentCount}'),
+                                      _buildInfoRow(
+                                          'Period',
+                                          '${classItem.startDate} - ${classItem.endDate}'),
+                                      if (classItem.lecturerName != null &&
+                                          classItem.lecturerName!.isNotEmpty)
+                                        _buildInfoRow(
+                                            'Lecturer', classItem.lecturerName!),
+                                    ],
                                   ),
                                 ),
-                                PopupMenuButton<String>(
-                                  onSelected: (value) =>
-                                      _handleClassAction(
-                                          value, classItem),
-                                  itemBuilder:
-                                      (BuildContext context) => [
-                                    const PopupMenuItem(
-                                      value: 'edit',
-                                      child: Text('Edit Class'),
-                                    ),
-                                    const PopupMenuItem(
-                                      value: 'delete',
-                                      child: Text('Delete Class',
-                                          style: TextStyle(
-                                              color: Colors.red)),
-                                    ),
-                                    const PopupMenuItem(
-                                      value: 'assignment',
-                                      child: Text('Assignments'),
-                                    ),
-                                    const PopupMenuItem(
-                                      value: 'files',
-                                      child: Text('Materials'),
-                                    ),
-                                    const PopupMenuItem(
-                                      value: 'attendance',
-                                      child: Text('Attendance'),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            _buildInfoRow(
-                                'Class Code', classItem.classId),
-                            if (classItem.attachedCode != null &&
-                                classItem.attachedCode!.isNotEmpty)
-                              _buildInfoRow('Associated Code',
-                                  classItem.attachedCode!),
-                            _buildInfoRow(
-                                'Type', classItem.classType),
-                            _buildInfoRow('Status', classItem.status),
-                            _buildInfoRow('Students',
-                                '${classItem.studentCount}'),
-                            _buildInfoRow('Period',
-                                '${classItem.startDate} - ${classItem.endDate}'),
-                            if (classItem.lecturerName != null &&
-                                classItem.lecturerName!.isNotEmpty)
-                              _buildInfoRow('Lecturer',
-                                  classItem.lecturerName!),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
+                              );
+                            },
+                          ),
               ),
             ],
           ),
@@ -293,24 +290,24 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
             right: 16,
             bottom: 16,
             child: authState.whenOrNull(
-              data: (user) => user != null
-                  ? FloatingActionButton.extended(
-                onPressed: () {
-                  if (user.role == 'STUDENT') {
-                    context.pushNamed(Routes.classRegistrationName);
-                  } else {
-                    context.pushNamed(Routes.createClassName);
-                  }
-                },
-                icon: Icon(
-                  user.role == 'STUDENT' ? Icons.add_task : Icons.add,
-                ),
-                label: Text(user.role == 'STUDENT'
-                    ? 'Register for Class'
-                    : 'Create Class'),
-              )
-                  : null,
-            ) ??
+                  data: (user) => user != null
+                      ? FloatingActionButton.extended(
+                          onPressed: () {
+                            if (user.role == 'STUDENT') {
+                              context.pushNamed(Routes.classRegistrationName);
+                            } else {
+                              context.pushNamed(Routes.createClassName);
+                            }
+                          },
+                          icon: Icon(
+                            user.role == 'STUDENT' ? Icons.add_task : Icons.add,
+                          ),
+                          label: Text(user.role == 'STUDENT'
+                              ? 'Register for Class'
+                              : 'Create Class'),
+                        )
+                      : null,
+                ) ??
                 const SizedBox.shrink(),
           ),
         ],
@@ -409,20 +406,20 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
                       onPressed: isDeleting
                           ? null
                           : () async {
-                        setState(() => isDeleting = true);
-                        try {
-                          final authState = ref.read(authProvider);
-                          final user = authState.value;
-                          if (user == null) {
-                            throw Exception('Not authenticated');
-                          }
+                              setState(() => isDeleting = true);
+                              try {
+                                final authState = ref.read(authProvider);
+                                final user = authState.value;
+                                if (user == null) {
+                                  throw Exception('Not authenticated');
+                                }
 
-                          await ref
-                              .read(classServiceProvider.notifier)
-                              .deleteClass(
-                            token: user.token ?? '',
-                            classId: classItem.classId,
-                          );
+                                await ref
+                                    .read(classServiceProvider.notifier)
+                                    .deleteClass(
+                                      token: user.token ?? '',
+                                      classId: classItem.classId,
+                                    );
 
                           if (!mounted) return;
                           Navigator.of(dialogContext)

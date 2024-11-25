@@ -147,7 +147,6 @@ class SurveyTabContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-
     return ListView.builder(
       itemCount: surveys.length,
       padding: const EdgeInsets.all(16),
@@ -190,7 +189,6 @@ class SurveyTabContent extends StatelessWidget {
                       style: theme.textTheme.bodyMedium,
                     ),
                   ],
-
                 ],
               ),
             ),

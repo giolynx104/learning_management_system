@@ -40,7 +40,7 @@ class CustomLayoutScaffold extends ConsumerWidget {
                   icon: const Icon(Icons.notifications_outlined),
                   tooltip: 'Notifications',
                   onPressed: () {
-                    context.push(Routes.notification);
+                    context.pushNamed(Routes.notificationName);
                   },
                 ),
               ],

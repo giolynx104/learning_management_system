@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:learning_management_system/models/survey.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -16,10 +17,10 @@ class SubmitSurveyScreen extends ConsumerStatefulWidget {
   });
 
   @override
-  SubmitSurveyScreenState createState() => SubmitSurveyScreenState();
+  ConsumerState<SubmitSurveyScreen> createState() => _SubmitSurveyScreenState();
 }
 
-class SubmitSurveyScreenState extends ConsumerState<SubmitSurveyScreen> {
+class _SubmitSurveyScreenState extends ConsumerState<SubmitSurveyScreen> {
   late Survey survey;
 
   // Controllers for TextFields
@@ -39,10 +40,7 @@ class SubmitSurveyScreenState extends ConsumerState<SubmitSurveyScreen> {
   @override
   void initState() {
     super.initState();
-    // Directly use the passed survey
     survey = widget.survey;
-
-    // Set the initial value for the read-only fields
     _nameController.text = survey.name;
     _surveyDescriptionController.text = survey.description ?? '';
     _answerDescriptionController.text = ''; // Initially empty

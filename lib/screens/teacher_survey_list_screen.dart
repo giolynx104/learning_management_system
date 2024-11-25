@@ -56,12 +56,12 @@ class TeacherSurveyListScreenState extends ConsumerState<TeacherSurveyListScreen
     _fetchSurveys();
   }
 
-  List<TeacherSurvey> getUpcomingSurveys() {
-    return surveys
-        .where((survey) => survey.endTime.isAfter(DateTime.now()))
-        .toList()
-      ..sort((a, b) => a.endTime.compareTo(b.endTime));
-  }
+    List<TeacherSurvey> getUpcomingSurveys() {
+      return surveys
+          .where((survey) => survey.endTime.isAfter(DateTime.now()))
+          .toList()
+        ..sort((a, b) => a.endTime.compareTo(b.endTime));
+    }
 
   List<TeacherSurvey> getOverdueSurveys() {
     return surveys
@@ -109,13 +109,8 @@ class TeacherSurveyListScreenState extends ConsumerState<TeacherSurveyListScreen
             icon: const Icon(Icons.arrow_back),
             onPressed: () => Navigator.of(context).pop(),
           ),
-          bottom: TabBar(
-            labelColor: theme.colorScheme.onPrimary,
-            unselectedLabelColor: theme.colorScheme.onPrimary.withOpacity(0.7),
-            tabs: const [
-              Tab(text: 'Active'),
-              Tab(text: 'Expired'),
-            ],
+          bottom: const SurveyTabBar(
+            tabLabels: ['Active', 'Expired'],
           ),
         ),
         body: TabBarView(
@@ -279,4 +274,23 @@ class SurveyTabContent extends StatelessWidget {
       },
     );
   }
+}
+
+class SurveyTabBar extends StatelessWidget implements PreferredSizeWidget {
+  final List<String> tabLabels;
+
+  const SurveyTabBar({
+    super.key,
+    required this.tabLabels,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TabBar(
+      tabs: tabLabels.map((label) => Tab(text: label)).toList(),
+    );
+  }
+
+  @override
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 }
