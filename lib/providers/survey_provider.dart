@@ -37,7 +37,7 @@ class SurveyList extends _$SurveyList {
         token: token,
         assignmentId: survey.id,
       );
-      state = AsyncValue.data(state.value!.map((s) => 
+      state = AsyncValue.data(state.value!.map((s) =>
         s.id == survey.id ? survey.copyWith(isSubmitted: isSubmitted) : s
       ).toList());
     } catch (e, stack) {

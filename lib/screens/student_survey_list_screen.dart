@@ -40,14 +40,17 @@ class StudentSurveyListScreen extends HookConsumerWidget {
               SurveyTabContent(
                 title: 'Upcoming',
                 surveys: surveysNotifier.getUpcomingSurveys(surveys),
+                surveysNotifier: surveysNotifier,
               ),
               SurveyTabContent(
                 title: 'Overdue',
                 surveys: surveysNotifier.getOverdueSurveys(surveys),
+                surveysNotifier: surveysNotifier,
               ),
               SurveyTabContent(
                 title: 'Completed',
                 surveys: surveysNotifier.getCompletedSurveys(surveys),
+                surveysNotifier: surveysNotifier,
               ),
             ],
           ),
@@ -76,11 +79,13 @@ class StudentSurveyListScreen extends HookConsumerWidget {
 class SurveyTabContent extends StatelessWidget {
   final String title;
   final List<Survey> surveys;
+  final SurveyList surveysNotifier;
 
   const SurveyTabContent({
     super.key,
     required this.title,
     required this.surveys,
+    required this.surveysNotifier,
   });
 
   @override
@@ -97,11 +102,15 @@ class SurveyTabContent extends StatelessWidget {
           endTimeFormatted: endTimeFormatted,
           name: survey.title,
           description: survey.description,
-          onTap: () {
-            context.pushNamed(
+          onTap: () async {
+            final result = await context.pushNamed(
               Routes.submitSurveyName,
               extra: survey,
             );
+
+            if (result == true) {
+              surveysNotifier.refresh();
+            }
           },
         );
       },

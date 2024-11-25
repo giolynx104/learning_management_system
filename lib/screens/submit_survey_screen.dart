@@ -278,7 +278,7 @@ class _SubmitSurveyScreenState extends ConsumerState<SubmitSurveyScreen> {
                           _isSubmitEnabled = false;
                         });
                         Future.delayed(Duration(milliseconds: 500));
-                        Navigator.pop(context);
+                        Navigator.pop(context, true);
                       } catch (e) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(content: Text("Error: ${e.toString()}")),

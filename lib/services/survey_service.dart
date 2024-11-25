@@ -81,34 +81,57 @@ class SurveyService extends _$SurveyService {
     required String assignmentId,
   }) async {
     try {
+      final data = <String, dynamic>{
+        'token': token,
+        'assignment_id': assignmentId,
+      };
+      developer.log(
+        'Sending to /it5023e/get_submission: $data',
+        name: 'SurveyService.checkSubmissionStatus',
+      );
       final response = await _apiService.dio.post(
         '/it5023e/get_submission',
-        data: {
-          'token': token,
-          'assignment_id': assignmentId,
-        },
+        data: data,
+      );
+      developer.log(
+        'Response from /it5023e/get_submission: $response',
+        name: 'SurveyService.checkSubmissionStatus',
       );
 
+      // Check if the response code is 9994 (no submission), and return false in that case
+      if (response.data['code'] == 9994) {
+        return false;
+      }
+
+      // If code is 1000, return true, otherwise handle the response as valid or not
       return _handleResponse<bool>(
         response,
-        (data) => data != null,
+            (data) => data != null && response.data['code'] == 1000,
       );
     } on DioException catch (e) {
+      // Handle any DioExceptions
+      developer.log(
+        'DioException occurred: $e',
+        name: 'SurveyService.checkSubmissionStatus',
+      );
       throw ApiException.fromDioError(e);
     }
   }
+
+
 
   Future<Map<String, dynamic>?> getSubmission({
     required String token,
     required String assignmentId,
   }) async {
     try {
+      final data = <String, dynamic>{
+        'token': token,
+        'assignment_id': assignmentId,
+      };
       final response = await _apiService.dio.post(
         '/it5023e/get_submission',
-        data: {
-          'token': token,
-          'assignment_id': assignmentId,
-        },
+        data: data,
       );
 
       final responseData = response.data as Map<String, dynamic>;
