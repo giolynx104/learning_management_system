@@ -61,44 +61,7 @@ class UploadMaterialScreen extends HookConsumerWidget {
       return null;
     }, [materialListState]);
 
-    Future<void> showDescriptionDialog(int index) async {
-      TextEditingController descriptionController = TextEditingController();
 
-      await showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Enter Description'),
-          content: TextField(
-            controller: descriptionController,
-            decoration: const InputDecoration(hintText: "Enter description for the material"),
-            maxLines: 3,
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () {
-                final updatedMaterial = MaterialData(
-                  name: selectedMaterials.value[index].name,
-                  size: selectedMaterials.value[index].size,
-                  path: selectedMaterials.value[index].path,
-                  materialLink: selectedMaterials.value[index].materialLink,
-                );
-                updatedMaterial.description = descriptionController.text; // Lưu mô tả
-                final updatedList = [...selectedMaterials.value];
-                updatedList[index] = updatedMaterial;
-                selectedMaterials.value = updatedList;
-
-                Navigator.of(context).pop();
-              },
-              child: const Text('Save'),
-            ),
-          ],
-        ),
-      );
-    }
     Future<void> selectMaterials() async {
       FilePickerResult? result = await FilePicker.platform.pickFiles(
         allowMultiple: true,
@@ -125,17 +88,36 @@ class UploadMaterialScreen extends HookConsumerWidget {
       selectedMaterials.value = newMaterials;
     }
 
-    Future<void> editMaterialName(int index) async {
+    Future<void> editMaterial(int index) async {
+      // Lấy tên và mô tả hiện tại của tài liệu
       String currentName = selectedMaterials.value[index].name;
-      TextEditingController controller = TextEditingController(text: currentName);
+      String currentDescription = selectedMaterials.value[index].description;
+
+      // Tạo các controller cho tên và mô tả
+      TextEditingController nameController = TextEditingController(text: currentName);
+      TextEditingController descriptionController = TextEditingController(text: currentDescription);
 
       await showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Edit Material Name'),
-          content: TextField(
-            controller: controller,
-            decoration: const InputDecoration(hintText: "Enter new name"),
+          title: const Text('Edit Material'),
+          content: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // TextField cho tên tài liệu
+              TextField(
+                controller: nameController,
+                decoration: const InputDecoration(hintText: "Enter new name"),
+              ),
+              const SizedBox(height: 10),
+              // TextField cho mô tả tài liệu
+              TextField(
+                controller: descriptionController,
+                decoration: const InputDecoration(hintText: "Enter description"),
+                maxLines: 3, // Cho phép nhập mô tả nhiều dòng
+              ),
+            ],
           ),
           actions: [
             TextButton(
@@ -144,13 +126,20 @@ class UploadMaterialScreen extends HookConsumerWidget {
             ),
             TextButton(
               onPressed: () {
-                final newMaterials = [...selectedMaterials.value];
-                newMaterials[index] = MaterialData(
-                  name: controller.text,
+                // Cập nhật thông tin tài liệu
+                final updatedMaterial = MaterialData(
+                  name: nameController.text,
                   size: selectedMaterials.value[index].size,
                   path: selectedMaterials.value[index].path,
+                  materialLink: selectedMaterials.value[index].materialLink,
+                  description: descriptionController.text, // Cập nhật mô tả
                 );
-                selectedMaterials.value = newMaterials;
+
+                // Cập nhật lại danh sách tài liệu
+                final updatedList = [...selectedMaterials.value];
+                updatedList[index] = updatedMaterial;
+                selectedMaterials.value = updatedList;
+
                 Navigator.of(context).pop();
               },
               child: const Text('Save'),
@@ -159,6 +148,7 @@ class UploadMaterialScreen extends HookConsumerWidget {
         ),
       );
     }
+
 
     Future<void> uploadMaterials() async {
       try {
@@ -218,30 +208,9 @@ class UploadMaterialScreen extends HookConsumerWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: selectedMaterials.value.isEmpty
-                        ? null
-                        : () async {
-                      // Mở hộp thoại nhập mô tả cho mỗi tài liệu trước khi tải lên
-                      for (int i = 0; i < selectedMaterials.value.length; i++) {
-                        await showDescriptionDialog(i);  // Chờ cho mỗi hộp thoại hoàn thành trước khi tiếp tục
-                      }
-
-                      // Kiểm tra xem tất cả các tài liệu đã có mô tả chưa
-                      bool allHaveDescription = selectedMaterials.value.every((material) =>
-                      material.description != null && material.description!.isNotEmpty);
-
-                      if (allHaveDescription) {
-                        // Nếu tất cả đều có mô tả, thực hiện tải lên tài liệu
-                        await uploadMaterials();
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Please provide a description for all materials')),
-                        );
-                      }
-                    },
+                    onPressed: selectedMaterials.value.isEmpty ? null : uploadMaterials,
                     child: const Text('Upload'),
                   ),
-
                 ),
               ],
             ),
@@ -274,7 +243,7 @@ class UploadMaterialScreen extends HookConsumerWidget {
                                     Icons.edit,
                                     color: Theme.of(context).colorScheme.primary,
                                   ),
-                                  onPressed: () => editMaterialName(index),
+                                  onPressed: () => editMaterial(index),
                                 ),
                                 IconButton(
                                   icon: Icon(
