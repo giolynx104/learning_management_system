@@ -231,30 +231,70 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
                                             onSelected: (value) =>
                                                 _handleClassAction(
                                                     value, classItem),
-                                            itemBuilder: (BuildContext context) => [
-                                              const PopupMenuItem(
-                                                value: 'edit',
-                                                child: Text('Edit Class'),
-                                              ),
-                                              const PopupMenuItem(
-                                                value: 'delete',
-                                                child: Text('Delete Class',
-                                                    style: TextStyle(
-                                                        color: Colors.red)),
-                                              ),
-                                              const PopupMenuItem(
-                                                value: 'assignment',
-                                                child: Text('Assignments'),
-                                              ),
-                                              const PopupMenuItem(
-                                                value: 'files',
-                                                child: Text('Materials'),
-                                              ),
-                                              const PopupMenuItem(
-                                                value: 'attendance',
-                                                child: Text('Attendance'),
-                                              ),
-                                            ],
+                                            itemBuilder: (BuildContext context) {
+                                              // Get user role from auth provider
+                                              final authState = ref.read(authProvider);
+                                              final isStudent = authState.value?.role.toLowerCase() == 'student';
+
+                                              return [
+                                                // Common options first (for both roles)
+                                                const PopupMenuItem(
+                                                  value: 'assignment',
+                                                  child: Row(
+                                                    children: [
+                                                      Icon(Icons.assignment),
+                                                      SizedBox(width: 12),
+                                                      Text('Assignments'),
+                                                    ],
+                                                  ),
+                                                ),
+                                                const PopupMenuItem(
+                                                  value: 'files',
+                                                  child: Row(
+                                                    children: [
+                                                      Icon(Icons.folder),
+                                                      SizedBox(width: 12),
+                                                      Text('Materials'),
+                                                    ],
+                                                  ),
+                                                ),
+                                                const PopupMenuItem(
+                                                  value: 'attendance',
+                                                  child: Row(
+                                                    children: [
+                                                      Icon(Icons.people),
+                                                      SizedBox(width: 12),
+                                                      Text('Attendance'),
+                                                    ],
+                                                  ),
+                                                ),
+                                                // Teacher-specific options at the end
+                                                if (!isStudent) ...[
+                                                  const PopupMenuDivider(),
+                                                  const PopupMenuItem(
+                                                    value: 'edit',
+                                                    child: Row(
+                                                      children: [
+                                                        Icon(Icons.edit),
+                                                        SizedBox(width: 12),
+                                                        Text('Edit Class'),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                  PopupMenuItem(
+                                                    value: 'delete',
+                                                    child: Row(
+                                                      children: [
+                                                        Icon(Icons.delete, color: Colors.red),
+                                                        const SizedBox(width: 12),
+                                                        const Text('Delete Class',
+                                                            style: TextStyle(color: Colors.red)),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ],
+                                              ];
+                                            },
                                           ),
                                         ],
                                       ),
