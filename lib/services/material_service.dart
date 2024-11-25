@@ -22,8 +22,9 @@ class MaterialService extends _$MaterialService {
     required String classId,
   }) async {
     try {
-      debugPrint('MaterialService - Fetching material list for class: $classId');
-      
+      debugPrint(
+          'MaterialService - Fetching material list for class: $classId');
+
       final response = await _apiService.dio.post(
         '/it5023e/get_material_list',
         data: {
@@ -44,7 +45,8 @@ class MaterialService extends _$MaterialService {
 
       final responseData = response.data as Map<String, dynamic>;
       debugPrint('MaterialService - Response code: ${responseData['code']}');
-      debugPrint('MaterialService - Response message: ${responseData['message']}');
+      debugPrint(
+          'MaterialService - Response message: ${responseData['message']}');
       debugPrint('MaterialService - Response data: ${responseData['data']}');
 
       if (responseData['code'] == '9998') {
@@ -53,24 +55,27 @@ class MaterialService extends _$MaterialService {
       }
 
       if (responseData['code'] != '1000') {
-        throw Exception(responseData['message'] ?? 'Failed to get material list');
+        throw Exception(
+            responseData['message'] ?? 'Failed to get material list');
       }
 
       final materialListResponse = MaterialListResponse.fromJson(responseData);
-      debugPrint('MaterialService - Parsed materials count: ${materialListResponse.data.length}');
-      
+      debugPrint(
+          'MaterialService - Parsed materials count: ${materialListResponse.data.length}');
+
       return materialListResponse;
     } on DioException catch (e) {
       debugPrint('MaterialService - DioException: ${e.message}');
       debugPrint('MaterialService - Response data: ${e.response?.data}');
-      
+
       final responseData = e.response?.data as Map<String, dynamic>?;
       if (responseData?['code'] == '9998') {
         ref.read(authProvider.notifier).signOut();
         throw UnauthorizedException('Session expired. Please sign in again.');
       }
-      
-      throw Exception(responseData?['message'] ?? 'Failed to get material list');
+
+      throw Exception(
+          responseData?['message'] ?? 'Failed to get material list');
     } catch (e, stackTrace) {
       debugPrint('MaterialService - Error getting material list: $e');
       debugPrint('MaterialService - Stack trace: $stackTrace');
@@ -137,7 +142,7 @@ class MaterialService extends _$MaterialService {
       );
 
       debugPrint('MaterialService - Upload response: ${response.data}');
-      
+
       final responseData = response.data as Map<String, dynamic>;
       if (responseData['code'] != '1000') {
         throw Exception(responseData['message'] ?? 'Failed to upload material');
@@ -154,7 +159,7 @@ class MaterialService extends _$MaterialService {
   }) async {
     try {
       debugPrint('MaterialService - Deleting material: $materialId');
-      
+
       final response = await _apiService.dio.post(
         '/it5023e/delete_material',
         data: {
@@ -181,7 +186,7 @@ class MaterialService extends _$MaterialService {
     } on DioException catch (e) {
       debugPrint('MaterialService - DioException: ${e.message}');
       final responseData = e.response?.data as Map<String, dynamic>?;
-      
+
       if (responseData?['code'] == '9998') {
         ref.read(authProvider.notifier).signOut();
         throw UnauthorizedException('Session expired. Please sign in again.');
@@ -254,7 +259,7 @@ class MaterialService extends _$MaterialService {
     } on DioException catch (e) {
       debugPrint('MaterialService - DioException: ${e.message}');
       final responseData = e.response?.data as Map<String, dynamic>?;
-      
+
       if (responseData?['code'] == '9998') {
         ref.read(authProvider.notifier).signOut();
         throw UnauthorizedException('Session expired. Please sign in again.');

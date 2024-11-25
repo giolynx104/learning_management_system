@@ -34,43 +34,38 @@ import 'package:learning_management_system/screens/edit_survey_screen.dart';
 import '../screens/create_survey_screen.dart';
 import '../screens/response_survey_screen.dart';
 import '../screens/submit_survey_screen.dart';
+import 'package:learning_management_system/routes/router_notifier.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
 final _shellNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'shell');
 
 final routerProvider = Provider<GoRouter>((ref) {
-  final router = RouterNotifier(ref);
-
-  return GoRouter(
+  final notifier = RouterNotifier(ref);
+  
+  final router = GoRouter(
     navigatorKey: _rootNavigatorKey,
     initialLocation: Routes.signin,
-    refreshListenable: router,
-    redirect: (BuildContext context, GoRouterState state) {
+    refreshListenable: notifier,
+    redirect: (context, state) {
       final authState = ref.read(authProvider);
-      debugPrint('🚦 Router redirect - Current path: ${state.uri.path}');
+      
+      // Handle loading state
+      if (authState is AsyncLoading) {
+        return null; // Don't redirect while loading
+      }
+      
+      final isAuth = authState.value != null;
+      final isSignInPage = state.matchedLocation == '/signin';
 
-      return authState.when(
-        data: (user) {
-          debugPrint('👤 User in redirect: ${user?.toJson()}');
+      if (!isAuth && !isSignInPage) {
+        return '/signin';
+      }
 
-          if (user == null) {
-            if (state.uri.path == Routes.signin ||
-                state.uri.path == Routes.signup) {
-              return null;
-            }
-            return Routes.signin;
-          }
+      if (isAuth && isSignInPage) {
+        return '/';
+      }
 
-          if (state.uri.path == Routes.signin ||
-              state.uri.path == Routes.signup) {
-            return Routes.home;
-          }
-
-          return null;
-        },
-        loading: () => null,
-        error: (_, __) => Routes.signin,
-      );
+      return null;
     },
     routes: [
       // Auth routes (outside shell)
@@ -290,17 +285,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
     ],
   );
+
+  return router;
 });
-
-class RouterNotifier extends ChangeNotifier {
-  final Ref _ref;
-
-  RouterNotifier(this._ref) {
-    _ref.listen(authProvider, (previous, next) {
-      debugPrint('🔄 Auth state changed: $next');
-      notifyListeners();
-    });
-  }
-}
 
 final appRouter = routerProvider;

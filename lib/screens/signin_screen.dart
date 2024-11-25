@@ -2,13 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:learning_management_system/providers/auth_provider.dart';
+import 'package:learning_management_system/providers/auth_service_provider.dart';
 import 'package:learning_management_system/components/auth_header.dart';
 import 'package:learning_management_system/components/auth_text_field.dart';
 import 'package:learning_management_system/widgets/custom_button.dart';
-import 'package:learning_management_system/services/auth_service.dart';
 import 'package:learning_management_system/routes/routes.dart';
 import 'package:learning_management_system/utils/verification_helper.dart';
-import 'package:learning_management_system/models/user.dart';
 
 /// Screen for handling user sign-in functionality.
 /// 
@@ -40,42 +39,42 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final authService = ref.read(authServiceProvider);
-      final result = await authService.signIn(
+      final response = await ref.read(authProvider.notifier).handleSignIn(
         email: _emailController.text,
         password: _passwordController.text,
       );
 
       if (!mounted) return;
 
-      if (result['needs_verification'] == true) {
+      if (response['success']) {
+        final authState = ref.read(authProvider);
+        if (authState.hasError) {
+          throw authState.error!;
+        }
+        
+        if (authState.hasValue && authState.value != null) {
+          context.goNamed(Routes.homeName);
+        } else {
+          throw Exception('Failed to authenticate user');
+        }
+      } else if (response['needs_verification']) {
         final verificationSuccess = await VerificationHelper.handleVerification(
           context: context,
           email: _emailController.text,
-          verificationCode: result['verify_code'],
+          verificationCode: response['verify_code'] as String,
         );
-
-        if (!mounted) return;
 
         if (verificationSuccess) {
           await _handleSignInAfterVerification();
-          return;
         }
-      }
-
-      if (result['token'] != null) {
-        final user = User.fromJson(result['user'] as Map<String, dynamic>);
-        await ref.read(authProvider.notifier).signIn(
-          user,
-          result['token'] as String,
-        );
-        debugPrint('SignInScreen - Successfully signed in with token: ${result['token']}');
-        context.goNamed(Routes.homeName);
       }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
+        SnackBar(
+          content: Text('Sign in failed: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
       );
     } finally {
       if (mounted) {
@@ -86,20 +85,16 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
 
   Future<void> _handleSignInAfterVerification() async {
     try {
-      final authService = ref.read(authServiceProvider);
-      final result = await authService.signIn(
+      final success = await ref.read(authProvider.notifier)
+          .handleSignInAfterVerification(
         email: _emailController.text,
         password: _passwordController.text,
       );
 
       if (!mounted) return;
-
-      if (result['token'] != null) {
-        final user = User.fromJson(result['user'] as Map<String, dynamic>);
-        await ref.read(authProvider.notifier).signIn(
-          user,
-          result['token'] as String,
-        );
+      
+      if (success) {
+        context.goNamed(Routes.homeName);
       }
     } catch (e) {
       if (!mounted) return;

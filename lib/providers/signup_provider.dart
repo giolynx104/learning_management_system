@@ -1,6 +1,7 @@
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:learning_management_system/services/auth_service.dart';
+import 'package:learning_management_system/providers/auth_service_provider.dart';
 
 part 'signup_provider.g.dart';
 
@@ -10,15 +11,15 @@ part 'signup_provider.g.dart';
 /// which includes verification details.
 @riverpod
 Future<Map<String, dynamic>> signUp(
-  Ref ref, {
+  SignUpRef ref, {
   required String firstName,
   required String lastName,
   required String email,
   required String password,
   required String role,
 }) async {
-  // Get the auth service instance
-  final authService = ref.watch(authServiceProvider);
+  // Use read instead of watch since we don't need to watch for changes
+  final authService = ref.read(authServiceProvider);
 
   try {
     // Attempt to sign up the user
