@@ -94,10 +94,10 @@ class MaterialService extends _$MaterialService {
 
       final formData = FormData.fromMap({
         'token': token,
-        'class_id': classId,
-        'material_name': title,
+        'classId': classId,
+        'title': title,
         'description': description,
-        'material_type': materialType,
+        'materialType': materialType,
         'file': file,
       });
 
@@ -115,13 +115,16 @@ class MaterialService extends _$MaterialService {
       debugPrint('MaterialService - Upload response: ${response.data}');
 
       final responseData = response.data as Map<String, dynamic>;
-      if (responseData['code'] == '9998') {
+      if (responseData['code'] == "1000"  ) {
+        debugPrint('MaterialService - Material uploaded successfully');
+        return MaterialResponse.fromJson(responseData);
+      } else if (responseData['code'] == '9998') {
         ref.read(authProvider.notifier).signOut();
         throw UnauthorizedException('Session expired. Please sign in again.');
-      }
-
-      if (responseData['code'] != '1000') {
-        throw Exception(responseData['message'] ?? 'Failed to upload material');
+      } else {
+        final errorMessage = responseData['message'] ?? 'Failed to upload material';
+        debugPrint('MaterialService - Error: $errorMessage');
+        throw Exception(errorMessage);
       }
 
       debugPrint('MaterialService - Material uploaded successfully');
@@ -202,11 +205,11 @@ class MaterialService extends _$MaterialService {
 
       final Map<String, dynamic> formMap = {
         'token': token,
-        'material_id': materialId,
-        'class_id': classId,
-        'material_name': title,
+        'materialId': materialId,
+        'classId': classId,
+        'title': title,
         'description': description,
-        'material_type': materialType,
+        'materialType': materialType,
       };
 
       // Only add file if a new one is provided

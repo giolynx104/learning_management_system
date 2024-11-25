@@ -11,9 +11,10 @@ class MaterialModel with _$MaterialModel {
     @JsonKey(name: 'material_name') required String materialName,
     String? description,
     @JsonKey(name: 'material_type') required String materialType,
-    @JsonKey(ignore: true) String? materialLink,
-  }) = _MaterialModel;
+    @JsonKey(name: 'material_link') String? materialLink,
 
+    // @JsonKey(ignore: true) String? materialLink,
+  }) = _MaterialModel;
   factory MaterialModel.fromJson(Map<String, dynamic> json) =>
       _$MaterialModelFromJson(json);
 }
@@ -25,7 +26,6 @@ class MaterialListResponse with _$MaterialListResponse {
     @JsonKey(name: 'message') required String message,
     @JsonKey(name: 'data') required List<MaterialModel> data,
   }) = _MaterialListResponse;
-
   factory MaterialListResponse.fromJson(Map<String, dynamic> json) =>
       _$MaterialListResponseFromJson(json);
 }

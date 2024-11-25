@@ -4,13 +4,32 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:learning_management_system/providers/material_provider.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+Future<void> launchURL(String url) async {
+  final Uri uri = Uri.parse(url);
+
+  if (await canLaunchUrl(uri)) {
+    await launchUrl(uri);
+  } else {
+    throw 'Could not launch $url';
+  }
+}
 
 class MaterialData {
   final String name;
   final int size;
   final String? path;
+  final String? materialLink; // Thêm materialLink
+  String description; // Thêm trường mô tả
 
-  MaterialData({required this.name, required this.size, this.path});
+  MaterialData({
+    required this.name,
+    required this.size,
+    this.path,
+    this.materialLink,
+    this.description = '', // Mặc định mô tả là rỗng
+  });
 }
 
 class UploadMaterialScreen extends HookConsumerWidget {
@@ -21,12 +40,14 @@ class UploadMaterialScreen extends HookConsumerWidget {
     super.key,
   });
 
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedMaterials = useState<List<MaterialData>>([]);
 
     useEffect(() {
       debugPrint('UploadMaterialScreen - ClassId: $classId');
+
       return null;
     }, []);
 
@@ -35,10 +56,49 @@ class UploadMaterialScreen extends HookConsumerWidget {
     useEffect(() {
       materialListState.whenData((response) {
         debugPrint('Material List Response: $response');
+
       });
       return null;
     }, [materialListState]);
 
+    Future<void> showDescriptionDialog(int index) async {
+      TextEditingController descriptionController = TextEditingController();
+
+      await showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Enter Description'),
+          content: TextField(
+            controller: descriptionController,
+            decoration: const InputDecoration(hintText: "Enter description for the material"),
+            maxLines: 3,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                final updatedMaterial = MaterialData(
+                  name: selectedMaterials.value[index].name,
+                  size: selectedMaterials.value[index].size,
+                  path: selectedMaterials.value[index].path,
+                  materialLink: selectedMaterials.value[index].materialLink,
+                );
+                updatedMaterial.description = descriptionController.text; // Lưu mô tả
+                final updatedList = [...selectedMaterials.value];
+                updatedList[index] = updatedMaterial;
+                selectedMaterials.value = updatedList;
+
+                Navigator.of(context).pop();
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        ),
+      );
+    }
     Future<void> selectMaterials() async {
       FilePickerResult? result = await FilePicker.platform.pickFiles(
         allowMultiple: true,
@@ -51,6 +111,8 @@ class UploadMaterialScreen extends HookConsumerWidget {
               name: file.name,
               size: file.size,
               path: file.path,
+              description: '', // Mặc định mô tả rỗng
+
             ),
           ),
         ];
@@ -106,7 +168,7 @@ class UploadMaterialScreen extends HookConsumerWidget {
           final params = UploadMaterialParams(
             classId: classId,
             title: material.name,
-            description: 'Uploaded from mobile app',
+            description: material.description ?? 'No description', // Dùng mô tả nếu có
             materialType: 'document',
             filePath: material.path!,
           );
@@ -156,9 +218,30 @@ class UploadMaterialScreen extends HookConsumerWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: selectedMaterials.value.isEmpty ? null : uploadMaterials,
+                    onPressed: selectedMaterials.value.isEmpty
+                        ? null
+                        : () async {
+                      // Mở hộp thoại nhập mô tả cho mỗi tài liệu trước khi tải lên
+                      for (int i = 0; i < selectedMaterials.value.length; i++) {
+                        await showDescriptionDialog(i);  // Chờ cho mỗi hộp thoại hoàn thành trước khi tiếp tục
+                      }
+
+                      // Kiểm tra xem tất cả các tài liệu đã có mô tả chưa
+                      bool allHaveDescription = selectedMaterials.value.every((material) =>
+                      material.description != null && material.description!.isNotEmpty);
+
+                      if (allHaveDescription) {
+                        // Nếu tất cả đều có mô tả, thực hiện tải lên tài liệu
+                        await uploadMaterials();
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Please provide a description for all materials')),
+                        );
+                      }
+                    },
                     child: const Text('Upload'),
                   ),
+
                 ),
               ],
             ),
@@ -202,6 +285,17 @@ class UploadMaterialScreen extends HookConsumerWidget {
                                 ),
                               ],
                             ),
+                            onTap: () {
+                              // Mở link Google Drive chỉ khi materialLink không phải null và không rỗng
+                              if (material.materialLink?.isNotEmpty ?? false) {
+                                debugPrint('Opening URL: ${material.materialLink}');
+                                launchURL(material.materialLink!); // Hàm mở link
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('No link available for this material.')),
+                                );
+                              }
+                            },
                           ),
                         );
                       },

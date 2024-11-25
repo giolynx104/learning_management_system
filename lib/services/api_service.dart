@@ -10,8 +10,8 @@ class ApiService {
 
   ApiService() : _dio = Dio() {
     _dio.options.baseUrl = 'http://157.66.24.126:8080';
-    _dio.options.connectTimeout = const Duration(seconds: 5);
-    _dio.options.receiveTimeout = const Duration(seconds: 3);
+    _dio.options.connectTimeout = const Duration(seconds: 10);
+    _dio.options.receiveTimeout = const Duration(seconds: 10);
     _dio.options.headers = {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
