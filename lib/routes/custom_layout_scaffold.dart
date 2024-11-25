@@ -26,13 +26,9 @@ class CustomLayoutScaffold extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final appBarState = ref.watch(appBarNotifierProvider);
-    final unreadCountAsyncValue = ref.watch(unreadNotificationCountProvider);
+    
     int unreadCount = 0;
-    unreadCountAsyncValue.when(
-      data: (count) => unreadCount = count,
-      loading: () => unreadCount = 0,
-      error: (e, _) => unreadCount = 0,
-    );
+    unreadCount = _getUnreadMessageCount(ref, unreadCount);
 
     String badgeText = '';
     double badgeSize = 20;
@@ -115,5 +111,15 @@ class CustomLayoutScaffold extends ConsumerWidget {
             ),
       body: child,
     );
+  }
+
+  int _getUnreadMessageCount(WidgetRef ref, int unreadCount) {
+    final unreadCountAsyncValue = ref.watch(unreadNotificationCountProvider);
+    unreadCountAsyncValue.when(
+      data: (count) => unreadCount = count,
+      loading: () => unreadCount = 0,
+      error: (e, _) => unreadCount = 0,
+    );
+    return unreadCount;
   }
 }

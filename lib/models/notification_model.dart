@@ -1,8 +1,22 @@
+// lib/models/notification_model.dart
+
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'notification_model.freezed.dart';
 part 'notification_model.g.dart';
 
+@freezed
+class SendNotificationModel with _$SendNotificationModel {
+  const factory SendNotificationModel({
+    @JsonKey(name: 'message') required String message,
+    @JsonKey(name: 'to_user') required int toUser,
+    @JsonKey(name: 'type') required String type,
+    @JsonKey(name: 'title_push_notification') required String titlePushNotification,
+  }) = _SendNotificationModel;
+
+  factory SendNotificationModel.fromJson(Map<String, dynamic> json) =>
+      _$SendNotificationModelFromJson(json);
+}
 @freezed
 class NotificationModel with _$NotificationModel {
   const factory NotificationModel({
@@ -12,7 +26,7 @@ class NotificationModel with _$NotificationModel {
     @JsonKey(name: 'from_user') required int fromUser,
     @JsonKey(name: 'to_user') required int toUser,
     @JsonKey(name: 'type') required String type,
-    @JsonKey(name: 'image_url') String? imageUrl ,
+    @JsonKey(name: 'image_url') String? imageUrl,
     @JsonKey(name: 'sent_time') required String sentTime,
     @JsonKey(name: 'data') required NotificationData data,
     @JsonKey(name: 'title_push_notification') required String titlePushNotification,
@@ -32,3 +46,5 @@ class NotificationData with _$NotificationData {
   factory NotificationData.fromJson(Map<String, dynamic> json) =>
       _$NotificationDataFromJson(json);
 }
+
+

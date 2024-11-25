@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:learning_management_system/models/notification_model.dart';
+import 'package:learning_management_system/providers/notification_provider.dart';
 import 'package:learning_management_system/routes/routes.dart';
 import 'package:learning_management_system/models/notifications.dart';
 import 'package:learning_management_system/providers/auth_provider.dart';
@@ -27,12 +28,7 @@ class NotificationScreenState extends ConsumerState<NotificationScreen> {
   bool connections =true;
   bool _isLoading = true;
   List<NotificationModels> notifications =[];
-  void _getNotifications(){
-    setState(() {
-    notifications = NotificationModels.getNotifications();
-    connections= true;
-    });
-  }
+   
 Future<void> _initializeNotificationData() async {
   debugPrint('NotificationManagementScreen - _initializeNotificationData started');
   if (!mounted) return;
@@ -97,6 +93,7 @@ Future<void> _initializeNotificationData() async {
     super.dispose();
   }
  Future<void> _loadNotificationList() async {
+
   try {
     final authState = ref.read(authProvider);
     final token = authState.token;
@@ -110,7 +107,8 @@ Future<void> _initializeNotificationData() async {
      setState(() {
         _isLoading = true; 
       });
-    final notifications = await ref.read(notificationServiceProvider.notifier).getNotifications(token);
+    final notificationProvider = ref.read(notificationServiceProvider.notifier);
+    final notifications = await notificationProvider.getNotifications(token);
 
     if (mounted) {
         setState(() {
@@ -233,63 +231,43 @@ Future<void> _initializeNotificationData() async {
 
 
 
-class NotifyItem extends StatelessWidget {
+class NotifyItem extends ConsumerWidget {
   const NotifyItem({
     Key? key,
     required this.notification,
   }) : super(key: key);
 
   final NotificationModel notification;
-
-  String formatFriendlyTime(String sentTime) {
-    try {
-      final sentDateTime =
-          DateFormat('yyyy-MM-ddTHH:mm:ss').parse(sentTime, true).toLocal();
-      final now = DateTime.now();
-      final difference = now.difference(sentDateTime);
-
-      if (difference.inSeconds < 60) {
-        return 'just now';
-      } else if (difference.inMinutes < 60) {
-        return '${difference.inMinutes} minutes ago';
-      } else if (difference.inHours < 24) {
-        return '${difference.inHours} hours ago';
-      } else if (difference.inDays < 7) {
-        return '${difference.inDays} days ago';
-      } else {
-        return DateFormat('dd/MM/yyyy').format(sentDateTime);
-      }
-    } catch (e) {
-      return sentTime;
-    }
-  }
-
-  String formatDetailedTime(String sentTime) {
-    try {
-      final sentDateTime =
-          DateFormat('yyyy-MM-ddTHH:mm:ss').parse(sentTime, true).toLocal();
-      return 'at ${DateFormat('HH:mm:ss').format(sentDateTime)} on ${DateFormat('dd/MM/yyyy').format(sentDateTime)}';
-    } catch (e) {
-      return sentTime;
-    }
-  }
-  // Helper function to convert Google Drive URL to direct link
-String getDirectImageUrl(String url) {
-  final uri = Uri.parse(url);
-  if (uri.host == 'drive.google.com') {
-    final segments = uri.pathSegments;
-    if (segments.length >= 3 && segments[0] == 'file' && segments[1] == 'd') {
-      final fileId = segments[2];
-      return 'https://drive.google.com/uc?export=view&id=$fileId';
-    }
-  }
-  return url;
-}
-
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return GestureDetector(
-      onTap: () {
+      onTap: () async {
+        final authState = ref.read(authProvider);
+        final token = authState.token;
+
+        if (token != null) {
+          try {
+            await ref
+                .read(notificationServiceProvider.notifier)
+                .markNotificationAsRead(token, notification.id.toString());
+            await ref.read(unreadNotificationCountProvider);
+            // Optionally, update the local state or refetch notifications
+            // For example, you might invalidate a provider to refetch data
+            // ref.invalidate(notificationsListProvider);
+          } catch (e) {
+
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Error: ${e.toString()}')),
+            );
+          }
+        } else {
+      
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('User not authenticated.')),
+          );
+          return; 
+        }
+        await NotificationScreenState()._loadNotificationList();
         _showNotificationDetailed(context);
       },
       child: Stack(
@@ -391,6 +369,50 @@ String getDirectImageUrl(String url) {
         ],
       ),
     );
+  }
+  String formatFriendlyTime(String sentTime) {
+    try {
+      final sentDateTime =
+          DateFormat('yyyy-MM-ddTHH:mm:ss').parse(sentTime, true).toLocal();
+      final now = DateTime.now();
+      final difference = now.difference(sentDateTime);
+
+      if (difference.inSeconds < 60) {
+        return 'just now';
+      } else if (difference.inMinutes < 60) {
+        return '${difference.inMinutes} minutes ago';
+      } else if (difference.inHours < 24) {
+        return '${difference.inHours} hours ago';
+      } else if (difference.inDays < 7) {
+        return '${difference.inDays} days ago';
+      } else {
+        return DateFormat('dd/MM/yyyy').format(sentDateTime);
+      }
+    } catch (e) {
+      return sentTime;
+    }
+  }
+
+  String formatDetailedTime(String sentTime) {
+    try {
+      final sentDateTime =
+          DateFormat('yyyy-MM-ddTHH:mm:ss').parse(sentTime, true).toLocal();
+      return 'at ${DateFormat('HH:mm:ss').format(sentDateTime)} on ${DateFormat('dd/MM/yyyy').format(sentDateTime)}';
+    } catch (e) {
+      return sentTime;
+    }
+  }
+  // Helper function to convert Google Drive URL to direct link
+  String getDirectImageUrl(String url) {
+    final uri = Uri.parse(url);
+    if (uri.host == 'drive.google.com') {
+      final segments = uri.pathSegments;
+      if (segments.length >= 3 && segments[0] == 'file' && segments[1] == 'd') {
+        final fileId = segments[2];
+        return 'https://drive.google.com/uc?export=view&id=$fileId';
+      }
+    }
+    return url;
   }
 
   Future<dynamic> _showNotificationDetailed(BuildContext context) {

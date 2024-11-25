@@ -7,6 +7,7 @@ import 'package:learning_management_system/providers/auth_provider.dart';
 import 'package:learning_management_system/services/class_service.dart';
 import 'package:learning_management_system/models/student_info.dart';
 import 'package:go_router/go_router.dart';
+import 'package:learning_management_system/services/notification_service.dart';
 
 class RollCallActionScreen extends HookConsumerWidget {
   final String classId;
@@ -25,7 +26,6 @@ class RollCallActionScreen extends HookConsumerWidget {
     final error = useState<String?>(null);
 
     final attendanceState = ref.watch(takeAttendanceProvider);
-
     useEffect(() {
       Future<void> loadStudents() async {
         try {
