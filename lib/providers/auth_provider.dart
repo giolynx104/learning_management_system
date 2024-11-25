@@ -157,6 +157,37 @@ class Auth extends _$Auth {
       rethrow;
     }
   }
+
+  Future<void> updateAvatar(String filePath) async {
+    try {
+      final currentUser = state.value;
+      if (currentUser == null || currentUser.token == null) {
+        throw Exception('Not authenticated');
+      }
+
+      final authService = ref.read(authServiceProvider);
+      final userData = await authService.changeInfoAfterSignup(
+        token: currentUser.token!,
+        filePath: filePath,
+      );
+
+      // Update the user state with new data
+      final updatedUser = User(
+        id: int.parse(userData['id']),
+        firstName: userData['ho'] ?? '',
+        lastName: userData['ten'] ?? '',
+        email: userData['email'] ?? '',
+        role: userData['role'] ?? '',
+        avatar: userData['avatar'],
+        token: currentUser.token,
+      );
+
+      state = AsyncData(updatedUser);
+    } catch (e) {
+      debugPrint('Error updating avatar: $e');
+      rethrow;
+    }
+  }
 }
 
 /// Extension methods for easier state checking

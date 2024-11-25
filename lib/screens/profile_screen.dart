@@ -3,6 +3,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:learning_management_system/providers/auth_provider.dart';
 import 'package:learning_management_system/routes/routes.dart';
+import 'package:file_picker/file_picker.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -24,12 +25,27 @@ class ProfileScreen extends ConsumerWidget {
                     padding: const EdgeInsets.all(16),
                     child: Column(
                       children: [
-                        CircleAvatar(
-                          radius: 40,
-                          child: Text(
-                            '${user.firstName[0]}${user.lastName[0]}'.toUpperCase(),
-                            style: theme.textTheme.headlineMedium,
-                          ),
+                        Stack(
+                          children: [
+                            CircleAvatar(
+                              radius: 40,
+                              backgroundImage: user.avatar != null 
+                                ? NetworkImage(user.avatar!) 
+                                : null,
+                              child: user.avatar == null ? Text(
+                                '${user.firstName[0]}${user.lastName[0]}'.toUpperCase(),
+                                style: theme.textTheme.headlineMedium,
+                              ) : null,
+                            ),
+                            Positioned(
+                              right: -10,
+                              bottom: -10,
+                              child: IconButton(
+                                icon: const Icon(Icons.camera_alt),
+                                onPressed: () => _updateAvatar(context, ref),
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 16),
                         Text(
@@ -112,5 +128,80 @@ class ProfileScreen extends ConsumerWidget {
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (error, stack) => Center(child: Text('Error: $error')),
     );
+  }
+
+  Future<void> _updateAvatar(BuildContext context, WidgetRef ref) async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+        allowMultiple: false,
+      );
+
+      if (result != null && result.files.single.path != null) {
+        final filePath = result.files.single.path!;
+        
+        // Show loading overlay using GoRouter's overlay
+        if (context.mounted) {
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (BuildContext context) => WillPopScope(
+              onWillPop: () async => false,
+              child: const Center(
+                child: CircularProgressIndicator(),
+              ),
+            ),
+          );
+        }
+
+        try {
+          // Update avatar
+          await ref.read(authProvider.notifier).updateAvatar(filePath);
+
+          if (context.mounted) {
+            // First pop the loading dialog
+            context.pop();
+            
+            // Show success message
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Profile updated successfully'),
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+        } catch (e) {
+          if (context.mounted) {
+            // First pop the loading dialog
+            context.pop();
+            
+            // Show error dialog using GoRouter
+            showDialog(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: const Text('Update Failed'),
+                content: Text(e.toString()),
+                actions: [
+                  TextButton(
+                    onPressed: () => context.pop(),
+                    child: const Text('OK'),
+                  ),
+                ],
+              ),
+            );
+          }
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to pick image: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
   }
 } 

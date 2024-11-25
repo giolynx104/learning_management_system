@@ -226,4 +226,46 @@ class AuthService {
       return false;
     }
   }
+
+  /// Updates user information after signup including avatar
+  Future<Map<String, dynamic>> changeInfoAfterSignup({
+    required String token,
+    required String filePath,
+  }) async {
+    try {
+      final formData = FormData.fromMap({
+        'token': token,
+        'file': await MultipartFile.fromFile(
+          filePath,
+          filename: filePath.split('/').last,
+        ),
+      });
+
+      final response = await _apiService.dio.post(
+        '/it4788/change_info_after_signup',
+        data: formData,
+        options: Options(
+          contentType: 'multipart/form-data',
+        ),
+      );
+
+      if (response.statusCode == 200 && 
+          response.data['code'].toString() == '1000') {
+        return response.data['data'];
+      }
+
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: response.data['message'] ?? 'Failed to update profile',
+      );
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 401) {
+        throw UnauthorizedException('Invalid token or session expired');
+      }
+      throw ApiException(
+        statusCode: e.response?.statusCode,
+        message: 'Error updating profile: ${e.message}',
+      );
+    }
+  }
 }
