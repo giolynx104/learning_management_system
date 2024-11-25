@@ -73,9 +73,34 @@ class ProfileScreen extends ConsumerWidget {
                           style: TextStyle(color: Colors.red),
                         ),
                         onTap: () async {
-                          await ref.read(authProvider.notifier).signOut();
-                          if (context.mounted) {
-                            context.go(Routes.signin);
+                          try {
+                            // Reset app bar through router navigation
+                            context.go(Routes.signin); // This will trigger router's redirect
+                            
+                            // Perform sign out
+                            await ref.read(authProvider.notifier).signOut();
+                          } catch (e) {
+                            if (context.mounted) {
+                              // Show error using SelectableText.rich for better error visibility
+                              showDialog(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  title: const Text('Sign Out Error'),
+                                  content: SelectableText.rich(
+                                    TextSpan(
+                                      text: e.toString(),
+                                      style: const TextStyle(color: Colors.red),
+                                    ),
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => context.pop(),
+                                      child: const Text('OK'),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }
                           }
                         },
                       ),
