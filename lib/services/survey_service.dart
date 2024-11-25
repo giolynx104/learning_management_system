@@ -85,36 +85,48 @@ class SurveyService extends _$SurveyService {
         'token': token,
         'assignment_id': assignmentId,
       };
+      
       developer.log(
         'Sending to /it5023e/get_submission: $data',
         name: 'SurveyService.checkSubmissionStatus',
       );
+      
       final response = await _apiService.dio.post(
         '/it5023e/get_submission',
         data: data,
+        options: Options(
+          validateStatus: (status) => 
+            status != null && (status < 500 || status == 400),
+        ),
       );
+      
       developer.log(
-        'Response from /it5023e/get_submission: $response',
+        'Response from /it5023e/get_submission: ${response.data}',
         name: 'SurveyService.checkSubmissionStatus',
       );
 
-      // Check if the response code is 9994 (no submission), and return false in that case
-      if (response.data['code'] == 9994) {
+      // Check if response contains meta information
+      final meta = response.data['meta'] as Map<String, dynamic>;
+      
+      // If code is 9994, it means no submission found
+      if (meta['code'] == '9994') {
         return false;
       }
+      
+      // If code is 1000 and we have data, submission exists
+      if (meta['code'] == '1000' && response.data['data'] != null) {
+        return true;
+      }
 
-      // If code is 1000, return true, otherwise handle the response as valid or not
-      return _handleResponse<bool>(
-        response,
-            (data) => data != null && response.data['code'] == 1000,
-      );
-    } on DioException catch (e) {
-      // Handle any DioExceptions
+      return false;
+    } catch (e, stack) {
       developer.log(
-        'DioException occurred: $e',
+        'Error checking submission status: $e',
         name: 'SurveyService.checkSubmissionStatus',
+        error: e,
+        stackTrace: stack,
       );
-      throw ApiException.fromDioError(e);
+      return false;
     }
   }
 
