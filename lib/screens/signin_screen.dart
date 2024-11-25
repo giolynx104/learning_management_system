@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:learning_management_system/providers/auth_provider.dart';
-import 'package:learning_management_system/providers/auth_service_provider.dart';
 import 'package:learning_management_system/components/auth_header.dart';
 import 'package:learning_management_system/components/auth_text_field.dart';
 import 'package:learning_management_system/widgets/custom_button.dart';
@@ -115,8 +114,10 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               IconButton(
-                icon:
-                    Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onPrimary),
+                icon: Icon(
+                  Icons.arrow_back, 
+                  color: Theme.of(context).colorScheme.onPrimary,
+                ),
                 onPressed: () => context.pop(),
               ),
               const SizedBox(height: 16.0),
@@ -132,7 +133,34 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                 textColor: Theme.of(context).colorScheme.primary,
               ),
               const SizedBox(height: 16.0),
-              _buildSignUpLink(),
+              Center(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      "Don't have an account? ",
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onPrimary,
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        debugPrint('Navigating to signup screen');
+                        context.goNamed(Routes.signupName);
+                      },
+                      child: Text(
+                        'Sign up',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onPrimary,
+                          fontWeight: FontWeight.bold,
+                          decoration: TextDecoration.underline,
+                          decorationColor: Theme.of(context).colorScheme.onPrimary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
@@ -186,17 +214,6 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildSignUpLink() {
-    return Center(
-      child: TextButton(
-        onPressed: () {
-          context.goNamed(Routes.signupName);
-        },
-        child: const Text('Sign Up'),
       ),
     );
   }
