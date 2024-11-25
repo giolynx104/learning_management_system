@@ -505,22 +505,34 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
 
     return showDialog(
       context: context,
-      barrierDismissible: false, // Prevent dismissing by tapping outside
+      barrierDismissible: false,
       builder: (BuildContext dialogContext) {
         return StatefulBuilder(
-          // Use StatefulBuilder to update dialog state
           builder: (context, setState) {
             return Stack(
               children: [
                 AlertDialog(
                   title: const Text('Delete Class'),
-                  content: Text(
-                      'Are you sure you want to delete ${classItem.className}?'),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Are you sure you want to delete ${classItem.className}?'),
+                      if (classItem.studentCount > 0) ...[
+                        const SizedBox(height: 16),
+                        Text(
+                          'Warning: This class has ${classItem.studentCount} enrolled student${classItem.studentCount > 1 ? 's' : ''}.',
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.error,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
                   actions: [
                     TextButton(
-                      onPressed: isDeleting
-                          ? null
-                          : () => Navigator.of(dialogContext).pop(),
+                      onPressed: isDeleting ? null : () => Navigator.of(dialogContext).pop(),
                       child: const Text('Cancel'),
                     ),
                     TextButton(
@@ -542,30 +554,43 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
                                       classId: classItem.classId,
                                     );
 
-                          if (!mounted) return;
-                          Navigator.of(dialogContext)
-                              .pop(); // Close the dialog
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Class deleted successfully'),
-                              backgroundColor: Colors.green,
-                            ),
-                          );
-                          _refreshClassList();
-                        } catch (e) {
-                          setState(() => isDeleting =
-                          false); // Reset loading state on error
-                          if (!mounted) return;
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Error deleting class: $e'),
-                              backgroundColor: Colors.red,
-                            ),
-                          );
-                        }
-                      },
-                      child: const Text('Delete',
-                          style: TextStyle(color: Colors.red)),
+                              if (!mounted) return;
+                              Navigator.of(dialogContext).pop();
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Class deleted successfully'),
+                                  backgroundColor: Colors.green,
+                                ),
+                              );
+                              _refreshClassList();
+                            } catch (e) {
+                              setState(() => isDeleting = false);
+                              if (!mounted) return;
+                              
+                              // Close the delete confirmation dialog
+                              Navigator.of(dialogContext).pop();
+                              
+                              // Show error dialog
+                              showDialog(
+                                context: context,
+                                builder: (BuildContext context) => AlertDialog(
+                                  title: const Text('Unable to Delete Class'),
+                                  content: Text(
+                                    e.toString().contains('Cannot delete class with existing content')
+                                        ? 'This class cannot be deleted because it has existing content (assignments, materials, or enrolled students). Please remove all content and unenroll all students before deleting the class.'
+                                        : 'Error deleting class: ${e.toString()}',
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.of(context).pop(),
+                                      child: const Text('OK'),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }
+                          },
+                      child: const Text('Delete', style: TextStyle(color: Colors.red)),
                     ),
                   ],
                 ),
