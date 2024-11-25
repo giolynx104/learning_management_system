@@ -410,11 +410,14 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
             child: authState.whenOrNull(
                   data: (user) => user != null
                       ? FloatingActionButton.extended(
-                          onPressed: () {
+                          onPressed: () async {
                             if (user.role == 'STUDENT') {
                               context.pushNamed(Routes.classRegistrationName);
                             } else {
-                              context.pushNamed(Routes.createClassName);
+                              final result = await context.pushNamed<bool>(Routes.createClassName);
+                              if (result == true) {
+                                _refreshClassList();
+                              }
                             }
                           },
                           icon: Icon(
