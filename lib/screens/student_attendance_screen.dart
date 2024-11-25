@@ -141,7 +141,7 @@ class StudentAttendanceScreen extends HookConsumerWidget {
                   FilledButton.icon(
                     onPressed: () {
                       context.pushNamed(
-                        Routes.absenceRequest,
+                        Routes.absenceRequestName,
                         pathParameters: {'classId': classId},
                       );
                     },
@@ -155,7 +155,7 @@ class StudentAttendanceScreen extends HookConsumerWidget {
                   FilledButton.icon(
                     onPressed: () {
                       context.pushNamed(
-                        Routes.absenceRequestList,
+                        Routes.absenceRequestListName,
                         pathParameters: {'classId': classId},
                       );
                     },
