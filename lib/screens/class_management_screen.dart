@@ -207,6 +207,7 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
                             itemBuilder: (context, index) {
                               final classItem = filteredClasses[index];
                               return Card(
+                                elevation: 2,
                                 margin: const EdgeInsets.only(bottom: 12),
                                 child: Padding(
                                   padding: const EdgeInsets.all(16.0),
@@ -214,15 +215,48 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
+                                      // Class Name Header with Status Badge
                                       Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                         children: [
                                           Expanded(
+                                            child: Row(
+                                              children: [
+                                                Icon(
+                                                  Icons.school,
+                                                  color: theme.colorScheme.primary,
+                                                  size: 24,
+                                                ),
+                                                const SizedBox(width: 12),
+                                                Expanded(
+                                                  child: Text(
+                                                    classItem.className,
+                                                    style: theme.textTheme.titleMedium?.copyWith(
+                                                      fontWeight: FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 8,
+                                              vertical: 4,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: _getStatusColor(classItem.status).withOpacity(0.1),
+                                              borderRadius: BorderRadius.circular(12),
+                                              border: Border.all(
+                                                color: _getStatusColor(classItem.status),
+                                                width: 1,
+                                              ),
+                                            ),
                                             child: Text(
-                                              classItem.className,
-                                              style: theme.textTheme.titleMedium
-                                                  ?.copyWith(
+                                              classItem.status,
+                                              style: TextStyle(
+                                                color: _getStatusColor(classItem.status),
+                                                fontSize: 12,
                                                 fontWeight: FontWeight.bold,
                                               ),
                                             ),
@@ -298,23 +332,67 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
                                           ),
                                         ],
                                       ),
-                                      const SizedBox(height: 8),
-                                      _buildInfoRow('Class Code', classItem.classId),
-                                      if (classItem.attachedCode != null &&
-                                          classItem.attachedCode!.isNotEmpty)
-                                        _buildInfoRow('Associated Code',
-                                            classItem.attachedCode!),
-                                      _buildInfoRow('Type', classItem.classType),
-                                      _buildInfoRow('Status', classItem.status),
-                                      _buildInfoRow(
-                                          'Students', '${classItem.studentCount}'),
-                                      _buildInfoRow(
-                                          'Period',
-                                          '${classItem.startDate} - ${classItem.endDate}'),
+                                      const Divider(height: 24),
+                                      
+                                      // Class Information Grid
+                                      Wrap(
+                                        spacing: 16,
+                                        runSpacing: 16,
+                                        children: [
+                                          _buildInfoChip(
+                                            Icons.numbers,
+                                            'Class Code',
+                                            classItem.classId,
+                                            theme.colorScheme.primary,
+                                          ),
+                                          if (classItem.attachedCode != null &&
+                                              classItem.attachedCode!.isNotEmpty)
+                                            _buildInfoChip(
+                                              Icons.link,
+                                              'Associated Code',
+                                              classItem.attachedCode!,
+                                              Colors.purple,
+                                            ),
+                                          _buildInfoChip(
+                                            Icons.category,
+                                            'Type',
+                                            classItem.classType,
+                                            Colors.orange,
+                                          ),
+                                          _buildInfoChip(
+                                            Icons.people,
+                                            'Students',
+                                            classItem.studentCount.toString(),
+                                            Colors.green,
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 16),
+                                      
+                                      // Period and Lecturer Info
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: _buildDetailRow(
+                                              Icons.calendar_today,
+                                              'Period',
+                                              '${classItem.startDate} - ${classItem.endDate}',
+                                              Colors.blue,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
                                       if (classItem.lecturerName != null &&
                                           classItem.lecturerName!.isNotEmpty)
-                                        _buildInfoRow(
-                                            'Lecturer', classItem.lecturerName!),
+                                        Padding(
+                                          padding: const EdgeInsets.only(top: 8),
+                                          child: _buildDetailRow(
+                                            Icons.person,
+                                            'Lecturer',
+                                            classItem.lecturerName!,
+                                            Colors.teal,
+                                          ),
+                                        ),
                                     ],
                                   ),
                                 ),
@@ -502,34 +580,93 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: IntrinsicHeight(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(
-              width: 120,
-              child: Text(
+  Color _getStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'active':
+        return Colors.green;
+      case 'inactive':
+        return Colors.grey;
+      case 'pending':
+        return Colors.orange;
+      default:
+        return Colors.blue;
+    }
+  }
+
+  Widget _buildInfoChip(
+    IconData icon,
+    String label,
+    String value,
+    Color color,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: color),
+          const SizedBox(width: 8),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
                 label,
-                style: const TextStyle(
+                style: TextStyle(
+                  fontSize: 12,
+                  color: color,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: color,
                   fontWeight: FontWeight.bold,
                 ),
               ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(
+    IconData icon,
+    String label,
+    String value,
+    Color color,
+  ) {
+    return Row(
+      children: [
+        Icon(icon, size: 20, color: color),
+        const SizedBox(width: 8),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                color: color,
+                fontWeight: FontWeight.w500,
+              ),
             ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                value,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w500,
-                ),
+            Text(
+              value,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
               ),
             ),
           ],
         ),
-      ),
+      ],
     );
   }
 }
