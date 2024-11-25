@@ -114,11 +114,6 @@ class TeacherHomeScreen extends HookConsumerWidget {
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.pushNamed(Routes.createClassName),
-        icon: const Icon(Icons.add),
-        label: const Text('Create Class'),
-      ),
     );
   }
 

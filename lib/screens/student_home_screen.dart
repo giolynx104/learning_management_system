@@ -112,11 +112,6 @@ class StudentHomeScreen extends HookConsumerWidget {
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.pushNamed(Routes.classRegistrationName),
-        icon: const Icon(Icons.add),
-        label: const Text('Register for Class'),
-      ),
     );
   }
 
