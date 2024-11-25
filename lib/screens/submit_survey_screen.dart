@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:learning_management_system/providers/app_bar_provider.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:learning_management_system/models/survey.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:learning_management_system/services/survey_service.dart';
+import 'package:learning_management_system/providers/auth_provider.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 class SubmitSurveyScreen extends ConsumerStatefulWidget {
   // Required parameter for Survey
-  final SmallSurvey survey;
+  final Survey survey;
 
   const SubmitSurveyScreen({
     super.key,
@@ -16,26 +20,8 @@ class SubmitSurveyScreen extends ConsumerStatefulWidget {
   ConsumerState<SubmitSurveyScreen> createState() => _SubmitSurveyScreenState();
 }
 
-class SmallSurvey {
-  final String name;
-  final String? description;
-  final String? file; // Path or URL to the survey file
-  final String? answerDescription;
-  final String? answerFile; // Path or URL to the answer file
-  DateTime endTime;
-
-  SmallSurvey({
-    required this.name,
-    this.description,
-    this.file,
-    this.answerDescription,
-    this.answerFile,
-    required this.endTime,
-  });
-}
-
 class _SubmitSurveyScreenState extends ConsumerState<SubmitSurveyScreen> {
-  late SmallSurvey survey;
+  late Survey survey;
 
   // Controllers for TextFields
   final TextEditingController _descriptionController = TextEditingController();
@@ -44,23 +30,50 @@ class _SubmitSurveyScreenState extends ConsumerState<SubmitSurveyScreen> {
   final TextEditingController _answerDescriptionController = TextEditingController();
 
   String? _fileName; // Holds the name of the selected file
+  PlatformFile? _selectedFile; // File selected by user
+  String? _token; // Token for API call (fetch from provider or pass it as required)
+
+  bool _hasChanged = false; // Tracks if user has changed the input or file
 
   bool _isSubmitEnabled = false;
-
+  Map<String, dynamic>? _submissionData;
   @override
   void initState() {
     super.initState();
     survey = widget.survey;
-    _nameController.text = survey.name;
-    if (survey.description != null) {
-      _surveyDescriptionController.text = survey.description!;
-    }
-    if (survey.answerDescription != null) {
-      _answerDescriptionController.text = survey.answerDescription!;
-    }
-    _descriptionController.addListener(_validateForm);
-  }
+    _nameController.text = survey.title;
+    _surveyDescriptionController.text = survey.description ?? '';
+    _answerDescriptionController.text = ''; // Initially empty
 
+    _descriptionController.addListener(_validateForm);
+    _loadSubmission();
+  }
+  Future<void> _loadSubmission() async {
+    try {
+      final authState = await ref.read(authProvider.future);
+      if (authState == null) {
+        throw Exception('Not authenticated');
+      }
+      final surveyService = ref.read(surveyServiceProvider.notifier);
+      final submission = await surveyService.getSubmission(
+        token: authState.token!,
+        assignmentId: survey.id,
+      );
+
+      setState(() {
+        _submissionData = submission;
+        if (_submissionData != null) {
+          _answerDescriptionController.text = _submissionData!['text_response'];
+          _descriptionController.text = _submissionData!['text_response'];
+        }
+        _isSubmitEnabled = _submissionData == null;
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error loading submission: ${e.toString()}")),
+      );
+    }
+  }
   @override
   void dispose() {
     _descriptionController.dispose();
@@ -72,42 +85,20 @@ class _SubmitSurveyScreenState extends ConsumerState<SubmitSurveyScreen> {
 
   // Method to validate the form based on conditions
   void _validateForm() {
-    bool isDescriptionFilledOrFileUploaded = _descriptionController.text
-        .isNotEmpty || _fileName != null;
+    bool isDescriptionFilled = _descriptionController.text.isNotEmpty;
+    bool isFileUploaded = _selectedFile != null;
 
-    // If conditions are met, enable the submit button
     setState(() {
-      _isSubmitEnabled = isDescriptionFilledOrFileUploaded;
+      _isSubmitEnabled = (isDescriptionFilled && isFileUploaded) && _hasChanged;
     });
   }
-
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        toolbarHeight: 100,
-        backgroundColor: Colors.red[900],
-        centerTitle: true,
-        title: Column(
-          mainAxisSize: MainAxisSize.min, // Use min size to fit the content
-          children: [
-            Image.asset(
-              'assets/images/HUST_white.png', // Replace with your image path
-              height: 40, // Set the height as needed
-              fit: BoxFit.contain, // Adjust the fit as needed
-            ),
-            const SizedBox(height: 5.0),
-            const Text(
-              'SUBMIT SURVEY',
-              style: TextStyle(
-                color: Colors.white,
-                fontFamily: 'Times New Roman',
-              ),
-            ),
-          ],
-        ),
+        title: const Text('Submit Assignment'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {
@@ -167,17 +158,26 @@ class _SubmitSurveyScreenState extends ConsumerState<SubmitSurveyScreen> {
                 ),
                 const SizedBox(height: 16.0),
               ],
-              if (survey.file != null)...[
+              if (survey.file != null) ...[
                 ElevatedButton(
-                  onPressed: () {
-                    // Handle file logic
-                  },
+                  onPressed: survey.file != null
+                      ? () async {
+                    final Uri url = Uri.parse(survey.file!);
+                    if (await canLaunchUrl(url)) {
+                      await launchUrl(url, mode: LaunchMode.externalApplication);
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text("Cannot open the URL")),
+                      );
+                    }
+                  }
+                      : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.red[900],
                     foregroundColor: Colors.white,
                   ),
                   child: Text(
-                    survey.file ?? ' ',
+                    (survey.file != null) ? 'Link file đề bài' : ' ',
                     style: const TextStyle(fontSize: 18.0, color: Colors.white),
                   ),
                 ),
@@ -185,79 +185,53 @@ class _SubmitSurveyScreenState extends ConsumerState<SubmitSurveyScreen> {
               ],
               const SizedBox(height: 20.0),
 
-              survey.answerDescription == null
-                  ? TextField(
-                controller: _descriptionController,
-                onChanged: (value) {
-                  _validateForm(); // Validate form whenever survey name changes
-                },
-                style: TextStyle(color: Colors.red[900]),
-                decoration: InputDecoration(
-                  labelText: 'Mô tả nộp bài',
-                  labelStyle: TextStyle(color: Colors.red[300]),
-                  filled: true,
-                  fillColor: Colors.white70,
-                  alignLabelWithHint: true,
-                  enabledBorder: const OutlineInputBorder(
-                    borderRadius: BorderRadius.all(Radius.zero),
-                    borderSide: BorderSide(color: Colors.red),
+              if (_submissionData == null) ...[
+                TextField(
+                  controller: _descriptionController,
+                  onChanged: (value) {
+                    _validateForm();
+                  },
+                  style: TextStyle(color: Colors.red[900]),
+                  decoration: InputDecoration(
+                    labelText: 'Mô tả nộp bài',
+                    labelStyle: TextStyle(color: Colors.red[300]),
+                    filled: true,
+                    fillColor: Colors.white70,
+                    alignLabelWithHint: true,
+                    enabledBorder: const OutlineInputBorder(
+                      borderRadius: BorderRadius.all(Radius.zero),
+                      borderSide: BorderSide(color: Colors.red),
+                    ),
+                    focusedBorder: const OutlineInputBorder(
+                      borderRadius: BorderRadius.all(Radius.zero),
+                      borderSide: BorderSide(color: Colors.red),
+                    ),
                   ),
-                  focusedBorder: const OutlineInputBorder(
-                    borderRadius: BorderRadius.all(Radius.zero),
-                    borderSide: BorderSide(color: Colors.red),
+                  maxLines: 3,
+                  keyboardType: TextInputType.multiline,
+                ),
+                const SizedBox(height: 16.0),
+                Text(
+                  'Hoặc',
+                  style: TextStyle(
+                    fontSize: 16.0,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.red[900],
+                    fontStyle: FontStyle.italic,
                   ),
                 ),
-                maxLines: 3,
-                keyboardType: TextInputType.multiline,
-              )
-                  : TextField(
-                readOnly: true,
-                style: TextStyle(color: Colors.red[900]),
-                decoration: InputDecoration(
-                  hintText: survey.answerDescription,
-                  hintStyle: TextStyle(color: Colors.red[900]),
-                  filled: true,
-                  fillColor: Colors.white70,
-                  alignLabelWithHint: true,
-                  enabledBorder: const OutlineInputBorder(
-                    borderRadius: BorderRadius.all(Radius.zero),
-                    borderSide: BorderSide(color: Colors.red),
-                  ),
-                  focusedBorder: const OutlineInputBorder(
-                    borderRadius: BorderRadius.all(Radius.zero),
-                    borderSide: BorderSide(color: Colors.red),
-                  ),
-                ),
-                maxLines: 3,
-                keyboardType: TextInputType.multiline,
-              ),
-              const SizedBox(height: 16.0),
-              Text(
-                'Hoặc',
-                style: TextStyle(
-                  fontSize: 16.0,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.red[900],
-                  fontStyle: FontStyle.italic,
-                ),
-              ),
-              const SizedBox(height: 16.0),
-              survey.answerFile == null
-                  ? ElevatedButton(
+                const SizedBox(height: 16.0),
+                ElevatedButton(
                   onPressed: () async {
-                    // Open file picker to select a .docx file
                     FilePickerResult? result = await FilePicker.platform.pickFiles(
                       type: FileType.custom,
-                      allowedExtensions: ['docx'], // Only allow .docx files
+                      allowedExtensions: ['docx', 'png', 'pdf'],
                     );
 
                     if (result != null) {
-                      // Get the file name
-                      String fileName = result.files.single.name;
-
-                      // Update the button text with the selected file name
                       setState(() {
-                        _fileName = fileName;
+                        _selectedFile = result.files.single;
+                        _hasChanged = true; // Mark as changed when a new file is selected
                       });
                       _validateForm();
                     }
@@ -267,74 +241,120 @@ class _SubmitSurveyScreenState extends ConsumerState<SubmitSurveyScreen> {
                     foregroundColor: Colors.white,
                   ),
                   child: Text(
-                    _fileName != null
-                        ? _fileName! // Display the file name after selection
-                        : 'Tải tài liệu lên    ▲', // Default button text
+                    _selectedFile?.name ?? 'Tải tài liệu lên    ▲',
                     style: const TextStyle(
-                        fontSize: 16.0,
-                        fontStyle: FontStyle.italic,
-                        fontWeight: FontWeight.bold),
+                      fontSize: 16.0,
+                      fontStyle: FontStyle.italic,
+                      fontWeight: FontWeight.bold,
                     ),
-                  )
-                  :ElevatedButton(
-                    onPressed: () {
-                      // Handle file logic
-                    },
+                  ),
+                ),
+                const SizedBox(height: 16.0),
+                if (survey.deadline.isAfter(DateTime.now())) ...[
+                  ElevatedButton(
+                    onPressed: _isSubmitEnabled
+                        ? () async {
+                      try {
+                        final authState = await ref.read(authProvider.future);
+                        if (authState == null) {
+                          throw Exception('Not authenticated');
+                        }
+                        final surveyService = ref.read(surveyServiceProvider.notifier);
+                        await surveyService.submitSurvey(
+                          token: authState.token!,
+                          assignmentId: survey.id,
+                          file: _selectedFile!,
+                          textResponse: _descriptionController.text,
+                        );
+
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text("Submit Assignment Successfully"),
+                          ),
+                        );
+
+                        setState(() {
+                          _hasChanged = false; // Reset change tracking after submission
+                          _isSubmitEnabled = false;
+                        });
+                        Future.delayed(Duration(milliseconds: 500));
+                        Navigator.pop(context);
+                      } catch (e) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text("Error: ${e.toString()}")),
+                        );
+                      }
+                    }
+                        : null,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red[900],
+                      backgroundColor: _isSubmitEnabled ? Colors.red[900] : Colors.grey,
                       foregroundColor: Colors.white,
                     ),
-                    child: Text(
-                      survey.answerFile ?? ' ',
-                      style: const TextStyle(fontSize: 18.0, color: Colors.white),
+                    child: const Text(
+                      'Submit',
+                      style: TextStyle(
+                        fontSize: 16.0,
+                        fontStyle: FontStyle.italic,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-              const SizedBox(height: 16.0),
-              // Inside the build method:
-              survey.endTime.isAfter(DateTime.now())
-                  ? ElevatedButton(
-                onPressed: _isSubmitEnabled
-                    ? () {
-                  // Handle submit logic here
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Nộp bài kiểm tra thành công")),
-                  );
-                }
-                    : null, // Disable the button if the form is not valid
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: _isSubmitEnabled ? Colors.red[900] : Colors.grey,
-                  foregroundColor: Colors.white,
+                  ),
+                ]
+              ]else...[
+                TextField(
+                  controller: _answerDescriptionController,
+                  readOnly: true,
+                  style: TextStyle(color: Colors.red[900]),
+                  decoration: InputDecoration(
+                    labelText: 'Mô tả nộp bài',
+                    labelStyle: TextStyle(color: Colors.red[300]),
+                    filled: true,
+                    fillColor: Colors.white70,
+                    alignLabelWithHint: true,
+                    enabledBorder: const OutlineInputBorder(
+                      borderRadius: BorderRadius.all(Radius.zero),
+                      borderSide: BorderSide(color: Colors.red),
+                    ),
+                    focusedBorder: const OutlineInputBorder(
+                      borderRadius: BorderRadius.all(Radius.zero),
+                      borderSide: BorderSide(color: Colors.red),
+                    ),
+                  ),
+                  maxLines: 3,
+                  keyboardType: TextInputType.multiline,
                 ),
-                child: const Text(
-                  'Submit',  // Display "Submit" if the deadline has not passed
+                const SizedBox(height: 16.0),
+                ElevatedButton(
+                  onPressed: () async {
+                    final Uri url = Uri.parse(_submissionData!['file_url']);
+                    if (await canLaunchUrl(url)) {
+                      await launchUrl(url, mode: LaunchMode.externalApplication);
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text("Cannot open the URL")),
+                      );
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red[900],
+                    foregroundColor: Colors.white,
+                  ),
+                  child: Text(
+                    'Link file bài nộp',
+                    style: const TextStyle(fontSize: 18.0, color: Colors.white),
+                  ),
+                ),
+                const SizedBox(height: 16.0),
+                Text(
+                  'Điểm: ${_submissionData!['grade'] ?? 'chưa có'}',
                   style: TextStyle(
-                      fontSize: 16.0,
-                      fontStyle: FontStyle.italic,
-                      fontWeight: FontWeight.bold),
-                ),
-              )
-                  : ElevatedButton(
-                onPressed: _isSubmitEnabled
-                    ? () {
-                  // Handle submit logic for late turn-in here
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Turned in late")),
-                  );
-                }
-                    : null, // Disable the button if the form is not valid
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: _isSubmitEnabled ? Colors.red[900] : Colors.grey,
-                  foregroundColor: Colors.white,
-                ),
-                child: const Text(
-                  'Turn in late', // Display "Turn in late" if the deadline has passed
-                  style: TextStyle(
-                      fontSize: 16.0,
-                      fontStyle: FontStyle.italic,
-                      fontWeight: FontWeight.bold),
-                ),
-              ),
-            ],
+                    fontSize: 16.0,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.red[900],
+                    ),
+                  ),
+                ],
+              ],
           ),
         ),
       ),

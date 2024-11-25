@@ -159,7 +159,7 @@ class RollCallScreen extends HookConsumerWidget {
                     ElevatedButton(
                       onPressed: () {
                         context.pushNamed(
-                          Routes.detailedAttendanceList,
+                          Routes.detailedAttendanceListName,
                           pathParameters: {'classId': classId},
                         );
                       },
@@ -172,7 +172,7 @@ class RollCallScreen extends HookConsumerWidget {
                     ElevatedButton(
                       onPressed: () {
                         context.pushNamed(
-                          Routes.rollCallAction,
+                          Routes.rollCallActionName,
                           pathParameters: {'classId': classId},
                         );
                       },
@@ -185,7 +185,7 @@ class RollCallScreen extends HookConsumerWidget {
                     ElevatedButton(
                       onPressed: () {
                         context.pushNamed(
-                          Routes.absenceRequestList,
+                          Routes.absenceRequestListName,
                           pathParameters: {'classId': classId},
                         );
                       },

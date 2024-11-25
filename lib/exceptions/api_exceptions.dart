@@ -1,3 +1,5 @@
+import 'package:dio/dio.dart';
+
 /// Base exception class for API-related errors.
 class ApiException implements Exception {
   final int? statusCode;
@@ -9,6 +11,31 @@ class ApiException implements Exception {
     required this.message,
     this.data,
   });
+
+  factory ApiException.fromDioError(DioException error) {
+    if (error.response?.data is Map<String, dynamic>) {
+      final responseData = error.response?.data as Map<String, dynamic>;
+      final meta = responseData['meta'] as Map<String, dynamic>?;
+      
+      return ApiException(
+        message: meta?['message'] ?? 'Unknown error occurred',
+        statusCode: int.tryParse(meta?['code']?.toString() ?? ''),
+        data: responseData,
+      );
+    }
+
+    // Handle different DioException types
+    switch (error.type) {
+      case DioExceptionType.connectionTimeout:
+      case DioExceptionType.sendTimeout:
+      case DioExceptionType.receiveTimeout:
+        return NetworkException(message: 'Connection timed out');
+      case DioExceptionType.connectionError:
+        return NetworkException(message: 'No internet connection');
+      default:
+        return ApiException(message: 'Something went wrong');
+    }
+  }
 
   @override
   String toString() => 'ApiException: $message (Status: $statusCode)';

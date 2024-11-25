@@ -108,7 +108,7 @@ class CustomLayoutScaffold extends ConsumerWidget {
                   ),
                   tooltip: 'Notifications',
                   onPressed: () {
-                    context.push(Routes.notification);
+                    context.pushNamed(Routes.notificationName);
                   },
                 ),
               ],

@@ -1,14 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:go_router/go_router.dart';
-import 'package:learning_management_system/routes/routes.dart';
 import 'package:intl/intl.dart';
+import 'package:go_router/go_router.dart';
 import 'package:learning_management_system/models/survey.dart';
+import 'package:learning_management_system/providers/auth_provider.dart';
+import 'package:learning_management_system/routes/routes.dart';
+import 'package:learning_management_system/services/survey_service.dart';
 import 'package:learning_management_system/widgets/survey_tab_bar.dart';
+import 'package:learning_management_system/widgets/survey_card.dart';
+import 'package:learning_management_system/providers/survey_provider.dart';
+import 'dart:developer' as developer;
 
 class TeacherSurveyListScreen extends HookConsumerWidget {
   final String classId;
-
+  
   const TeacherSurveyListScreen({
     super.key,
     required this.classId,
@@ -16,240 +21,190 @@ class TeacherSurveyListScreen extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    debugPrint('TeacherSurveyListScreen - ClassId: $classId');
+    final surveysAsync = ref.watch(surveyListProvider(classId));
+    final surveysNotifier = ref.read(surveyListProvider(classId).notifier);
 
-    final List<TeacherSurvey> surveys = [
-      TeacherSurvey(
-        id: '1',
-        name: 'Survey 1',
-        description: 'Description for Survey 1',
-        file: 'path/to/survey1.docx',
-        responseCount: 10,
-        startTime: DateTime.now().subtract(const Duration(hours: 1)),
-        endTime: DateTime.now().add(const Duration(hours: 1)),
-        className: 'Math 101',
-      ),
-      TeacherSurvey(
-        id: '2',
-        name: 'Survey 2',
-        description: 'Description for Survey 2',
-        file: 'path/to/survey2.docx',
-        responseCount: 5,
-        startTime: DateTime.now().subtract(const Duration(hours: 2)),
-        endTime: DateTime.now().subtract(const Duration(hours: 1)),
-        className: 'Science 101',
-      ),
-    ];
+    Future<void> deleteSurvey(String surveyId) async {
+      try {
+        final authState = await ref.read(authProvider.future);
+        if (authState == null) throw Exception('Not authenticated');
 
-    List<TeacherSurvey> getUpcomingSurveys() {
-      return surveys
-          .where((survey) => survey.endTime.isAfter(DateTime.now()))
-          .toList()
-        ..sort((a, b) => a.endTime.compareTo(b.endTime));
-    }
+        await ref.read(surveyServiceProvider.notifier).deleteSurvey(
+          token: authState.token!,
+          surveyId: surveyId,
+        );
 
-    List<TeacherSurvey> getOverdueSurveys() {
-      return surveys
-          .where((survey) => survey.endTime.isBefore(DateTime.now()))
-          .toList()
-        ..sort((a, b) => a.endTime.compareTo(b.endTime));
+        // Refresh survey list after deletion
+        surveysNotifier.refresh();
+      } catch (e, stack) {
+        developer.log(
+          'Error deleting survey: $e',
+          name: 'TeacherSurveyList',
+          error: e,
+          stackTrace: stack,
+        );
+        // Show error to user
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error deleting survey: $e')),
+          );
+        }
+      }
     }
 
     return DefaultTabController(
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Manage Assignments'),
+          title: const Text('Manage Assignment'),
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => context.pop(),
           ),
           bottom: const SurveyTabBar(
             tabLabels: ['Active', 'Expired'],
           ),
         ),
-        body: TabBarView(
-          children: [
-            SurveyTabContent(
-              title: 'Active',
-              surveys: getUpcomingSurveys(),
+        body: surveysAsync.when(
+          data: (surveys) => TabBarView(
+            children: [
+              SurveyTabContent(
+                title: 'Active',
+                surveys: surveysNotifier.getUpcomingSurveys(surveys),
+                onDelete: deleteSurvey,
+                onRefresh: () => surveysNotifier.refresh(),
+                onTap: (survey) => _handleSurveyTap(context, survey),
+              ),
+              SurveyTabContent(
+                title: 'Expired',
+                surveys: surveysNotifier.getOverdueSurveys(surveys),
+                onDelete: deleteSurvey,
+                onRefresh: () => surveysNotifier.refresh(),
+                onTap: (survey) => _handleSurveyTap(context, survey),
+              ),
+            ],
+          ),
+          loading: () => const Center(
+            child: CircularProgressIndicator(),
+          ),
+          error: (error, stack) => Center(
+            child: SelectableText.rich(
+              TextSpan(
+                text: 'Error loading surveys: ',
+                children: [
+                  TextSpan(
+                    text: error.toString(),
+                    style: const TextStyle(color: Colors.red),
+                  ),
+                ],
+              ),
             ),
-            SurveyTabContent(
-              title: 'Expired',
-              surveys: getOverdueSurveys(),
-            ),
-          ],
+          ),
         ),
         floatingActionButton: FloatingActionButton(
-          onPressed: () => context.push(Routes.getCreateSurveyPath()),
-          backgroundColor: Theme.of(context).colorScheme.primary,
-          foregroundColor: Theme.of(context).colorScheme.onPrimary,
+          onPressed: () => _handleCreateSurvey(context, surveysNotifier),
           child: const Icon(Icons.add),
         ),
       ),
     );
   }
+
+  void _handleSurveyTap(BuildContext context, Survey survey) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading: const Icon(Icons.edit),
+            title: const Text('Edit Assignment'),
+            onTap: () {
+              context.pop();
+              context.pushNamed(
+                Routes.editSurveyName,
+                pathParameters: {'surveyId': survey.id},
+                extra: survey,
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.assessment),
+            title: const Text('View Responses'),
+            onTap: () {
+              context.pop();
+              context.pushNamed(
+                Routes.responseSurveyName,
+                pathParameters: {'surveyId': survey.id},
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _handleCreateSurvey(
+    BuildContext context,
+    SurveyList surveysNotifier,
+  ) async {
+    final result = await context.pushNamed(
+      Routes.createSurveyName,
+      pathParameters: {'classId': classId},
+    );
+
+    if (result == true) {
+      surveysNotifier.refresh();
+    }
+  }
 }
 
+// Update SurveyTabContent to include onTap handler
 class SurveyTabContent extends StatelessWidget {
   final String title;
-  final List<TeacherSurvey> surveys;
+  final List<Survey> surveys;
+  final Function(String)? onDelete;
+  final VoidCallback? onRefresh;
+  final Function(Survey) onTap;
 
   const SurveyTabContent({
     super.key,
     required this.title,
     required this.surveys,
+    this.onDelete,
+    this.onRefresh,
+    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return ListView.builder(
       itemCount: surveys.length,
       padding: const EdgeInsets.all(16),
       itemBuilder: (context, index) {
         final survey = surveys[index];
-        final startTimeFormatted =
-            DateFormat('HH:mm dd-MM-yyyy').format(survey.startTime);
-        final endTimeFormatted =
-            DateFormat('HH:mm dd-MM-yyyy').format(survey.endTime);
+        final endTimeFormatted = 
+            DateFormat('HH:mm dd-MM-yyyy').format(survey.deadline);
 
-        return Card(
-          margin: const EdgeInsets.only(bottom: 12),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            survey.name,
-                            style: theme.textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'From: $startTimeFormatted',
-                            style: theme.textTheme.bodyMedium,
-                          ),
-                          Text(
-                            'To: $endTimeFormatted',
-                            style: theme.textTheme.bodyMedium,
-                          ),
-                        ],
-                      ),
-                    ),
-                    PopupMenuButton<String>(
-                      itemBuilder: (context) => [
-                        const PopupMenuItem(
-                          value: 'edit',
-                          child: Row(
-                            children: [
-                              Icon(Icons.edit),
-                              SizedBox(width: 8),
-                              Text('Edit'),
-                            ],
-                          ),
-                        ),
-                        const PopupMenuItem(
-                          value: 'delete',
-                          child: Row(
-                            children: [
-                              Icon(Icons.delete, color: Colors.red),
-                              SizedBox(width: 8),
-                              Text('Delete',
-                                  style: TextStyle(color: Colors.red)),
-                            ],
-                          ),
-                        ),
-                        const PopupMenuItem(
-                          value: 'responses',
-                          child: Row(
-                            children: [
-                              Icon(Icons.assessment),
-                              SizedBox(width: 8),
-                              Text('View Responses'),
-                            ],
-                          ),
-                        ),
-                      ],
-                      onSelected: (value) {
-                        switch (value) {
-                          case 'edit':
-                            context.push(
-                              Routes.getEditSurveyPath(survey.id),
-                              extra: TeacherSmallSurvey(
-                                name: survey.name,
-                                description: survey.description,
-                                file: survey.file,
-                                startTime: survey.startTime,
-                                endTime: survey.endTime,
-                              ),
-                            );
-                            break;
-                          case 'delete':
-                            // TODO: Implement delete
-                            break;
-                          case 'responses':
-                            // TODO: Implement view responses
-                            break;
-                        }
-                      },
-                    ),
-                  ],
-                ),
-                if (survey.description != null) ...[
-                  const SizedBox(height: 8),
-                  Text(
-                    survey.description!,
-                    style: theme.textTheme.bodyMedium,
-                  ),
-                ],
-                const SizedBox(height: 8),
-                Text(
-                  'Responses: ${survey.responseCount}',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.primary,
-                  ),
-                ),
-                Text(
-                  'Class: ${survey.className}',
-                  style: theme.textTheme.bodyMedium,
-                ),
-              ],
-            ),
-          ),
+        return SurveyCard(
+          endTimeFormatted: endTimeFormatted,
+          name: survey.title,
+          description: survey.description,
+          onDelete: onDelete != null ? () => onDelete!(survey.id) : null,
+          onEdit: () {
+            context.pushNamed(
+              Routes.editSurveyName,
+              pathParameters: {'surveyId': survey.id},
+              extra: survey,
+            );
+          },
+          onViewResponse: () {
+            context.pushNamed(
+              Routes.responseSurveyName,
+              pathParameters: {'surveyId': survey.id},
+            );
+          },
         );
       },
     );
   }
-}
-
-class TeacherSurvey {
-  final String id;
-  final String name;
-  final String? description;
-  final String? file;
-  final int responseCount;
-  final DateTime startTime;
-  final DateTime endTime;
-  final String className;
-
-  TeacherSurvey({
-    required this.id,
-    required this.name,
-    this.description,
-    this.file,
-    required this.responseCount,
-    required this.startTime,
-    required this.endTime,
-    required this.className,
-  });
 }

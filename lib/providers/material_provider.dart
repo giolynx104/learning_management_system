@@ -42,7 +42,7 @@ final materialListProvider = FutureProvider.family<MaterialListResponse, String>
   },
 );
 
-final uploadMaterialProvider = FutureProvider.family<MaterialResponse, UploadMaterialParams>(
+final uploadMaterialProvider = FutureProvider.family<void, UploadMaterialParams>(
   (ref, params) async {
     final authState = ref.read(authProvider);
     final user = authState.value;

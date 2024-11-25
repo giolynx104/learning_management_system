@@ -107,7 +107,7 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
       }
 
       final classes =
-          await ref.read(classServiceProvider.notifier).getClassList(token);
+      await ref.read(classServiceProvider.notifier).getClassList(token);
 
       if (mounted) {
         setState(() {
@@ -211,8 +211,7 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
                                 child: Padding(
                                   padding: const EdgeInsets.all(16.0),
                                   child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       Row(
@@ -232,8 +231,7 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
                                             onSelected: (value) =>
                                                 _handleClassAction(
                                                     value, classItem),
-                                            itemBuilder:
-                                                (BuildContext context) => [
+                                            itemBuilder: (BuildContext context) => [
                                               const PopupMenuItem(
                                                 value: 'edit',
                                                 child: Text('Edit Class'),
@@ -261,23 +259,22 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
                                         ],
                                       ),
                                       const SizedBox(height: 8),
-                                      _buildInfoRow(
-                                          'Class Code', classItem.classId),
+                                      _buildInfoRow('Class Code', classItem.classId),
                                       if (classItem.attachedCode != null &&
                                           classItem.attachedCode!.isNotEmpty)
                                         _buildInfoRow('Associated Code',
                                             classItem.attachedCode!),
-                                      _buildInfoRow(
-                                          'Type', classItem.classType),
+                                      _buildInfoRow('Type', classItem.classType),
                                       _buildInfoRow('Status', classItem.status),
-                                      _buildInfoRow('Students',
-                                          '${classItem.studentCount}'),
-                                      _buildInfoRow('Period',
+                                      _buildInfoRow(
+                                          'Students', '${classItem.studentCount}'),
+                                      _buildInfoRow(
+                                          'Period',
                                           '${classItem.startDate} - ${classItem.endDate}'),
                                       if (classItem.lecturerName != null &&
                                           classItem.lecturerName!.isNotEmpty)
-                                        _buildInfoRow('Lecturer',
-                                            classItem.lecturerName!),
+                                        _buildInfoRow(
+                                            'Lecturer', classItem.lecturerName!),
                                     ],
                                   ),
                                 ),
@@ -297,9 +294,9 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
                       ? FloatingActionButton.extended(
                           onPressed: () {
                             if (user.role == 'STUDENT') {
-                              context.push(Routes.classRegistration);
+                              context.pushNamed(Routes.classRegistrationName);
                             } else {
-                              context.push(Routes.createClass);
+                              context.pushNamed(Routes.createClassName);
                             }
                           },
                           icon: Icon(
@@ -322,9 +319,10 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
       String action, ClassListItem classItem) async {
     switch (action) {
       case 'edit':
-        debugPrint(
-            'ClassManagementScreen - ClassId: ${classItem.classId}, Type: ${classItem.classId.runtimeType}');
-        context.push('/classes/modify/${classItem.classId}').then((result) {
+        context.pushNamed(
+          Routes.modifyClassName,
+          pathParameters: {'classId': classItem.classId},
+        ).then((result) {
           if (result == true) {
             _refreshClassList();
           }
@@ -339,18 +337,21 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
 
         if (isStudent) {
           context.pushNamed(
-            Routes.studentSurveyList,
+            Routes.studentSurveyListName,
             pathParameters: {'classId': classItem.classId},
           );
         } else {
           context.pushNamed(
-            Routes.teacherSurveyList,
+            Routes.teacherSurveyListName,
             pathParameters: {'classId': classItem.classId},
           );
         }
         break;
       case 'files':
-        context.push(Routes.getMaterialListPath(classItem.classId));
+        context.pushNamed(
+          Routes.materialListName,
+          pathParameters: {'classId': classItem.classId},
+        );
         break;
       case 'attendance':
         try {
@@ -361,12 +362,12 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
 
           if (isStudent) {
             context.pushNamed(
-              'student-attendance',
+              Routes.studentAttendanceName,
               pathParameters: {'classId': classItem.classId},
             );
           } else {
             context.pushNamed(
-              'roll-call',
+              Routes.rollCallName,
               pathParameters: {'classId': classItem.classId},
             );
           }
@@ -420,28 +421,28 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
                                       classId: classItem.classId,
                                     );
 
-                                if (!mounted) return;
-                                Navigator.of(dialogContext)
-                                    .pop(); // Close the dialog
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Class deleted successfully'),
-                                    backgroundColor: Colors.green,
-                                  ),
-                                );
-                                _refreshClassList();
-                              } catch (e) {
-                                setState(() => isDeleting =
-                                    false); // Reset loading state on error
-                                if (!mounted) return;
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text('Error deleting class: $e'),
-                                    backgroundColor: Colors.red,
-                                  ),
-                                );
-                              }
-                            },
+                          if (!mounted) return;
+                          Navigator.of(dialogContext)
+                              .pop(); // Close the dialog
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Class deleted successfully'),
+                              backgroundColor: Colors.green,
+                            ),
+                          );
+                          _refreshClassList();
+                        } catch (e) {
+                          setState(() => isDeleting =
+                          false); // Reset loading state on error
+                          if (!mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Error deleting class: $e'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      },
                       child: const Text('Delete',
                           style: TextStyle(color: Colors.red)),
                     ),
