@@ -1,6 +1,8 @@
 import 'dart:developer';
 
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:learning_management_system/exceptions/api_exceptions.dart';
+import 'package:learning_management_system/providers/api_service_provider.dart';
 import 'package:learning_management_system/providers/auth_service_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:flutter/foundation.dart';
@@ -164,4 +166,9 @@ extension AuthStateX on AsyncValue<User?> {
   String? get token => whenOrNull(
         data: (user) => user?.token,
       );
+}
+
+@riverpod
+AuthService authService(Ref ref) {
+  return AuthService(ref.read(apiServiceProvider));
 }
