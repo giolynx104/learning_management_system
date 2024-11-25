@@ -213,11 +213,11 @@ class MaterialService extends _$MaterialService {
 
       final Map<String, dynamic> formMap = {
         'token': token,
-        'material_id': materialId,
+        'materialId': materialId,
         'class_id': classId,
-        'material_name': title,
+        'title': title,
         'description': description,
-        'material_type': materialType,
+        'materialType': materialType,
       };
 
       // Only add file if a new one is provided
