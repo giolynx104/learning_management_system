@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
+import 'package:learning_management_system/exceptions/api_exceptions.dart';
 import 'package:learning_management_system/services/api_service.dart';
 import 'package:learning_management_system/models/attendance_list_model.dart';
+import 'package:dio/dio.dart';
 
 class AttendanceService {
   final ApiService _apiService;
@@ -19,7 +21,6 @@ class AttendanceService {
       debugPrint('  Class ID: $classId');
       debugPrint('  Date: ${date.toIso8601String().split('T')[0]}');
       debugPrint('  Absent IDs: $absentStudentIds');
-      debugPrint('  Token: $token');
 
       final response = await _apiService.dio.post(
         '/it5023e/take_attendance',
@@ -34,16 +35,29 @@ class AttendanceService {
       debugPrint('AttendanceService - Response status: ${response.statusCode}');
       debugPrint('AttendanceService - Response data: ${response.data}');
 
-      if (response.statusCode != 200) {
-        debugPrint('AttendanceService - Error: Non-200 status code');
-        throw Exception(
-            response.data['message'] ?? 'Failed to submit attendance');
+    } on DioException catch (e) {
+      debugPrint('AttendanceService - DioException: ${e.message}');
+      debugPrint('AttendanceService - Response data: ${e.response?.data}');
+
+      if (e.response?.statusCode == 400) {
+        final responseData = e.response?.data as Map<String, dynamic>?;
+        if (responseData != null) {
+          final errorMessage = responseData['data'] as String? ?? 
+                             responseData['meta']?['message'] ?? 
+                             'Invalid request';
+          
+          throw ApiException(
+            statusCode: 400,
+            message: errorMessage,
+            data: responseData,
+          );
+        }
       }
 
-      debugPrint('AttendanceService - Attendance submitted successfully');
+      throw ApiException.fromDioError(e);
     } catch (e) {
-      debugPrint('AttendanceService - Error occurred: $e');
-      throw Exception('Failed to submit attendance: ${e.toString()}');
+      debugPrint('AttendanceService - Error: $e');
+      rethrow;
     }
   }
 
@@ -66,6 +80,9 @@ class AttendanceService {
           },
       };
 
+      debugPrint('AttendanceService - Fetching attendance list');
+      debugPrint('AttendanceService - Request data: $data');
+
       final response = await _apiService.dio.post(
         '/it5023e/get_attendance_list',
         data: data,
@@ -78,15 +95,31 @@ class AttendanceService {
         return null;
       }
 
-      if (response.statusCode != 200) {
-        throw Exception(
-            response.data['message'] ?? 'Failed to get attendance list');
-      }
-
       final returnedData = responseData['data'] as Map<String, dynamic>;
       return AttendanceListResponse.fromJson(returnedData);
+    } on DioException catch (e) {
+      debugPrint('AttendanceService - DioException: ${e.message}');
+      debugPrint('AttendanceService - Response data: ${e.response?.data}');
+
+      if (e.response?.statusCode == 400) {
+        final responseData = e.response?.data as Map<String, dynamic>?;
+        if (responseData != null) {
+          final errorMessage = responseData['data'] as String? ?? 
+                             responseData['meta']?['message'] ?? 
+                             'Invalid request';
+          
+          throw ApiException(
+            statusCode: 400,
+            message: errorMessage,
+            data: responseData,
+          );
+        }
+      }
+
+      throw ApiException.fromDioError(e);
     } catch (e) {
-      throw Exception('Failed to get attendance list: ${e.toString()}');
+      debugPrint('AttendanceService - Error: $e');
+      rethrow;
     }
   }
 }

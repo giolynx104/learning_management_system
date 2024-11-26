@@ -35,6 +35,7 @@ import 'package:learning_management_system/screens/response_survey_screen.dart';
 import 'package:learning_management_system/screens/submit_survey_screen.dart';
 import 'package:learning_management_system/routes/router_notifier.dart';
 import 'package:learning_management_system/screens/assignment_list_screen.dart';
+import 'package:learning_management_system/screens/take_attendance_screen.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
 final _shellNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'shell');
@@ -262,6 +263,13 @@ final routerProvider = Provider<GoRouter>((ref) {
                     name: Routes.submitSurveyName,
                     builder: (context, state) => SubmitSurveyScreen(
                       survey: state.extra as Survey,
+                    ),
+                  ),
+                  GoRoute(
+                    path: Routes.takeAttendance,
+                    name: Routes.takeAttendanceName,
+                    builder: (context, state) => TakeAttendanceScreen(
+                      classId: state.pathParameters['classId'] ?? '',
                     ),
                   ),
                 ],

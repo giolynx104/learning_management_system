@@ -18,8 +18,8 @@ class ApiException implements Exception {
       final meta = responseData['meta'] as Map<String, dynamic>?;
       
       return ApiException(
-        message: meta?['message'] ?? 'Unknown error occurred',
-        statusCode: int.tryParse(meta?['code']?.toString() ?? ''),
+        message: meta?['message'] ?? responseData['message'] ?? 'Unknown error occurred',
+        statusCode: error.response?.statusCode,
         data: responseData,
       );
     }
@@ -33,12 +33,15 @@ class ApiException implements Exception {
       case DioExceptionType.connectionError:
         return NetworkException(message: 'No internet connection');
       default:
-        return ApiException(message: 'Something went wrong');
+        return ApiException(
+          message: error.message ?? 'Unknown error occurred',
+          statusCode: error.response?.statusCode,
+        );
     }
   }
 
   @override
-  String toString() => 'ApiException: $message (Status: $statusCode)';
+  String toString() => message;
 }
 
 /// Exception for authentication and authorization errors.
@@ -52,11 +55,7 @@ class UnauthorizedException extends ApiException {
 
 /// Exception for network-related failures.
 class NetworkException extends ApiException {
-  NetworkException({String? message})
-      : super(
-          message: message ?? 'Network connection failed',
-          statusCode: null,
-        );
+  const NetworkException({required String message}) : super(message: message);
 }
 
 /// Exception for validation errors from the API.

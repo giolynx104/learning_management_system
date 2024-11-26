@@ -26,6 +26,7 @@ class Routes {
   static const String materialList = 'materials/:classId';
   static const String uploadMaterial = 'materials/:classId/upload';
   static const String assignments = 'assignments';
+  static const String takeAttendance = 'take-attendance/:classId';
 
   // Route names
   static const String signinName = 'signin';
@@ -54,6 +55,7 @@ class Routes {
   static const String submitSurveyName = 'submitSurvey';
   static const String responseSurveyName = 'responseSurvey';
   static const String assignmentsName = 'assignments';
+  static const String takeAttendanceName = 'takeAttendance';
 
   // Helper methods for generating full paths
   static String getRollCallPath(String classId) => '/classes/roll-call/$classId';
@@ -78,4 +80,5 @@ class Routes {
   static String getSignUpPath() => signup;
   static String getHomePath() => home;
   static String getNotificationPath() => notification;
+  static String getTakeAttendancePath(String classId) => '/classes/take-attendance/$classId';
 }

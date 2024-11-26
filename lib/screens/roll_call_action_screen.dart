@@ -153,15 +153,18 @@ class RollCallActionScreen extends HookConsumerWidget {
               onPressed: attendanceState.isLoading
                   ? null
                   : () async {
-                      debugPrint('RollCallActionScreen - Starting attendance submission');
+                      debugPrint(
+                          'RollCallActionScreen - Starting attendance submission');
                       final absentStudents = students.value
                           .where((s) => !s.isPresent)
                           .map((s) => s.id)
                           .toList();
-                      
-                      debugPrint('RollCallActionScreen - Absent student IDs: $absentStudents');
+
+                      debugPrint(
+                          'RollCallActionScreen - Absent student IDs: $absentStudents');
                       debugPrint('RollCallActionScreen - Class ID: $classId');
-                      debugPrint('RollCallActionScreen - Date: ${selectedDate.value}');
+                      debugPrint(
+                          'RollCallActionScreen - Date: ${selectedDate.value}');
 
                       await ref
                           .read(takeAttendanceProvider.notifier)
@@ -171,10 +174,12 @@ class RollCallActionScreen extends HookConsumerWidget {
                             absentStudentIds: absentStudents,
                           )
                           .then((_) {
-                        debugPrint('RollCallActionScreen - Submission successful');
+                        debugPrint(
+                            'RollCallActionScreen - Submission successful');
                         context.pop();
                       }).catchError((error) {
-                        debugPrint('RollCallActionScreen - Submission error: $error');
+                        debugPrint(
+                            'RollCallActionScreen - Submission error: $error');
                       });
                     },
               child: Text(
