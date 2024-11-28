@@ -17,7 +17,6 @@ import 'package:learning_management_system/screens/create_class_screen.dart';
 import 'package:learning_management_system/screens/detailed_roll_call_info_screen.dart';
 import 'package:learning_management_system/screens/modify_class_screen.dart';
 import 'package:learning_management_system/screens/notification_screen.dart';
-import 'package:learning_management_system/screens/roll_call_action_screen.dart';
 import 'package:learning_management_system/screens/roll_call_management_screen.dart';
 import 'package:learning_management_system/screens/student_home_screen.dart';
 import 'package:learning_management_system/screens/student_survey_list_screen.dart';
@@ -174,9 +173,9 @@ final routerProvider = Provider<GoRouter>((ref) {
                     ),
                   ),
                   GoRoute(
-                    path: Routes.rollCallAction,
-                    name: Routes.rollCallActionName,
-                    builder: (context, state) => RollCallActionScreen(
+                    path: Routes.takeAttendance,
+                    name: Routes.takeAttendanceName,
+                    builder: (context, state) => TakeAttendanceScreen(
                       classId: state.pathParameters['classId'] ?? '',
                     ),
                   ),
@@ -263,13 +262,6 @@ final routerProvider = Provider<GoRouter>((ref) {
                     name: Routes.submitSurveyName,
                     builder: (context, state) => SubmitSurveyScreen(
                       survey: state.extra as Survey,
-                    ),
-                  ),
-                  GoRoute(
-                    path: Routes.takeAttendance,
-                    name: Routes.takeAttendanceName,
-                    builder: (context, state) => TakeAttendanceScreen(
-                      classId: state.pathParameters['classId'] ?? '',
                     ),
                   ),
                 ],
