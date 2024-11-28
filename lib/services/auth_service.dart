@@ -268,4 +268,39 @@ class AuthService {
       );
     }
   }
+
+  /// Changes the user's password
+  Future<void> changePassword({
+    required String token,
+    required String oldPassword,
+    required String newPassword,
+  }) async {
+    try {
+      final response = await _apiService.dio.post(
+        '/it4788/change_password',
+        data: {
+          'token': token,
+          'old_password': oldPassword,
+          'new_password': newPassword,
+        },
+      );
+
+      if (response.statusCode == 200 && response.data['code'] == '1000') {
+        return;
+      }
+
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: response.data['message'] ?? 'Failed to change password',
+      );
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 401) {
+        throw UnauthorizedException('Invalid credentials or session expired');
+      }
+      throw ApiException(
+        statusCode: e.response?.statusCode,
+        message: e.response?.data['message'] ?? 'Failed to change password',
+      );
+    }
+  }
 }
