@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:learning_management_system/exceptions/api_exceptions.dart';
 import 'package:learning_management_system/services/api_service.dart';
+import 'package:learning_management_system/constants/api_constants.dart';
 
 /// Service responsible for making authentication-related API calls.
 ///
@@ -37,7 +38,7 @@ class AuthService {
     try {
       debugPrint('Attempting sign in for email: $email');
       final response = await _apiService.dio.post(
-        '/it4788/login',
+        ApiConstants.login,
         data: {
           'email': email,
           'password': password,
@@ -50,7 +51,7 @@ class AuthService {
       if (response.statusCode == 403 &&
           response.data['code'].toString() == '9991') {
         final verifyCodeResponse = await _apiService.dio.post(
-          '/it4788/get_verify_code',
+          ApiConstants.getVerifyCode,
           data: {
             'email': email,
             'password': password,
@@ -58,7 +59,7 @@ class AuthService {
         );
 
         if (verifyCodeResponse.statusCode == 200 &&
-            verifyCodeResponse.data['code'].toString() == '1000') {
+            verifyCodeResponse.data['code'].toString() == ApiConstants.successCode) {
           return {
             'success': false,
             'needs_verification': true,
@@ -146,7 +147,7 @@ class AuthService {
   }) async {
     try {
       final response = await _apiService.dio.post(
-        '/it4788/signup',
+        ApiConstants.signup,
         data: {
           'ho': firstName,
           'ten': lastName,
@@ -188,7 +189,7 @@ class AuthService {
   }) async {
     try {
       final response = await _apiService.dio.post(
-        '/it4788/check_verify_code',
+        ApiConstants.checkVerifyCode,
         data: {
           'email': email,
           'verify_code': verifyCode,
@@ -213,7 +214,7 @@ class AuthService {
   Future<bool> signOut(String token) async {
     try {
       final response = await _apiService.dio.post(
-        '/it4788/logout',
+        ApiConstants.logout,
         data: {
           'token': token,
         },
@@ -242,7 +243,7 @@ class AuthService {
       });
 
       final response = await _apiService.dio.post(
-        '/it4788/change_info_after_signup',
+        ApiConstants.changeInfoAfterSignup,
         data: formData,
         options: Options(
           contentType: 'multipart/form-data',
@@ -277,7 +278,7 @@ class AuthService {
   }) async {
     try {
       final response = await _apiService.dio.post(
-        '/it4788/change_password',
+        ApiConstants.changePassword,
         data: {
           'token': token,
           'old_password': oldPassword,

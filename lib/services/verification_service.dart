@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:learning_management_system/services/api_service.dart';
+import 'package:learning_management_system/constants/api_constants.dart';
 
 part 'verification_service.g.dart';
 
@@ -16,7 +17,7 @@ class VerificationService {
   }) async {
     try {
       final response = await _apiService.dio.post(
-        '/get_verify_code',
+        ApiConstants.getVerifyCode,
         data: {
           'email': email,
           'password': password,
@@ -53,7 +54,7 @@ class VerificationService {
   }) async {
     try {
       final response = await _apiService.dio.post(
-        '/verify_code',
+        ApiConstants.checkVerifyCode,
         data: {
           'email': email,
           'code': code,

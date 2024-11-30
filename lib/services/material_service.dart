@@ -7,6 +7,7 @@ import 'package:learning_management_system/exceptions/api_exceptions.dart';
 import 'package:learning_management_system/providers/auth_provider.dart';
 import 'dart:io';
 import 'package:http_parser/http_parser.dart';
+import 'package:learning_management_system/constants/api_constants.dart';
 
 part 'material_service.g.dart';
 
@@ -26,7 +27,7 @@ class MaterialService extends _$MaterialService {
           'MaterialService - Fetching material list for class: $classId');
 
       final response = await _apiService.dio.post(
-        '/it5023e/get_material_list',
+        ApiConstants.getMaterialList,
         data: {
           'token': token,
           'class_id': classId,
@@ -49,12 +50,12 @@ class MaterialService extends _$MaterialService {
           'MaterialService - Response message: ${responseData['message']}');
       debugPrint('MaterialService - Response data: ${responseData['data']}');
 
-      if (responseData['code'] == '9998') {
+      if (responseData['code'] == ApiConstants.sessionExpiredCode) {
         ref.read(authProvider.notifier).signOut();
         throw UnauthorizedException('Session expired. Please sign in again.');
       }
 
-      if (responseData['code'] != '1000') {
+      if (responseData['code'] != ApiConstants.successCode) {
         throw Exception(
             responseData['message'] ?? 'Failed to get material list');
       }
@@ -69,7 +70,7 @@ class MaterialService extends _$MaterialService {
       debugPrint('MaterialService - Response data: ${e.response?.data}');
 
       final responseData = e.response?.data as Map<String, dynamic>?;
-      if (responseData?['code'] == '9998') {
+      if (responseData?['code'] == ApiConstants.sessionExpiredCode) {
         ref.read(authProvider.notifier).signOut();
         throw UnauthorizedException('Session expired. Please sign in again.');
       }
@@ -126,7 +127,7 @@ class MaterialService extends _$MaterialService {
 
     try {
       final response = await _apiService.dio.post(
-        '/it5023e/upload_material',
+        ApiConstants.uploadMaterial,
         data: formData,
         options: Options(
           contentType: 'multipart/form-data',
@@ -144,7 +145,7 @@ class MaterialService extends _$MaterialService {
       debugPrint('MaterialService - Upload response: ${response.data}');
 
       final responseData = response.data as Map<String, dynamic>;
-      if (responseData['code'] != '1000') {
+      if (responseData['code'] != ApiConstants.successCode) {
         throw Exception(responseData['message'] ?? 'Failed to upload material');
       }
     } catch (e) {
@@ -161,7 +162,7 @@ class MaterialService extends _$MaterialService {
       debugPrint('MaterialService - Deleting material: $materialId');
 
       final response = await _apiService.dio.post(
-        '/it5023e/delete_material',
+        ApiConstants.deleteMaterial,
         data: {
           'token': token,
           'material_id': materialId,
@@ -171,12 +172,12 @@ class MaterialService extends _$MaterialService {
       debugPrint('MaterialService - Delete response: ${response.data}');
 
       final responseData = response.data as Map<String, dynamic>;
-      if (responseData['code'] == '9998') {
+      if (responseData['code'] == ApiConstants.sessionExpiredCode) {
         ref.read(authProvider.notifier).signOut();
         throw UnauthorizedException('Session expired. Please sign in again.');
       }
 
-      if (responseData['code'] != '1000') {
+      if (responseData['code'] != ApiConstants.successCode) {
         throw Exception(
           responseData['message'] ?? 'Failed to delete material',
         );
@@ -187,7 +188,7 @@ class MaterialService extends _$MaterialService {
       debugPrint('MaterialService - DioException: ${e.message}');
       final responseData = e.response?.data as Map<String, dynamic>?;
 
-      if (responseData?['code'] == '9998') {
+      if (responseData?['code'] == ApiConstants.sessionExpiredCode) {
         ref.read(authProvider.notifier).signOut();
         throw UnauthorizedException('Session expired. Please sign in again.');
       }
@@ -232,7 +233,7 @@ class MaterialService extends _$MaterialService {
       final formData = FormData.fromMap(formMap);
 
       final response = await _apiService.dio.post(
-        '/it5023e/edit_material',
+        ApiConstants.editMaterial,
         data: formData,
         options: Options(
           contentType: 'multipart/form-data',
@@ -245,12 +246,12 @@ class MaterialService extends _$MaterialService {
       debugPrint('MaterialService - Edit response: ${response.data}');
 
       final responseData = response.data as Map<String, dynamic>;
-      if (responseData['code'] == '9998') {
+      if (responseData['code'] == ApiConstants.sessionExpiredCode) {
         ref.read(authProvider.notifier).signOut();
         throw UnauthorizedException('Session expired. Please sign in again.');
       }
 
-      if (responseData['code'] != '1000') {
+      if (responseData['code'] != ApiConstants.successCode) {
         throw Exception(responseData['message'] ?? 'Failed to edit material');
       }
 
@@ -260,7 +261,7 @@ class MaterialService extends _$MaterialService {
       debugPrint('MaterialService - DioException: ${e.message}');
       final responseData = e.response?.data as Map<String, dynamic>?;
 
-      if (responseData?['code'] == '9998') {
+      if (responseData?['code'] == ApiConstants.sessionExpiredCode) {
         ref.read(authProvider.notifier).signOut();
         throw UnauthorizedException('Session expired. Please sign in again.');
       }

@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:learning_management_system/models/user.dart';
 import 'package:learning_management_system/services/api_service.dart';
 import 'package:learning_management_system/exceptions/api_exceptions.dart';
+import 'package:learning_management_system/constants/api_constants.dart';
 
 class UserService {
   final ApiService _apiService;
@@ -26,7 +27,7 @@ class UserService {
       }
 
       final response = await _apiService.dio.post(
-        '/it4788/get_user_info',
+        ApiConstants.getUserInfo,
         data: {'token': token},
       );
       debugPrint('GetUserInfo raw response: ${response.data}');
@@ -34,7 +35,7 @@ class UserService {
       final responseData = response.data as Map<String, dynamic>;
       debugPrint('Response data code: ${responseData['code']}');
 
-      if (responseData['code'].toString() == '1000' && responseData['data'] != null) {
+      if (responseData['code'].toString() == ApiConstants.successCode && responseData['data'] != null) {
         final userData = responseData['data'];
         
         // Convert ID to int if it's a string

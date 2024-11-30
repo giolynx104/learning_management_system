@@ -6,6 +6,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:learning_management_system/services/api_service.dart';
 import 'package:learning_management_system/exceptions/api_exceptions.dart';
 import 'package:learning_management_system/models/survey.dart';
+import 'package:learning_management_system/constants/api_constants.dart';
 
 part 'survey_service.g.dart'; // This will hold the generated code.
 
@@ -26,7 +27,7 @@ class SurveyService extends _$SurveyService {
       );
 
       final response = await _apiService.dio.post(
-        '/it5023e/get_all_surveys',
+        ApiConstants.getAllSurveys,
         data: {
           'token': token,
           'class_id': classId,
@@ -64,7 +65,7 @@ class SurveyService extends _$SurveyService {
     final responseData = response.data as Map<String, dynamic>;
     final meta = responseData['meta'] as Map<String, dynamic>;
 
-    if (meta['code'] != '1000') {
+    if (meta['code'] != ApiConstants.successCode) {
       throw ApiException(
         message: meta['message'] ?? 'Unknown error',
         statusCode: int.tryParse(meta['code']?.toString() ?? ''),
@@ -92,7 +93,7 @@ class SurveyService extends _$SurveyService {
       );
       
       final response = await _apiService.dio.post(
-        '/it5023e/get_submission',
+        ApiConstants.getSubmission,
         data: data,
         options: Options(
           validateStatus: (status) => 
@@ -109,12 +110,12 @@ class SurveyService extends _$SurveyService {
       final meta = response.data['meta'] as Map<String, dynamic>;
       
       // If code is 9994, it means no submission found
-      if (meta['code'] == '9994') {
+      if (meta['code'] == ApiConstants.noDataCode) {
         return false;
       }
       
       // If code is 1000 and we have data, submission exists
-      if (meta['code'] == '1000' && response.data['data'] != null) {
+      if (meta['code'] == ApiConstants.successCode && response.data['data'] != null) {
         return true;
       }
 
@@ -142,16 +143,16 @@ class SurveyService extends _$SurveyService {
         'assignment_id': assignmentId,
       };
       final response = await _apiService.dio.post(
-        '/it5023e/get_submission',
+        ApiConstants.getSubmission,
         data: data,
       );
 
       final responseData = response.data as Map<String, dynamic>;
       final meta = responseData['meta'] as Map<String, dynamic>;
 
-      if (meta['code'] == '9994') { // No submission found
+      if (meta['code'] == ApiConstants.noDataCode) { // No submission found
         return null;
-      } else if (meta['code'] == '1000') {
+      } else if (meta['code'] == ApiConstants.successCode) {
         // Return submission data
         return responseData['data'];
       } else {
@@ -181,7 +182,7 @@ class SurveyService extends _$SurveyService {
       });
 
       final response = await _apiService.dio.post(
-        '/it5023e/submit_survey',
+        ApiConstants.submitSurvey,
         data: formData,
       );
 
@@ -213,7 +214,7 @@ class SurveyService extends _$SurveyService {
       });
 
       final response = await _apiService.dio.post(
-        '/it5023e/create_survey',
+        ApiConstants.createSurvey,
         data: formData,
       );
 
@@ -245,7 +246,7 @@ class SurveyService extends _$SurveyService {
       });
 
       final response = await _apiService.dio.post(
-        '/it5023e/edit_survey',
+        ApiConstants.editSurvey,
         data: formData,
       );
 
@@ -261,7 +262,7 @@ class SurveyService extends _$SurveyService {
   }) async {
     try {
       final response = await _apiService.dio.post(
-        '/it5023e/delete_survey',
+        ApiConstants.deleteSurvey,
         data: {
           'token': token,
           'survey_id': surveyId,
@@ -302,7 +303,7 @@ class SurveyService extends _$SurveyService {
         name: 'SurveyService',
       );
       final response = await _apiService.dio.post(
-        '/it5023e/get_survey_response',
+        ApiConstants.getSurveyResponse,
         data: data,
       );
       developer.log(
@@ -313,10 +314,10 @@ class SurveyService extends _$SurveyService {
       final responseData = response.data as Map<String, dynamic>;
       final meta = responseData['meta'] as Map<String, dynamic>;
 
-      if (meta['code'] == '9994') {
+      if (meta['code'] == ApiConstants.noDataCode) {
         // No submission found
         return [];
-      } else if (meta['code'] == '1000') {
+      } else if (meta['code'] == ApiConstants.successCode) {
         // Return the list of responses
         final List<dynamic> dataList = responseData['data'];
         return dataList.map((item) => item as Map<String, dynamic>).toList();

@@ -3,6 +3,7 @@ import 'package:learning_management_system/exceptions/api_exceptions.dart';
 import 'package:learning_management_system/services/api_service.dart';
 import 'package:learning_management_system/models/attendance_list_model.dart';
 import 'package:dio/dio.dart';
+import 'package:learning_management_system/constants/api_constants.dart';
 
 class AttendanceService {
   final ApiService _apiService;
@@ -23,7 +24,7 @@ class AttendanceService {
       debugPrint('  Absent IDs: $absentStudentIds');
 
       final response = await _apiService.dio.post(
-        '/it5023e/take_attendance',
+        ApiConstants.takeAttendance,
         data: {
           'token': token,
           'class_id': classId,
@@ -84,7 +85,7 @@ class AttendanceService {
       debugPrint('AttendanceService - Request data: $data');
 
       final response = await _apiService.dio.post(
-        '/it5023e/get_attendance_list',
+        ApiConstants.getAttendanceList,
         data: data,
       );
 

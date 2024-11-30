@@ -6,6 +6,7 @@ import 'package:learning_management_system/services/api_service.dart';
 import 'package:learning_management_system/exceptions/api_exceptions.dart';
 import 'package:learning_management_system/providers/auth_provider.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:learning_management_system/constants/api_constants.dart';
 
 part 'notification_service.g.dart';
 
@@ -15,13 +16,6 @@ class NotificationService extends _$NotificationService {
   FutureOr<void> build() {}
 
   ApiService get _apiService => ref.read(apiServiceProvider);
-
-  static const String _getNotificationsEndpoint = '/it5023e/get_notifications';
-  static const String _sendNotificationEndpoint = '/it5023e/send_notification';
-  static const String _getUnreadCountEndpoint = '/it5023e/get_unread_notification_count';
-  static const String _markAsReadEndpoint = '/it5023e/mark_notification_as_read';
-  static const String _sessionExpiredCode = '9998';
-  static const String _successCode = '1000';
 
   /// Fetch the list of notifications
   Future<List<NotificationModel>> getNotifications(
@@ -39,19 +33,19 @@ class NotificationService extends _$NotificationService {
       };
 
       final response = await _apiService.dio.post(
-        _getNotificationsEndpoint,
+        ApiConstants.getNotifications,
         data: requestData,
       );
 
       final responseData = response.data as Map<String, dynamic>;
       final meta = responseData['meta'] as Map<String, dynamic>;
 
-      if (meta['code'] == _sessionExpiredCode) {
+      if (meta['code'] == ApiConstants.sessionExpiredCode) {
         ref.read(authProvider.notifier).signOut();
         throw UnauthorizedException('Session expired. Please sign in again.');
       }
 
-      if (meta['code'] != _successCode) {
+      if (meta['code'] != ApiConstants.successCode) {
         throw Exception(meta['message'] ?? 'Failed to get notifications');
       }
 
@@ -104,7 +98,7 @@ class NotificationService extends _$NotificationService {
       debugPrint('NotificationService - Sending request with formData: ${formData.fields}');
 
       final response = await _apiService.dio.post(
-        _sendNotificationEndpoint,
+        ApiConstants.sendNotification,
         data: formData,
         options: Options(
           contentType: 'multipart/form-data',
@@ -118,12 +112,12 @@ class NotificationService extends _$NotificationService {
       final responseData = response.data as Map<String, dynamic>;
       final meta = responseData['meta'] as Map<String, dynamic>;
 
-      if (meta['code'] == _sessionExpiredCode) {
+      if (meta['code'] == ApiConstants.sessionExpiredCode) {
         ref.read(authProvider.notifier).signOut();
         throw UnauthorizedException('Session expired. Please sign in again.');
       }
 
-      if (meta['code'] != _successCode) {
+      if (meta['code'] != ApiConstants.successCode) {
         throw Exception(meta['message'] ?? 'Failed to send notification');
       }
 
@@ -148,19 +142,19 @@ class NotificationService extends _$NotificationService {
       };
 
       final response = await _apiService.dio.post(
-        _getUnreadCountEndpoint,
+        ApiConstants.getUnreadCount,
         data: requestData,
       );
 
       final responseData = response.data as Map<String, dynamic>;
       final meta = responseData['meta'] as Map<String, dynamic>;
 
-      if (meta['code'] == _sessionExpiredCode) {
+      if (meta['code'] == ApiConstants.sessionExpiredCode) {
         ref.read(authProvider.notifier).signOut();
         throw UnauthorizedException('Session expired. Please sign in again.');
       }
 
-      if (meta['code'] != _successCode) {
+      if (meta['code'] != ApiConstants.successCode) {
         throw Exception(meta['message'] ?? 'Failed to get unread notifications count');
       }
 
@@ -188,19 +182,19 @@ class NotificationService extends _$NotificationService {
       };
 
       final response = await _apiService.dio.post(
-        _markAsReadEndpoint,
+        ApiConstants.markAsRead,
         data: requestData,
       );
 
       final responseData = response.data as Map<String, dynamic>;
       final meta = responseData['meta'] as Map<String, dynamic>;
 
-      if (meta['code'] == _sessionExpiredCode) {
+      if (meta['code'] == ApiConstants.sessionExpiredCode) {
         ref.read(authProvider.notifier).signOut();
         throw UnauthorizedException('Session expired. Please sign in again.');
       }
 
-      if (meta['code'] != _successCode) {
+      if (meta['code'] != ApiConstants.successCode) {
         throw Exception(meta['message'] ?? 'Failed to mark notification as read');
       }
 
