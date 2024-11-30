@@ -21,7 +21,7 @@ class User with _$User {  // _$User is a generated mixin that adds functionality
     required String lastName,
     required String email,
     required String role,
-    String? avatar,  // Optional field (can be null)
+    String? avatar,  // Optional fhttps://meet.google.com/kef-ghvq-hsbield (can be null)
     
     /// @JsonKey allows us to customize how fields are serialized/deserialized
     /// includeToJson: false means this field won't be included when converting to JSON

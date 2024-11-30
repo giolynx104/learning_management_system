@@ -3,8 +3,8 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:learning_management_system/providers/attendance_provider.dart';
-import 'package:learning_management_system/providers/auth_provider.dart';
 import 'package:learning_management_system/models/attendance_list_model.dart';
+import 'package:learning_management_system/exceptions/api_exceptions.dart';
 import 'package:go_router/go_router.dart';
 
 class DetailedAttendanceListScreen extends HookConsumerWidget {
@@ -18,6 +18,7 @@ class DetailedAttendanceListScreen extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedDate = useState(DateTime.now());
+    
     final attendanceState = ref.watch(
       getAttendanceListProvider(classId, selectedDate.value),
     );
@@ -37,8 +38,9 @@ class DetailedAttendanceListScreen extends HookConsumerWidget {
             child: Row(
               children: [
                 const Text('Date: '),
-                TextButton(
-                  child: Text(
+                TextButton.icon(
+                  icon: const Icon(Icons.calendar_today),
+                  label: Text(
                     DateFormat('yyyy-MM-dd').format(selectedDate.value),
                   ),
                   onPressed: () async {
@@ -46,7 +48,7 @@ class DetailedAttendanceListScreen extends HookConsumerWidget {
                       context: context,
                       initialDate: selectedDate.value,
                       firstDate: DateTime(2020),
-                      lastDate: DateTime.now(),
+                      lastDate: DateTime(2101),
                     );
                     if (date != null) {
                       selectedDate.value = date;
@@ -58,7 +60,7 @@ class DetailedAttendanceListScreen extends HookConsumerWidget {
           ),
           Expanded(
             child: attendanceState.when(
-              data: (AttendanceListResponse? data) {
+              data: (data) {
                 if (data == null || data.attendanceDetails.isEmpty) {
                   return const Center(
                     child: Text('No attendance records found for this date'),
@@ -68,18 +70,34 @@ class DetailedAttendanceListScreen extends HookConsumerWidget {
                 return ListView.builder(
                   itemCount: data.attendanceDetails.length,
                   itemBuilder: (context, index) {
-                    final record = data.attendanceDetails[index];
-                    return ListTile(
-                      leading: Icon(
-                        record.status == 'PRESENT'
-                            ? Icons.check_circle
-                            : Icons.cancel,
-                        color: record.status == 'PRESENT'
-                            ? Colors.green
-                            : Colors.red,
+                    final detail = data.attendanceDetails[index];
+                    return Card(
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 4,
                       ),
-                      title: Text('Student ID: ${record.studentId}'),
-                      subtitle: Text('Status: ${record.status}'),
+                      child: ListTile(
+                        title: Text('Student ID: ${detail.studentId}'),
+                        trailing: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: detail.status.toLowerCase() == 'present'
+                                ? Colors.green
+                                : Colors.red,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            detail.status,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
                     );
                   },
                 );
@@ -87,14 +105,49 @@ class DetailedAttendanceListScreen extends HookConsumerWidget {
               loading: () => const Center(
                 child: CircularProgressIndicator(),
               ),
-              error: (error, stack) => Center(
-                child: Text(
-                  'Error: ${error.toString()}',
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.error,
+              error: (error, stack) {
+                String errorMessage;
+                if (error is ApiException) {
+                  errorMessage = error.message;
+                } else {
+                  errorMessage = 'Failed to load attendance data';
+                }
+                
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        child: Text(
+                          errorMessage,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.error,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        height: 36,
+                        child: ElevatedButton(
+                          onPressed: () => ref.refresh(
+                            getAttendanceListProvider(classId, selectedDate.value),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 0,
+                            ),
+                            minimumSize: const Size(80, 36),
+                          ),
+                          child: const Text('Retry'),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ),
+                );
+              },
             ),
           ),
         ],

@@ -17,7 +17,6 @@ import 'package:learning_management_system/screens/create_class_screen.dart';
 import 'package:learning_management_system/screens/detailed_roll_call_info_screen.dart';
 import 'package:learning_management_system/screens/modify_class_screen.dart';
 import 'package:learning_management_system/screens/notification_screen.dart';
-import 'package:learning_management_system/screens/roll_call_action_screen.dart';
 import 'package:learning_management_system/screens/roll_call_management_screen.dart';
 import 'package:learning_management_system/screens/student_home_screen.dart';
 import 'package:learning_management_system/screens/student_survey_list_screen.dart';
@@ -35,6 +34,8 @@ import 'package:learning_management_system/screens/response_survey_screen.dart';
 import 'package:learning_management_system/screens/submit_survey_screen.dart';
 import 'package:learning_management_system/routes/router_notifier.dart';
 import 'package:learning_management_system/screens/assignment_list_screen.dart';
+import 'package:learning_management_system/screens/take_attendance_screen.dart';
+import 'package:learning_management_system/screens/change_password_screen.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
 final _shellNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'shell');
@@ -85,6 +86,15 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const CustomLayoutScaffold(
           hideAppBar: true,
           child: SignUpScreen(),
+        ),
+      ),
+      
+      // Add the change password route here, outside the shell
+      GoRoute(
+        path: Routes.changePassword,
+        name: Routes.changePasswordName,
+        builder: (context, state) => const CustomLayoutScaffold(
+          child: ChangePasswordScreen(),
         ),
       ),
 
@@ -173,9 +183,9 @@ final routerProvider = Provider<GoRouter>((ref) {
                     ),
                   ),
                   GoRoute(
-                    path: Routes.rollCallAction,
-                    name: Routes.rollCallActionName,
-                    builder: (context, state) => RollCallActionScreen(
+                    path: Routes.takeAttendance,
+                    name: Routes.takeAttendanceName,
+                    builder: (context, state) => TakeAttendanceScreen(
                       classId: state.pathParameters['classId'] ?? '',
                     ),
                   ),

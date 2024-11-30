@@ -188,6 +188,28 @@ class Auth extends _$Auth {
       rethrow;
     }
   }
+
+  Future<void> changePassword({
+    required String oldPassword,
+    required String newPassword,
+  }) async {
+    try {
+      final currentUser = state.value;
+      if (currentUser == null || currentUser.token == null) {
+        throw Exception('Not authenticated');
+      }
+
+      final authService = ref.read(authServiceProvider);
+      await authService.changePassword(
+        token: currentUser.token!,
+        oldPassword: oldPassword,
+        newPassword: newPassword,
+      );
+    } catch (e) {
+      state = AsyncError(e, StackTrace.current);
+      rethrow;
+    }
+  }
 }
 
 /// Extension methods for easier state checking

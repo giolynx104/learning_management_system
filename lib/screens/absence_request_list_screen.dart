@@ -6,6 +6,8 @@ import 'package:go_router/go_router.dart';
 import 'package:learning_management_system/models/absence_request_list_model.dart';
 import 'package:learning_management_system/providers/absence_request_provider.dart';
 import 'package:learning_management_system/providers/auth_provider.dart';
+import 'package:learning_management_system/providers/attendance_provider.dart';
+import 'package:learning_management_system/exceptions/api_exceptions.dart';
 
 class AbsenceRequestListScreen extends HookConsumerWidget {
   final String classId;
@@ -124,6 +126,15 @@ class AbsenceRequestListScreen extends HookConsumerWidget {
           Expanded(
             child: requestsState.when(
               data: (data) {
+                if (data == null) {
+                  return Center(
+                    child: Text(
+                      'No attendance record found for this date',
+                      style: Theme.of(context).textTheme.bodyLarge,
+                    ),
+                  );
+                }
+                
                 if (data.pageContent.isEmpty) {
                   return const Center(
                     child: Text('No absence requests found'),
@@ -260,14 +271,43 @@ class AbsenceRequestListScreen extends HookConsumerWidget {
               loading: () => const Center(
                 child: CircularProgressIndicator(),
               ),
-              error: (error, stack) => Center(
-                child: Text(
-                  'Error: ${error.toString()}',
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.error,
+              error: (error, stack) {
+                String errorMessage;
+                
+                if (error is ApiException) {
+                  errorMessage = error.message;
+                } else {
+                  errorMessage = 'An error occurred while loading the data';
+                }
+                
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        child: Text(
+                          errorMessage,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.error,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: () => ref.refresh(
+                          getAttendanceListProvider(
+                            classId, 
+                            selectedDate.value ?? DateTime.now(),
+                          ),
+                        ),
+                        child: const Text('Retry'),
+                      ),
+                    ],
                   ),
-                ),
-              ),
+                );
+              },
             ),
           ),
         ],

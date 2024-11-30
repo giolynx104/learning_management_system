@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:learning_management_system/exceptions/api_exceptions.dart';
 import 'package:learning_management_system/providers/auth_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:learning_management_system/services/attendance_service.dart';
@@ -59,14 +60,22 @@ Future<AttendanceListResponse?> getAttendanceList(
   String classId,
   DateTime date,
 ) async {
-  final token = ref.read(authProvider).value?.token;
-  if (token == null) {
-    throw Exception('No authentication token found');
-  }
+  try {
+    final token = ref.read(authProvider).value?.token;
+    if (token == null) {
+      throw Exception('No authentication token found');
+    }
 
-  return ref.read(attendanceServiceProvider).getAttendanceList(
-    classId: classId,
-    date: date,
-    token: token,
-  );
+    return await ref.read(attendanceServiceProvider).getAttendanceList(
+      classId: classId,
+      date: date,
+      token: token,
+    );
+  } on ApiException catch (e) {
+    debugPrint('AttendanceProvider - ApiException: ${e.message}');
+    rethrow;
+  } catch (e) {
+    debugPrint('AttendanceProvider - Error: $e');
+    rethrow;
+  }
 } 

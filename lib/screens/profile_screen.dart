@@ -77,6 +77,11 @@ class ProfileScreen extends ConsumerWidget {
                         },
                       ),
                       ListTile(
+                        leading: const Icon(Icons.lock),
+                        title: const Text('Change Password'),
+                        onTap: () => context.pushNamed(Routes.changePasswordName),
+                      ),
+                      ListTile(
                         leading: const Icon(Icons.help),
                         title: const Text('Help & Support'),
                         onTap: () {

@@ -172,7 +172,7 @@ class RollCallScreen extends HookConsumerWidget {
                     ElevatedButton(
                       onPressed: () {
                         context.pushNamed(
-                          Routes.rollCallActionName,
+                          Routes.takeAttendanceName,
                           pathParameters: {'classId': classId},
                         );
                       },

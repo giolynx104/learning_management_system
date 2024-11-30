@@ -9,6 +9,11 @@ import 'package:learning_management_system/routes/routes.dart';
 import 'package:learning_management_system/services/class_service.dart';
 import 'package:learning_management_system/providers/auth_provider.dart';
 
+const _classDurationOptions = [
+  DropdownMenuItem(value: '8', child: Text('8 weeks')),
+  DropdownMenuItem(value: '16', child: Text('16 weeks')),
+];
+
 class CreateClassScreen extends HookConsumerWidget {
   const CreateClassScreen({super.key});
 
@@ -23,7 +28,7 @@ class CreateClassScreen extends HookConsumerWidget {
     final maxStudentsController = useTextEditingController();
     final classType = useState<String?>(null);
     final startDate = useState<DateTime?>(null);
-    final endDate = useState<DateTime?>(null);
+    final classDuration = useState<String>('16');
 
     /// Status is set to 'ACTIVE' by default in the backend
     /// This is handled server-side and doesn't need to be sent
@@ -47,23 +52,23 @@ class CreateClassScreen extends HookConsumerWidget {
             throw Exception('Class code must be exactly 6 digits');
           }
 
-          // Validate dates
-          if (startDate.value == null || endDate.value == null) {
-            throw Exception('Please select both start and end dates');
+          // Validate start date
+          if (startDate.value == null) {
+            throw Exception('Please select a start date');
           }
 
-          if (endDate.value!.isBefore(startDate.value!)) {
-            throw Exception('End date cannot be before start date');
-          }
+          // Calculate end date based on class duration
+          final weeks = int.parse(classDuration.value);
+          final calculatedEndDate = startDate.value!.add(Duration(days: weeks * 7 - 1));
+          
+          final formattedStartDate = DateFormat('yyyy-MM-dd').format(startDate.value!);
+          final formattedEndDate = DateFormat('yyyy-MM-dd').format(calculatedEndDate);
 
           // Validate max students
           final maxStudents = int.tryParse(maxStudentsController.text);
           if (maxStudents == null || maxStudents <= 0) {
             throw Exception('Please enter a valid number for maximum students');
           }
-
-          final formattedStartDate = DateFormat('yyyy-MM-dd').format(startDate.value!);
-          final formattedEndDate = DateFormat('yyyy-MM-dd').format(endDate.value!);
 
           debugPrint('CreateClassScreen - Request data:');
           debugPrint('Token: ${authState.token}');
@@ -272,10 +277,13 @@ class CreateClassScreen extends HookConsumerWidget {
                 theme: theme,
               ),
               const SizedBox(height: 16),
-              _DatePickerField(
-                labelText: 'End Date',
-                selectedDate: endDate.value,
-                onDateSelected: (date) => endDate.value = date,
+              _buildDropdownField(
+                value: classDuration.value,
+                labelText: 'Class Duration',
+                items: _classDurationOptions,
+                onChanged: (value) => classDuration.value = value ?? '16',
+                validator: (value) =>
+                    value == null ? 'Please select class duration' : null,
                 theme: theme,
               ),
               const SizedBox(height: 32),
