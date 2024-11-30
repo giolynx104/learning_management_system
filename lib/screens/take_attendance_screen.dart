@@ -9,6 +9,7 @@ import 'package:learning_management_system/services/class_service.dart';
 import 'package:learning_management_system/models/student_info.dart';
 import 'package:learning_management_system/models/class_detail_model.dart';
 import 'package:learning_management_system/exceptions/api_exceptions.dart';
+import 'package:learning_management_system/services/notification_service.dart';
 
 class TakeAttendanceScreen extends HookConsumerWidget {
   final String classId;
@@ -82,6 +83,11 @@ class TakeAttendanceScreen extends HookConsumerWidget {
 
     Future<void> handleSubmit() async {
       try {
+        final token = ref.read(authProvider).value?.token;
+        if (token == null) {
+          throw Exception('No authentication token found');
+        }
+
         final absentStudents = students.value
             .where((s) => !s.isPresent)
             .map((s) => s.id)
@@ -92,6 +98,29 @@ class TakeAttendanceScreen extends HookConsumerWidget {
           date: selectedDate.value,
           absentStudentIds: absentStudents,
         );
+
+        // Send notifications to absent students
+        if (classInfo.value != null) {
+          final notificationService = ref.read(notificationServiceProvider.notifier);
+          
+          for (final studentId in absentStudents) {
+            // Find the corresponding account_id for the student_id
+            final studentAccount = classInfo.value!.studentAccounts
+                .firstWhere((account) => account.studentId == studentId);
+
+            try {
+              await notificationService.sendNotification(
+                token,
+                'You were marked absent for ${classInfo.value!.className} on ${DateFormat('yyyy-MM-dd').format(selectedDate.value)}',
+                studentAccount.accountId,
+                'ABSENCE',
+                null,
+              );
+            } catch (e) {
+              debugPrint('Failed to send notification to student ${studentAccount.accountId}: $e');
+            }
+          }
+        }
 
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(

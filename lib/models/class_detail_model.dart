@@ -3,6 +3,12 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 part 'class_detail_model.freezed.dart';
 part 'class_detail_model.g.dart';
 
+int _parseStudentCount(dynamic value) {
+  if (value is int) return value;
+  if (value is String) return int.parse(value);
+  return 0; // or throw an exception if you prefer
+}
+
 @freezed
 class ClassDetailModel with _$ClassDetailModel {
   const factory ClassDetailModel({
@@ -11,7 +17,11 @@ class ClassDetailModel with _$ClassDetailModel {
     @JsonKey(name: 'class_type') required String classType,
     @JsonKey(name: 'attached_code') String? attachedCode,
     @JsonKey(name: 'lecturer_name') String? lecturerName,
-    @JsonKey(name: 'student_count') required String studentCount,
+    @JsonKey(
+      name: 'student_count',
+      fromJson: _parseStudentCount,
+    ) 
+    required int studentCount,
     @JsonKey(name: 'start_date') required String startDate,
     @JsonKey(name: 'end_date') required String endDate,
     required String status,

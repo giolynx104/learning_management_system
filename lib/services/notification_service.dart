@@ -76,40 +76,44 @@ class NotificationService extends _$NotificationService {
     String message,
     String toUser,
     String type,
-    String titlePushNotification,
-    XFile? imageFile,
+    String? image,
   ) async {
     try {
-      debugPrint('NotificationService - Sending notification.');
+      debugPrint('NotificationService - Sending notification with params:');
+      debugPrint('  token: $token');
+      debugPrint('  message: $message');
+      debugPrint('  toUser: $toUser');
+      debugPrint('  type: $type');
+      debugPrint('  image: $image');
 
-      final formData = FormData();
+      // Create form data
+      final formData = FormData.fromMap({
+        'token': token,
+        'message': message,
+        'toUser': toUser,
+        'type': type,
+      });
 
-      // Convert the model to JSON and add to form data
-      formData.fields.add(MapEntry('token', token));
-      formData.fields.add(MapEntry('message', message));
-      formData.fields.add(MapEntry('to_user', toUser));
-      formData.fields.add(MapEntry('type', type));
-      formData.fields.add(MapEntry('title_push_notification',titlePushNotification));
-
-      // Add image if provided
-      if (imageFile != null) {
+      if (image != null) {
         formData.files.add(MapEntry(
           'image',
-          await MultipartFile.fromFile(
-            imageFile.path,
-            filename: imageFile.name,
-          ),
+          await MultipartFile.fromFile(image),
         ));
       }
 
-      // Send the POST request with form-data
+      debugPrint('NotificationService - Sending request with formData: ${formData.fields}');
+
       final response = await _apiService.dio.post(
         _sendNotificationEndpoint,
         data: formData,
         options: Options(
           contentType: 'multipart/form-data',
+          validateStatus: (status) => true, // Allow any status code for debugging
         ),
       );
+
+      debugPrint('NotificationService - Response status: ${response.statusCode}');
+      debugPrint('NotificationService - Response data: ${response.data}');
 
       final responseData = response.data as Map<String, dynamic>;
       final meta = responseData['meta'] as Map<String, dynamic>;
@@ -126,7 +130,11 @@ class NotificationService extends _$NotificationService {
       debugPrint('NotificationService - Notification sent successfully.');
     } catch (e, stackTrace) {
       debugPrint('NotificationService - Error sending notification: $e');
-      debugPrintStack(stackTrace: stackTrace);
+      debugPrint('NotificationService - Error stacktrace: $stackTrace');
+      if (e is DioException) {
+        debugPrint('NotificationService - Response data: ${e.response?.data}');
+        debugPrint('NotificationService - Response headers: ${e.response?.headers}');
+      }
       if (e is UnauthorizedException) rethrow;
       throw Exception('An error occurred while sending the notification.');
     }

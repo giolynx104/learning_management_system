@@ -86,8 +86,7 @@ class RollCallScreen extends HookConsumerWidget {
       }
 
       final info = classInfo.value!;
-      final totalStudents = int.tryParse(info.studentCount) ?? 0;
-      // Calculate attendance rate based on student accounts
+      final totalStudents = info.studentCount;
       final attendanceRate = totalStudents > 0 ? info.studentAccounts.length / totalStudents : 0.0;
 
       return Scaffold(
