@@ -9,7 +9,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
   await FireBaseApi().initNotification();
-  FirebaseMessaging.onBackgroundMessage(FireBaseApi().firebaseMessagingBackgroundHandler);
+  FirebaseMessaging.onBackgroundMessage(FireBaseApi.firebaseMessagingBackgroundHandler);
   
   runApp(
     const ProviderScope(
