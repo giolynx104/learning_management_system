@@ -1,3 +1,5 @@
+import '../screens/attendance_management_screen.dart';
+
 class Routes {
   Routes._();
 
