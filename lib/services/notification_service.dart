@@ -72,25 +72,27 @@ class NotificationService extends _$NotificationService {
     }
   }
 
-  /// Send a notification
-  Future<void> sendNotification({
-    required String token,
-    required String message,
-    required String toUser,
-    required String type,
+  Future<void> sendNotification(
+    String token,
+    String message,
+    String toUser,
+    String type,
+    String titlePushNotification,
     XFile? imageFile,
-  }) async {
+  ) async {
     try {
       debugPrint('NotificationService - Sending notification.');
 
-      // Prepare the form data
       final formData = FormData();
 
+      // Convert the model to JSON and add to form data
       formData.fields.add(MapEntry('token', token));
       formData.fields.add(MapEntry('message', message));
-      formData.fields.add(MapEntry('toUser', toUser));
+      formData.fields.add(MapEntry('to_user', toUser));
       formData.fields.add(MapEntry('type', type));
+      formData.fields.add(MapEntry('title_push_notification',titlePushNotification));
 
+      // Add image if provided
       if (imageFile != null) {
         formData.files.add(MapEntry(
           'image',
@@ -169,7 +171,6 @@ class NotificationService extends _$NotificationService {
       throw Exception('An error occurred while fetching the unread notifications count.');
     }
   }
-  /// Mark a notification as read
   Future<void> markNotificationAsRead(String token, String notificationId) async {
     try {
       debugPrint('NotificationService - Marking notification as read.');

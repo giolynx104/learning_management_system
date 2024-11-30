@@ -9,7 +9,7 @@
       "client_info": {
         "mobilesdk_app_id": "1:844626516109:android:1c122a7d1d7acc8ffd2ac4",
         "android_client_info": {
-          "package_name": "com.danentang.learning_management_system"
+          "package_name": "com.example.learning_management_system"
         }
       },
       "oauth_client": [],
