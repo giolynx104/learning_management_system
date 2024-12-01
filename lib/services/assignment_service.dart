@@ -164,18 +164,44 @@ class AssignmentService extends _$AssignmentService {
     }
   }
 
-  Future<void> gradeAssignment({
+  Future<List<Map<String, dynamic>>> getAssignmentResponses({
     required String token,
     required String assignmentId,
-    required String grade,
   }) async {
     try {
       final response = await _apiService.dio.post(
         ApiConstants.getSurveyResponse,
         data: {
           'token': token,
-          'assignmentId': assignmentId,
-          'grade': grade,
+          'survey_id': assignmentId,
+        },
+      );
+
+      return await _handleResponse<List<Map<String, dynamic>>>(
+        response,
+        (data) => List<Map<String, dynamic>>.from(data as List),
+      );
+    } on DioException catch (e) {
+      throw ApiException.fromDioError(e);
+    }
+  }
+
+  Future<void> gradeAssignment({
+    required String token,
+    required String assignmentId,
+    required String score,
+    required String submissionId,
+  }) async {
+    try {
+      final response = await _apiService.dio.post(
+        ApiConstants.getSurveyResponse,
+        data: {
+          'token': token,
+          'survey_id': assignmentId,
+          'grade': {
+            'score': score,
+            'submission_id': submissionId,
+          },
         },
       );
 

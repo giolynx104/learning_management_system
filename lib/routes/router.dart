@@ -28,7 +28,7 @@ import 'package:learning_management_system/screens/student_attendance_screen.dar
 import 'package:learning_management_system/screens/material_list_screen.dart';
 import 'package:learning_management_system/screens/edit_assignment_screen.dart';
 import 'package:learning_management_system/screens/create_assignment_screen.dart';
-import 'package:learning_management_system/screens/response_survey_screen.dart';
+import 'package:learning_management_system/screens/response_assignment_screen.dart';
 import 'package:learning_management_system/screens/submit_survey_screen.dart';
 import 'package:learning_management_system/routes/router_notifier.dart';
 import 'package:learning_management_system/screens/assignment_list_screen.dart';
@@ -232,10 +232,10 @@ final routerProvider = Provider<GoRouter>((ref) {
                     ),
                   ),
                   GoRoute(
-                    path: Routes.responseSurvey,
-                    name: Routes.responseSurveyName,
-                    builder: (context, state) => ResponseSurveyScreen(
-                      surveyId: state.pathParameters['surveyId'] ?? '',
+                    path: Routes.responseAssignment,
+                    name: Routes.responseAssignmentName,
+                    builder: (context, state) => ResponseAssignmentScreen(
+                      assignmentId: state.pathParameters['assignmentId'] ?? '',
                     ),
                   ),
                   GoRoute(
