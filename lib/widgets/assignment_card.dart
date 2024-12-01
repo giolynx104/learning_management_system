@@ -6,29 +6,31 @@ class AssignmentCard extends StatelessWidget {
   final String name;
   final String? description;
   final VoidCallback? onTap;
-  final Widget? trailing;
-  final VoidCallback? onDelete;
-  final VoidCallback? onEdit;
-  final VoidCallback? onViewResponse;
+  final Function()? onEdit;
+  final Function()? onDelete;
+  final Function()? onViewResponse;
+  final bool isTeacher;
 
   const AssignmentCard({
     super.key,
     required this.endTimeFormatted,
     required this.name,
+    required this.isTeacher,
     this.description,
     this.onTap,
-    this.trailing,
-    this.onDelete,
     this.onEdit,
+    this.onDelete,
     this.onViewResponse,
   });
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final endDateTime = DateFormat('HH:mm dd-MM-yyyy').parse(endTimeFormatted);
     final isOverdue = DateTime.now().isAfter(endDateTime);
 
     return Card(
+      elevation: 2,
       margin: const EdgeInsets.only(bottom: 12),
       child: InkWell(
         onTap: onTap,
@@ -42,30 +44,106 @@ class AssignmentCard extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Expanded(
-                    child: Text(
-                      name,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.assignment,
+                          color: theme.colorScheme.primary,
+                          size: 24,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            name,
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  if (trailing != null) trailing!,
+                  if (isTeacher)
+                    PopupMenuButton<String>(
+                      icon: Icon(
+                        Icons.more_vert,
+                        color: theme.colorScheme.primary,
+                      ),
+                      onSelected: (value) {
+                        switch (value) {
+                          case 'edit':
+                            onEdit?.call();
+                            break;
+                          case 'delete':
+                            onDelete?.call();
+                            break;
+                          case 'responses':
+                            onViewResponse?.call();
+                            break;
+                        }
+                      },
+                      itemBuilder: (context) => [
+                        const PopupMenuItem(
+                          value: 'edit',
+                          child: Row(
+                            children: [
+                              Icon(Icons.edit),
+                              SizedBox(width: 8),
+                              Text('Edit'),
+                            ],
+                          ),
+                        ),
+                        const PopupMenuItem(
+                          value: 'responses',
+                          child: Row(
+                            children: [
+                              Icon(Icons.assessment),
+                              SizedBox(width: 8),
+                              Text('View Responses'),
+                            ],
+                          ),
+                        ),
+                        PopupMenuItem(
+                          value: 'delete',
+                          child: Row(
+                            children: [
+                              Icon(Icons.delete, color: Colors.red[700]),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Delete',
+                                style: TextStyle(color: Colors.red[700]),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                 ],
               ),
               if (description != null) ...[
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
                 Text(
                   description!,
-                  style: Theme.of(context).textTheme.bodyMedium,
+                  style: theme.textTheme.bodyMedium,
                 ),
               ],
-              const SizedBox(height: 8),
-              Text(
-                'Due: $endTimeFormatted',
-                style: TextStyle(
-                  color: isOverdue ? Colors.red : Colors.grey[600],
-                ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Icon(
+                    Icons.access_time,
+                    size: 16,
+                    color: isOverdue ? Colors.red : Colors.grey[600],
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Due: $endTimeFormatted',
+                    style: TextStyle(
+                      color: isOverdue ? Colors.red : Colors.grey[600],
+                      fontWeight: isOverdue ? FontWeight.bold : null,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

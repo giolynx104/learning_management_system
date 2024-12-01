@@ -128,7 +128,7 @@ class AssignmentService extends _$AssignmentService {
         ApiConstants.deleteSurvey,
         data: {
           'token': token,
-          'assignmentId': assignmentId,
+          'survey_id': assignmentId,
         },
       );
 
