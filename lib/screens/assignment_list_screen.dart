@@ -127,6 +127,7 @@ class AssignmentListScreen extends HookConsumerWidget {
     if (!isTeacher) {
       context.pushNamed(
         Routes.submitAssignmentName,
+        pathParameters: {'assignmentId': assignment.id},
         extra: assignment,
       );
     }

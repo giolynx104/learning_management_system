@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:learning_management_system/models/survey.dart';
 import 'package:learning_management_system/models/assignment.dart';
 import 'package:learning_management_system/providers/auth_provider.dart';
 import 'package:learning_management_system/routes/custom_layout_scaffold.dart';
@@ -29,7 +28,7 @@ import 'package:learning_management_system/screens/material_list_screen.dart';
 import 'package:learning_management_system/screens/edit_assignment_screen.dart';
 import 'package:learning_management_system/screens/create_assignment_screen.dart';
 import 'package:learning_management_system/screens/response_assignment_screen.dart';
-import 'package:learning_management_system/screens/submit_survey_screen.dart';
+import 'package:learning_management_system/screens/submit_assignment_screen.dart';
 import 'package:learning_management_system/routes/router_notifier.dart';
 import 'package:learning_management_system/screens/assignment_list_screen.dart';
 import 'package:learning_management_system/screens/take_attendance_screen.dart';
@@ -253,10 +252,10 @@ final routerProvider = Provider<GoRouter>((ref) {
                     ),
                   ),
                   GoRoute(
-                    path: Routes.submitSurvey,
-                    name: Routes.submitSurveyName,
-                    builder: (context, state) => SubmitSurveyScreen(
-                      survey: state.extra as Survey,
+                    path: Routes.submitAssignment,
+                    name: Routes.submitAssignmentName,
+                    builder: (context, state) => SubmitAssignmentScreen(
+                      assignment: state.extra as Assignment,
                     ),
                   ),
                 ],

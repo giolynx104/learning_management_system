@@ -19,14 +19,14 @@ class Routes {
   static const String materialList = 'materials/:classId';
   static const String uploadMaterial = 'materials/:classId/upload';
   static const String assignments = 'assignments/:classId';
-  static const String submitSurvey = 'submit-survey';
+  static const String submitSurvey = 'submit-survey/:surveyId';
   static const String createSurvey = 'create-survey/:classId';
   static const String editSurvey = 'edit-survey/:surveyId';
   static const String responseSurvey = 'response-survey/:surveyId';
   static const String attendanceManagement = 'attendance-management/:classId';
   static const String createAssignment = 'create-assignment/:classId';
   static const String editAssignment = '/edit-assignment/:assignmentId';
-  static const String submitAssignment = '/submit-assignment';
+  static const String submitAssignment = 'submit-assignment/:assignmentId';
   static const String responseAssignment = '/response-assignment/:assignmentId';
   // Route names
   static const String signinName = 'signin';

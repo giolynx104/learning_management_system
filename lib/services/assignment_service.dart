@@ -224,4 +224,54 @@ class AssignmentService extends _$AssignmentService {
       );
     }
   }
+
+  Future<Map<String, dynamic>?> getStudentSubmission({
+    required String token,
+    required String assignmentId,
+  }) async {
+    try {
+      developer.log(
+        'Getting student submission for assignment: $assignmentId',
+        name: 'AssignmentService',
+      );
+
+      final response = await _apiService.dio.post(
+        ApiConstants.getSubmission,
+        data: {
+          'token': token,
+          'assignment_id': assignmentId,
+        },
+        options: Options(
+          validateStatus: (status) => 
+            status != null && (status < 500 || status == 400),
+        ),
+      );
+
+      developer.log(
+        'Raw response data: ${response.data}',
+        name: 'AssignmentService',
+      );
+
+      if (response.statusCode == 400 || 
+          response.data['meta']['code'] == ApiConstants.noDataCode) {
+        return null;
+      }
+
+      return await _handleResponse<Map<String, dynamic>?>(
+        response,
+        (data) => (data as List).isNotEmpty ? 
+          Map<String, dynamic>.from(data.first) : null,
+      );
+    } on DioException catch (e) {
+      developer.log(
+        'Error getting student submission: ${e.message}',
+        name: 'AssignmentService',
+        error: e,
+      );
+      if (e.response?.statusCode != 400) {
+        throw ApiException.fromDioError(e);
+      }
+      return null;
+    }
+  }
 } 
