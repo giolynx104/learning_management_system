@@ -6,7 +6,6 @@ import 'package:learning_management_system/providers/material_provider.dart';
 import 'package:learning_management_system/routes/routes.dart';
 import 'package:learning_management_system/models/material_model.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:intl/intl.dart';
 import 'package:learning_management_system/providers/auth_provider.dart';
 
 class MaterialListScreen extends HookConsumerWidget {

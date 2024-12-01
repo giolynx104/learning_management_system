@@ -15,13 +15,10 @@ import 'package:learning_management_system/screens/signin_screen.dart';
 import 'package:learning_management_system/screens/signup_screen.dart';
 import 'package:learning_management_system/screens/class_management_screen.dart';
 import 'package:learning_management_system/screens/create_class_screen.dart';
-import 'package:learning_management_system/screens/detailed_roll_call_info_screen.dart';
 import 'package:learning_management_system/screens/modify_class_screen.dart';
 import 'package:learning_management_system/screens/notification_screen.dart';
 import 'package:learning_management_system/screens/student_home_screen.dart';
-import 'package:learning_management_system/screens/student_survey_list_screen.dart';
 import 'package:learning_management_system/screens/teacher_home_screen.dart';
-import 'package:learning_management_system/screens/teacher_survey_list_screen.dart';
 import 'package:learning_management_system/screens/upload_material_screen.dart';
 import 'package:learning_management_system/widgets/scaffold_with_navigation.dart';
 import 'package:learning_management_system/screens/profile_screen.dart';
@@ -29,7 +26,7 @@ import 'package:learning_management_system/screens/detailed_attendance_list_scre
 import 'package:learning_management_system/screens/student_attendance_screen.dart';
 import 'package:learning_management_system/screens/material_list_screen.dart';
 import 'package:learning_management_system/screens/edit_survey_screen.dart';
-import 'package:learning_management_system/screens/create_survey_screen.dart';
+import 'package:learning_management_system/screens/create_assignment_screen.dart';
 import 'package:learning_management_system/screens/response_survey_screen.dart';
 import 'package:learning_management_system/screens/submit_survey_screen.dart';
 import 'package:learning_management_system/routes/router_notifier.dart';
@@ -41,19 +38,19 @@ final _rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
 final _shellNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'shell');
 final routerProvider = Provider<GoRouter>((ref) {
   final notifier = RouterNotifier(ref);
-  
+
   final router = GoRouter(
     navigatorKey: _rootNavigatorKey,
     initialLocation: Routes.signin,
     refreshListenable: notifier,
     redirect: (context, state) {
       final authState = ref.read(authProvider);
-      
+
       // Handle loading state
       if (authState is AsyncLoading) {
         return null;
       }
-      
+
       final isAuth = authState.value != null;
       final isSignInPage = state.matchedLocation == '/signin';
       final isSignUpPage = state.matchedLocation == '/signup';
@@ -88,7 +85,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           child: SignUpScreen(),
         ),
       ),
-      
+
       // Add the change password route here, outside the shell
       GoRoute(
         path: Routes.changePassword,
@@ -111,12 +108,15 @@ final routerProvider = Provider<GoRouter>((ref) {
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
           final container = ProviderScope.containerOf(context);
-          final isStudent = container.read(authProvider).value?.role.toLowerCase() == 'student';
+          final isStudent =
+              container.read(authProvider).value?.role.toLowerCase() ==
+                  'student';
 
           return CustomLayoutScaffold(
             child: ScaffoldWithNavigation(
               navigationShell: navigationShell,
-              destinations: isStudent ? studentDestinations : teacherDestinations,
+              destinations:
+                  isStudent ? studentDestinations : teacherDestinations,
             ),
           );
         },
@@ -129,16 +129,13 @@ final routerProvider = Provider<GoRouter>((ref) {
                 name: Routes.homeName,
                 builder: (context, state) {
                   final container = ProviderScope.containerOf(context);
-                  final isStudent = container.read(authProvider).value?.role.toLowerCase() == 'student';
-                  return isStudent ? const StudentHomeScreen() : const TeacherHomeScreen();
+                  final isStudent =
+                      container.read(authProvider).value?.role.toLowerCase() ==
+                          'student';
+                  return isStudent
+                      ? const StudentHomeScreen()
+                      : const TeacherHomeScreen();
                 },
-                routes: [
-                  GoRoute(
-                    path: Routes.assignments,
-                    name: Routes.assignmentsName,
-                    builder: (context, state) => const AssignmentListScreen(),
-                  ),
-                ],
               ),
             ],
           ),
@@ -154,7 +151,8 @@ final routerProvider = Provider<GoRouter>((ref) {
                   GoRoute(
                     path: Routes.classRegistration,
                     name: Routes.classRegistrationName,
-                    builder: (context, state) => const ClassRegistrationScreen(),
+                    builder: (context, state) =>
+                        const ClassRegistrationScreen(),
                   ),
                   GoRoute(
                     path: Routes.createClass,
@@ -176,30 +174,9 @@ final routerProvider = Provider<GoRouter>((ref) {
                     ),
                   ),
                   GoRoute(
-                    path: Routes.detailedRollCall,
-                    name: Routes.detailedRollCallName,
-                    builder: (context, state) => DetailedRollCallInfoScreen(
-                      classId: state.pathParameters['classId'] ?? '',
-                    ),
-                  ),
-                  GoRoute(
                     path: Routes.takeAttendance,
                     name: Routes.takeAttendanceName,
                     builder: (context, state) => TakeAttendanceScreen(
-                      classId: state.pathParameters['classId'] ?? '',
-                    ),
-                  ),
-                  GoRoute(
-                    path: Routes.studentSurveyList,
-                    name: Routes.studentSurveyListName,
-                    builder: (context, state) => StudentSurveyListScreen(
-                      classId: state.pathParameters['classId'] ?? '',
-                    ),
-                  ),
-                  GoRoute(
-                    path: Routes.teacherSurveyList,
-                    name: Routes.teacherSurveyListName,
-                    builder: (context, state) => TeacherSurveyListScreen(
                       classId: state.pathParameters['classId'] ?? '',
                     ),
                   ),
@@ -261,9 +238,16 @@ final routerProvider = Provider<GoRouter>((ref) {
                     ),
                   ),
                   GoRoute(
-                    path: Routes.createSurvey,
-                    name: Routes.createSurveyName,
-                    builder: (context, state) => CreateSurveyScreen(
+                    path: Routes.assignments,
+                    name: Routes.assignmentsName,
+                    builder: (context, state) => AssignmentListScreen(
+                      classId: state.pathParameters['classId'] ?? '',
+                    ),
+                  ),
+                  GoRoute(
+                    path: Routes.createAssignment,
+                    name: Routes.createAssignmentName,
+                    builder: (context, state) => CreateAssignmentScreen(
                       classId: state.pathParameters['classId'] ?? '',
                     ),
                   ),

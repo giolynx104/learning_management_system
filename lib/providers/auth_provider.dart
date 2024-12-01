@@ -7,7 +7,6 @@ import 'package:flutter/foundation.dart';
 import 'package:learning_management_system/models/user.dart';
 import 'package:learning_management_system/providers/user_service_provider.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:learning_management_system/services/auth_service.dart';
 
 part 'auth_provider.g.dart';
 

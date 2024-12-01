@@ -1,9 +1,11 @@
 import 'dart:developer' as developer;
 import 'package:dio/dio.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:learning_management_system/services/api_service.dart';
 import 'package:learning_management_system/exceptions/api_exceptions.dart';
 import 'package:learning_management_system/models/assignment.dart';
+import 'package:learning_management_system/constants/api_constants.dart';
 
 part 'assignment_service.g.dart';
 
@@ -14,19 +16,21 @@ class AssignmentService extends _$AssignmentService {
 
   ApiService get _apiService => ref.read(apiServiceProvider);
 
-  Future<List<Assignment>> getStudentAssignments({
+  Future<List<Assignment>> getAllAssignments({
     required String token,
+    required String classId,
   }) async {
     try {
       developer.log(
-        'Fetching student assignments',
+        'Fetching assignments for class: $classId',
         name: 'AssignmentService',
       );
 
       final response = await _apiService.dio.post(
-        '/it5023e/get_student_assignments',
+        ApiConstants.getAllSurveys,
         data: {
           'token': token,
+          'class_id': classId,
         },
       );
 
@@ -35,17 +39,12 @@ class AssignmentService extends _$AssignmentService {
         name: 'AssignmentService',
       );
 
-      if (response.data['meta']['code'] == '1000') {
-        final List<dynamic> assignmentsData = response.data['data'];
-        return assignmentsData
+      return await _handleResponse<List<Assignment>>(
+        response,
+        (data) => (data as List)
             .map((json) => Assignment.fromJson(json as Map<String, dynamic>))
-            .toList();
-      } else {
-        throw ApiException(
-          statusCode: response.statusCode,
-          message: response.data['meta']['message'] ?? 'Failed to fetch assignments',
-        );
-      }
+            .toList(),
+      );
     } on DioException catch (e) {
       developer.log(
         'Error fetching assignments: ${e.message}',
@@ -53,6 +52,150 @@ class AssignmentService extends _$AssignmentService {
         error: e,
       );
       throw ApiException.fromDioError(e);
+    }
+  }
+
+  Future<void> createAssignment({
+    required String token,
+    required String classId,
+    required String title,
+    required String deadline,
+    required String description,
+    required PlatformFile file,
+  }) async {
+    try {
+      final formData = FormData.fromMap({
+        'token': token,
+        'classId': classId,
+        'title': title,
+        'deadline': deadline,
+        'description': description,
+        'file': await MultipartFile.fromFile(
+          file.path!,
+          filename: file.name,
+        ),
+      });
+
+      final response = await _apiService.dio.post(
+        ApiConstants.createSurvey,
+        data: formData,
+      );
+
+      _handleResponse<void>(response, (_) {});
+    } on DioException catch (e) {
+      throw ApiException.fromDioError(e);
+    }
+  }
+
+  Future<void> editAssignment({
+    required String token,
+    required String assignmentId,
+    required String title,
+    required String deadline,
+    required String description,
+    required PlatformFile file,
+  }) async {
+    try {
+      final formData = FormData.fromMap({
+        'token': token,
+        'assignmentId': assignmentId,
+        'title': title,
+        'deadline': deadline,
+        'description': description,
+        'file': await MultipartFile.fromFile(
+          file.path!,
+          filename: file.name,
+        ),
+      });
+
+      final response = await _apiService.dio.post(
+        ApiConstants.editSurvey,
+        data: formData,
+      );
+
+      _handleResponse<void>(response, (_) {});
+    } on DioException catch (e) {
+      throw ApiException.fromDioError(e);
+    }
+  }
+
+  Future<void> deleteAssignment({
+    required String token,
+    required String assignmentId,
+  }) async {
+    try {
+      final response = await _apiService.dio.post(
+        ApiConstants.deleteSurvey,
+        data: {
+          'token': token,
+          'assignmentId': assignmentId,
+        },
+      );
+
+      _handleResponse<void>(response, (_) {});
+    } on DioException catch (e) {
+      throw ApiException.fromDioError(e);
+    }
+  }
+
+  Future<void> submitAssignment({
+    required String token,
+    required String assignmentId,
+    required PlatformFile file,
+  }) async {
+    try {
+      final formData = FormData.fromMap({
+        'token': token,
+        'assignmentId': assignmentId,
+        'file': await MultipartFile.fromFile(
+          file.path!,
+          filename: file.name,
+        ),
+      });
+
+      final response = await _apiService.dio.post(
+        ApiConstants.submitSurvey,
+        data: formData,
+      );
+
+      _handleResponse<void>(response, (_) {});
+    } on DioException catch (e) {
+      throw ApiException.fromDioError(e);
+    }
+  }
+
+  Future<void> gradeAssignment({
+    required String token,
+    required String assignmentId,
+    required String grade,
+  }) async {
+    try {
+      final response = await _apiService.dio.post(
+        ApiConstants.getSurveyResponse,
+        data: {
+          'token': token,
+          'assignmentId': assignmentId,
+          'grade': grade,
+        },
+      );
+
+      await _handleResponse<void>(response, (_) {});
+    } on DioException catch (e) {
+      throw ApiException.fromDioError(e);
+    }
+  }
+
+  Future<T> _handleResponse<T>(
+    Response<dynamic> response,
+    T Function(dynamic) onSuccess,
+  ) async {
+    if (response.data['meta']['code'] == '1000') {
+      return onSuccess(response.data['data']);
+    } else {
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: response.data['meta']['message'] ?? 'Failed to fetch assignments',
+      );
     }
   }
 } 

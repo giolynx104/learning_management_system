@@ -107,7 +107,7 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
       }
 
       final classes =
-      await ref.read(classServiceProvider.notifier).getClassList(token);
+          await ref.read(classServiceProvider.notifier).getClassList(token);
 
       if (mounted) {
         setState(() {
@@ -212,27 +212,33 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
                                 child: Padding(
                                   padding: const EdgeInsets.all(16.0),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       // Class Name Header with Status Badge
                                       Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
                                         children: [
                                           Expanded(
                                             child: Row(
                                               children: [
                                                 Icon(
                                                   Icons.school,
-                                                  color: theme.colorScheme.primary,
+                                                  color:
+                                                      theme.colorScheme.primary,
                                                   size: 24,
                                                 ),
                                                 const SizedBox(width: 12),
                                                 Expanded(
                                                   child: Text(
                                                     classItem.className,
-                                                    style: theme.textTheme.titleMedium?.copyWith(
-                                                      fontWeight: FontWeight.bold,
+                                                    style: theme
+                                                        .textTheme.titleMedium
+                                                        ?.copyWith(
+                                                      fontWeight:
+                                                          FontWeight.bold,
                                                     ),
                                                   ),
                                                 ),
@@ -245,17 +251,22 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
                                               vertical: 4,
                                             ),
                                             decoration: BoxDecoration(
-                                              color: _getStatusColor(classItem.status).withOpacity(0.1),
-                                              borderRadius: BorderRadius.circular(12),
+                                              color: _getStatusColor(
+                                                      classItem.status)
+                                                  .withOpacity(0.1),
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
                                               border: Border.all(
-                                                color: _getStatusColor(classItem.status),
+                                                color: _getStatusColor(
+                                                    classItem.status),
                                                 width: 1,
                                               ),
                                             ),
                                             child: Text(
                                               classItem.status,
                                               style: TextStyle(
-                                                color: _getStatusColor(classItem.status),
+                                                color: _getStatusColor(
+                                                    classItem.status),
                                                 fontSize: 12,
                                                 fontWeight: FontWeight.bold,
                                               ),
@@ -265,10 +276,15 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
                                             onSelected: (value) =>
                                                 _handleClassAction(
                                                     value, classItem),
-                                            itemBuilder: (BuildContext context) {
+                                            itemBuilder:
+                                                (BuildContext context) {
                                               // Get user role from auth provider
-                                              final authState = ref.read(authProvider);
-                                              final isStudent = authState.value?.role.toLowerCase() == 'student';
+                                              final authState =
+                                                  ref.read(authProvider);
+                                              final isStudent = authState
+                                                      .value?.role
+                                                      .toLowerCase() ==
+                                                  'student';
 
                                               return [
                                                 // Common options first (for both roles)
@@ -319,10 +335,15 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
                                                     value: 'delete',
                                                     child: Row(
                                                       children: [
-                                                        Icon(Icons.delete, color: Colors.red),
-                                                        const SizedBox(width: 12),
-                                                        const Text('Delete Class',
-                                                            style: TextStyle(color: Colors.red)),
+                                                        Icon(Icons.delete,
+                                                            color: Colors.red),
+                                                        const SizedBox(
+                                                            width: 12),
+                                                        const Text(
+                                                            'Delete Class',
+                                                            style: TextStyle(
+                                                                color: Colors
+                                                                    .red)),
                                                       ],
                                                     ),
                                                   ),
@@ -333,7 +354,7 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
                                         ],
                                       ),
                                       const Divider(height: 24),
-                                      
+
                                       // Class Information Grid
                                       Wrap(
                                         spacing: 16,
@@ -346,7 +367,8 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
                                             theme.colorScheme.primary,
                                           ),
                                           if (classItem.attachedCode != null &&
-                                              classItem.attachedCode!.isNotEmpty)
+                                              classItem
+                                                  .attachedCode!.isNotEmpty)
                                             _buildInfoChip(
                                               Icons.link,
                                               'Associated Code',
@@ -368,7 +390,7 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
                                         ],
                                       ),
                                       const SizedBox(height: 16),
-                                      
+
                                       // Period and Lecturer Info
                                       Row(
                                         children: [
@@ -385,7 +407,8 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
                                       if (classItem.lecturerName != null &&
                                           classItem.lecturerName!.isNotEmpty)
                                         Padding(
-                                          padding: const EdgeInsets.only(top: 8),
+                                          padding:
+                                              const EdgeInsets.only(top: 8),
                                           child: _buildDetailRow(
                                             Icons.person,
                                             'Lecturer',
@@ -414,7 +437,8 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
                             if (user.role == 'STUDENT') {
                               context.pushNamed(Routes.classRegistrationName);
                             } else {
-                              final result = await context.pushNamed<bool>(Routes.createClassName);
+                              final result = await context
+                                  .pushNamed<bool>(Routes.createClassName);
                               if (result == true) {
                                 _refreshClassList();
                               }
@@ -453,20 +477,10 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
         _showDeleteConfirmationDialog(classItem);
         break;
       case 'assignment':
-        final authState = ref.read(authProvider);
-        final isStudent = authState.value?.role.toLowerCase() == 'student';
-
-        if (isStudent) {
-          context.pushNamed(
-            Routes.studentSurveyListName,
-            pathParameters: {'classId': classItem.classId},
-          );
-        } else {
-          context.pushNamed(
-            Routes.teacherSurveyListName,
-            pathParameters: {'classId': classItem.classId},
-          );
-        }
+        context.pushNamed(
+          Routes.assignmentsName,
+          pathParameters: {'classId': classItem.classId},
+        );
         break;
       case 'files':
         context.pushNamed(
@@ -488,7 +502,7 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
             );
           } else {
             context.pushNamed(
-              Routes.rollCallName,
+              Routes.takeAttendanceName,
               pathParameters: {'classId': classItem.classId},
             );
           }
@@ -517,7 +531,8 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Are you sure you want to delete ${classItem.className}?'),
+                      Text(
+                          'Are you sure you want to delete ${classItem.className}?'),
                       if (classItem.studentCount > 0) ...[
                         const SizedBox(height: 16),
                         Text(
@@ -532,7 +547,9 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
                   ),
                   actions: [
                     TextButton(
-                      onPressed: isDeleting ? null : () => Navigator.of(dialogContext).pop(),
+                      onPressed: isDeleting
+                          ? null
+                          : () => Navigator.of(dialogContext).pop(),
                       child: const Text('Cancel'),
                     ),
                     TextButton(
@@ -554,43 +571,47 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
                                       classId: classItem.classId,
                                     );
 
-                              if (!mounted) return;
-                              Navigator.of(dialogContext).pop();
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Class deleted successfully'),
-                                  backgroundColor: Colors.green,
-                                ),
-                              );
-                              _refreshClassList();
-                            } catch (e) {
-                              setState(() => isDeleting = false);
-                              if (!mounted) return;
-                              
-                              // Close the delete confirmation dialog
-                              Navigator.of(dialogContext).pop();
-                              
-                              // Show error dialog
-                              showDialog(
-                                context: context,
-                                builder: (BuildContext context) => AlertDialog(
-                                  title: const Text('Unable to Delete Class'),
-                                  content: Text(
-                                    e.toString().contains('Cannot delete class with existing content')
-                                        ? 'This class cannot be deleted because it has existing content (assignments, materials, or enrolled students). Please remove all content and unenroll all students before deleting the class.'
-                                        : 'Error deleting class: ${e.toString()}',
+                                if (!mounted) return;
+                                Navigator.of(dialogContext).pop();
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Class deleted successfully'),
+                                    backgroundColor: Colors.green,
                                   ),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () => Navigator.of(context).pop(),
-                                      child: const Text('OK'),
+                                );
+                                _refreshClassList();
+                              } catch (e) {
+                                setState(() => isDeleting = false);
+                                if (!mounted) return;
+
+                                // Close the delete confirmation dialog
+                                Navigator.of(dialogContext).pop();
+
+                                // Show error dialog
+                                showDialog(
+                                  context: context,
+                                  builder: (BuildContext context) =>
+                                      AlertDialog(
+                                    title: const Text('Unable to Delete Class'),
+                                    content: Text(
+                                      e.toString().contains(
+                                              'Cannot delete class with existing content')
+                                          ? 'This class cannot be deleted because it has existing content (assignments, materials, or enrolled students). Please remove all content and unenroll all students before deleting the class.'
+                                          : 'Error deleting class: ${e.toString()}',
                                     ),
-                                  ],
-                                ),
-                              );
-                            }
-                          },
-                      child: const Text('Delete', style: TextStyle(color: Colors.red)),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.of(context).pop(),
+                                        child: const Text('OK'),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }
+                            },
+                      child: const Text('Delete',
+                          style: TextStyle(color: Colors.red)),
                     ),
                   ],
                 ),
