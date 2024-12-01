@@ -8,6 +8,7 @@ import 'package:learning_management_system/routes/destinations.dart';
 import 'package:learning_management_system/routes/routes.dart';
 import 'package:learning_management_system/screens/absence_request_list_screen.dart';
 import 'package:learning_management_system/screens/absence_request_screen.dart';
+import 'package:learning_management_system/screens/attendance_management_screen.dart';
 import 'package:learning_management_system/screens/class_registration_screen.dart';
 import 'package:learning_management_system/screens/screen_chat.dart';
 import 'package:learning_management_system/screens/signin_screen.dart';
@@ -17,7 +18,6 @@ import 'package:learning_management_system/screens/create_class_screen.dart';
 import 'package:learning_management_system/screens/detailed_roll_call_info_screen.dart';
 import 'package:learning_management_system/screens/modify_class_screen.dart';
 import 'package:learning_management_system/screens/notification_screen.dart';
-import 'package:learning_management_system/screens/roll_call_management_screen.dart';
 import 'package:learning_management_system/screens/student_home_screen.dart';
 import 'package:learning_management_system/screens/student_survey_list_screen.dart';
 import 'package:learning_management_system/screens/teacher_home_screen.dart';
@@ -169,9 +169,9 @@ final routerProvider = Provider<GoRouter>((ref) {
                     ),
                   ),
                   GoRoute(
-                    path: Routes.rollCall,
-                    name: Routes.rollCallName,
-                    builder: (context, state) => RollCallScreen(
+                    path: Routes.attendanceManagement,
+                    name: Routes.attendanceManagementName,
+                    builder: (context, state) => AttendanceManagementScreen(
                       classId: state.pathParameters['classId'] ?? '',
                     ),
                   ),
