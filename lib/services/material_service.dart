@@ -96,6 +96,12 @@ class MaterialService extends _$MaterialService {
     final extension = filePath.split('.').last.toLowerCase();
     final mimeType = switch (extension) {
       'pdf' => 'application/pdf',
+      'doc' => 'application/msword',
+      'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'ppt' => 'application/vnd.ms-powerpoint',
+      'pptx' => 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      'xls' => 'application/vnd.ms-excel',
+      'xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       'jpg' || 'jpeg' => 'image/jpeg',
       'png' => 'image/png',
       _ => throw Exception('Unsupported file type: $extension'),
@@ -104,6 +110,9 @@ class MaterialService extends _$MaterialService {
     // Ensure materialType matches the actual file type
     final validatedMaterialType = switch (extension) {
       'pdf' => 'PDF',
+      'doc' || 'docx' => 'DOC',
+      'ppt' || 'pptx' => 'PPT',
+      'xls' || 'xlsx' => 'XLS',
       'jpg' || 'jpeg' || 'png' => 'IMAGE',
       _ => materialType,
     };
