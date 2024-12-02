@@ -205,4 +205,36 @@ class NotificationService extends _$NotificationService {
       throw Exception('An error occurred while marking the notification as read.');
     }
   }
+
+  /// Fetch all notifications using pagination
+  Future<List<NotificationModel>> getAllNotifications(String token) async {
+    List<NotificationModel> allNotifications = [];
+    int currentIndex = 0;
+    final int batchSize = 10;
+    bool hasMore = true;
+
+    try {
+      while (hasMore) {
+        final batch = await getNotifications(
+          token,
+          index: currentIndex,
+          count: batchSize,
+        );
+
+        allNotifications.addAll(batch);
+
+        // If we got fewer notifications than requested, we've reached the end
+        if (batch.length < batchSize) {
+          hasMore = false;
+        } else {
+          currentIndex += batchSize;
+        }
+      }
+
+      return allNotifications;
+    } catch (e) {
+      debugPrint('NotificationService - Error fetching all notifications: $e');
+      rethrow;
+    }
+  }
 }

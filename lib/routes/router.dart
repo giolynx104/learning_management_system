@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:learning_management_system/models/material_model.dart';
 import 'package:learning_management_system/models/assignment.dart';
 import 'package:learning_management_system/providers/auth_provider.dart';
 import 'package:learning_management_system/routes/custom_layout_scaffold.dart';
@@ -33,6 +34,7 @@ import 'package:learning_management_system/routes/router_notifier.dart';
 import 'package:learning_management_system/screens/assignment_list_screen.dart';
 import 'package:learning_management_system/screens/take_attendance_screen.dart';
 import 'package:learning_management_system/screens/change_password_screen.dart';
+import 'package:learning_management_system/screens/edit_material_screen.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
 final _shellNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'shell');
@@ -220,6 +222,13 @@ final routerProvider = Provider<GoRouter>((ref) {
                     name: Routes.uploadMaterialName,
                     builder: (context, state) => UploadMaterialScreen(
                       classId: state.pathParameters['classId'] ?? '',
+                    ),
+                  ),
+                  GoRoute(
+                    path: Routes.editMaterial,
+                    name: Routes.editMaterialName,
+                    builder: (context, state) => EditMaterialScreen(
+                      material: state.extra as MaterialModel,
                     ),
                   ),
                   GoRoute(

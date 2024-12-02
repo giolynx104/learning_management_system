@@ -6,6 +6,8 @@ import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
 import 'package:learning_management_system/models/absence_request_model.dart';
 import 'package:learning_management_system/providers/absence_request_provider.dart';
+import 'package:learning_management_system/widgets/file_upload_widget.dart';
+import 'package:learning_management_system/constants/file_upload_configs.dart';
 
 class AbsenceRequestScreen extends HookConsumerWidget {
   final String classId;
@@ -18,7 +20,7 @@ class AbsenceRequestScreen extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedDate = useState<DateTime?>(null);
-    final selectedFile = useState<String?>(null);
+    final selectedFile = useState<PlatformFile?>(null);
     final titleController = useTextEditingController();
     final reasonController = useTextEditingController();
     final requestState = ref.watch(submitAbsenceRequestProvider);
@@ -35,17 +37,17 @@ class AbsenceRequestScreen extends HookConsumerWidget {
       }
     }
 
-    Future<void> pickFile() async {
-      final result = await FilePicker.platform.pickFiles();
-      if (result != null) {
-        selectedFile.value = result.files.single.name;
-      }
-    }
-
     Future<void> submit() async {
       if (selectedDate.value == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Please select a date')),
+        );
+        return;
+      }
+
+      if (selectedFile.value == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please upload a proof file')),
         );
         return;
       }
@@ -55,7 +57,7 @@ class AbsenceRequestScreen extends HookConsumerWidget {
         title: titleController.text,
         reason: reasonController.text,
         date: DateFormat('yyyy-MM-dd').format(selectedDate.value!),
-        proofFile: selectedFile.value,
+        proofFile: selectedFile.value!.path,
       );
 
       try {
@@ -69,7 +71,10 @@ class AbsenceRequestScreen extends HookConsumerWidget {
       } catch (e) {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error: ${e.toString()}')),
+            SnackBar(
+              content: Text('Error submitting request: $e'),
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
           );
         }
       }
@@ -84,73 +89,77 @@ class AbsenceRequestScreen extends HookConsumerWidget {
         ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    TextField(
-                      controller: titleController,
-                      decoration: const InputDecoration(
-                        labelText: 'Title',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    TextField(
-                      controller: reasonController,
-                      maxLines: 3,
-                      decoration: const InputDecoration(
-                        labelText: 'Reason',
-                        border: OutlineInputBorder(),
-                        alignLabelWithHint: true,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    TextField(
-                      readOnly: true,
-                      controller: TextEditingController(
-                        text: selectedDate.value != null
-                            ? DateFormat('yyyy-MM-dd').format(selectedDate.value!)
-                            : '',
-                      ),
-                      decoration: InputDecoration(
-                        labelText: 'Date',
-                        border: const OutlineInputBorder(),
-                        suffixIcon: IconButton(
-                          icon: const Icon(Icons.calendar_today),
-                          onPressed: pickDate,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    FilledButton.tonalIcon(
-                      onPressed: pickFile,
-                      icon: const Icon(Icons.attach_file),
-                      label: const Text('Upload Proof'),
-                    ),
-                    if (selectedFile.value != null)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 8.0),
-                        child: Text('Selected file: ${selectedFile.value}'),
-                      ),
-                  ],
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              TextField(
+                controller: titleController,
+                decoration: const InputDecoration(
+                  labelText: 'Title *',
+                  border: OutlineInputBorder(),
                 ),
               ),
-            ),
-            const SizedBox(height: 16),
-            FilledButton(
-              onPressed: requestState.isLoading ? null : submit,
-              child: requestState.isLoading
-                  ? const CircularProgressIndicator()
-                  : const Text('Submit Request'),
-            ),
-          ],
+              const SizedBox(height: 16),
+              TextField(
+                controller: reasonController,
+                decoration: const InputDecoration(
+                  labelText: 'Reason *',
+                  border: OutlineInputBorder(),
+                ),
+                maxLines: 3,
+              ),
+              const SizedBox(height: 16),
+              InkWell(
+                onTap: pickDate,
+                child: InputDecorator(
+                  decoration: const InputDecoration(
+                    labelText: 'Date *',
+                    border: OutlineInputBorder(),
+                  ),
+                  child: Text(
+                    selectedDate.value == null
+                        ? 'Select Date'
+                        : DateFormat('dd/MM/yyyy').format(selectedDate.value!),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              FileUploadWidget(
+                config: FileUploadConfigs.absenceRequest,
+                selectedFiles: selectedFile.value != null ? [selectedFile.value!] : [],
+                isLoading: requestState.isLoading,
+                onFilesSelected: (files) {
+                  selectedFile.value = files.first;
+                },
+                onFileRemoved: (_) {
+                  selectedFile.value = null;
+                },
+              ),
+              const SizedBox(height: 24),
+              FilledButton(
+                onPressed: requestState.isLoading ? null : submit,
+                child: requestState.isLoading
+                    ? const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          ),
+                          SizedBox(width: 12),
+                          Text('Submitting...'),
+                        ],
+                      )
+                    : const Text('Submit Request'),
+              ),
+            ],
+          ),
         ),
       ),
     );

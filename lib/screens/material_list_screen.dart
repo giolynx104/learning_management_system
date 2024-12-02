@@ -2,11 +2,126 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:learning_management_system/providers/material_provider.dart';
 import 'package:learning_management_system/routes/routes.dart';
 import 'package:learning_management_system/models/material_model.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:learning_management_system/providers/auth_provider.dart';
+
+Future<void> openMaterialLink(BuildContext context, String? link) async {
+  debugPrint('Attempting to open material link: $link');
+  if (link == null) {
+    debugPrint('Material link is null');
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('No file link available'),
+        backgroundColor: Colors.orange,
+      ),
+    );
+    return;
+  }
+
+  // Parse the URL and ensure it's encoded properly
+  var uri = Uri.parse(link);
+  
+  // Special handling for Google Drive/Docs URLs
+  if (uri.host.contains('google.com')) {
+    // If it's a Google Drive/Docs URL, try to force it to open in the browser
+    debugPrint('Detected Google Docs/Drive URL');
+    try {
+      final launched = await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
+        webViewConfiguration: const WebViewConfiguration(
+          enableJavaScript: true,
+          enableDomStorage: true,
+        ),
+      );
+      debugPrint('URL launch result: $launched');
+      
+      if (!launched) {
+        // If external app launch fails, try browser
+        final browserLaunched = await launchUrl(
+          uri,
+          mode: LaunchMode.platformDefault,
+        );
+        debugPrint('Browser launch result: $browserLaunched');
+        
+        if (!browserLaunched && context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Could not open file. Please check if you have a compatible app installed.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('Error launching Google URL: $e');
+      // Try fallback to browser if app launch fails
+      try {
+        final browserLaunched = await launchUrl(
+          uri,
+          mode: LaunchMode.platformDefault,
+        );
+        debugPrint('Fallback browser launch result: $browserLaunched');
+        
+        if (!browserLaunched && context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Could not open file. Please check if you have a compatible app installed.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      } catch (e) {
+        debugPrint('Error launching in browser: $e');
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error opening file: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
+  } else {
+    // For non-Google URLs, use the standard approach
+    try {
+      final canLaunch = await canLaunchUrl(uri);
+      debugPrint('Can launch URL: $canLaunch');
+      if (canLaunch) {
+        final launched = await launchUrl(
+          uri,
+          mode: LaunchMode.externalApplication,
+        );
+        debugPrint('URL launch result: $launched');
+      } else {
+        debugPrint('Cannot launch URL');
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Could not open file'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('Error launching URL: $e');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error opening file: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+}
 
 class MaterialListScreen extends HookConsumerWidget {
   final String classId;
@@ -155,86 +270,92 @@ class _StudentMaterialListView extends StatelessWidget {
       itemCount: materials.length,
       itemBuilder: (context, index) {
         final material = materials[index];
+        debugPrint('Building material card for: ${material.materialName}');
+        debugPrint('Material link: ${material.materialLink}');
         
         return Card(
           margin: const EdgeInsets.only(bottom: 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header with icon and type
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primaryContainer,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      _getMaterialIcon(material.materialType),
-                      color: theme.colorScheme.primary,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      material.materialType.toUpperCase(),
-                      style: theme.textTheme.labelLarge?.copyWith(
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: () {
+              debugPrint('Card tapped for material: ${material.materialName}');
+              debugPrint('Opening link: ${material.materialLink}');
+              openMaterialLink(context, material.materialLink);
+            },
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header with icon and type
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primaryContainer,
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        _getMaterialIcon(material.materialType),
                         color: theme.colorScheme.primary,
                       ),
-                    ),
-                  ],
-                ),
-              ),
-              
-              // Content
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      material.materialName,
-                      style: theme.textTheme.titleLarge,
-                    ),
-                    if (material.description != null) ...[
-                      const SizedBox(height: 8),
+                      const SizedBox(width: 8),
                       Text(
-                        material.description!,
-                        style: theme.textTheme.bodyMedium,
-                      ),
-                    ],
-                    const SizedBox(height: 16),
-                    
-                    // Material details
-                    Wrap(
-                      spacing: 16,
-                      runSpacing: 8,
-                      children: [
-                        _DetailChip(
-                          icon: Icons.description,
-                          label: material.materialType,
+                        material.materialType.toUpperCase(),
+                        style: theme.textTheme.labelLarge?.copyWith(
+                          color: theme.colorScheme.primary,
                         ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              
-              // Actions
-              if (material.materialLink != null)
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: FilledButton.icon(
-                    onPressed: () {
-                      // TODO: Implement download functionality
-                      debugPrint('Download material: ${material.materialLink}');
-                    },
-                    icon: const Icon(Icons.download),
-                    label: const Text('Download Material'),
+                      ),
+                      const Spacer(),
+                      if (material.materialLink != null)
+                        Icon(
+                          Icons.open_in_new,
+                          size: 16,
+                          color: theme.colorScheme.primary,
+                        ),
+                    ],
                   ),
                 ),
-              const SizedBox(height: 8),
-            ],
+                
+                // Content
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        material.materialName,
+                        style: theme.textTheme.titleLarge,
+                      ),
+                      if (material.description != null) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          material.description!,
+                          style: theme.textTheme.bodyMedium,
+                        ),
+                      ],
+                      const SizedBox(height: 16),
+                      
+                      // Material details
+                      Row(
+                        children: [
+                          _DetailChip(
+                            icon: Icons.description,
+                            label: material.materialType,
+                          ),
+                          if (material.materialLink != null) ...[
+                            const SizedBox(width: 8),
+                            _DetailChip(
+                              icon: Icons.link,
+                              label: 'Click to open',
+                            ),
+                          ],
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         );
       },
@@ -333,21 +454,33 @@ class _TeacherMaterialListView extends HookConsumerWidget {
               children: [
                 if (material.materialLink != null)
                   IconButton(
-                    icon: const Icon(Icons.download),
-                    tooltip: 'Download material',
-                    onPressed: () {
-                      // TODO: Implement download functionality
-                      debugPrint('Download material: ${material.materialLink}');
-                    },
+                    icon: const Icon(Icons.open_in_new),
+                    tooltip: 'Open material',
+                    onPressed: () => openMaterialLink(context, material.materialLink),
                   ),
                 IconButton(
                   icon: const Icon(Icons.edit),
                   tooltip: 'Edit material',
-                  onPressed: () => _showEditMaterialSheet(
-                    context,
-                    ref,
-                    material,
-                  ),
+                  onPressed: () async {
+                    final result = await context.push<bool>(
+                      Routes.getEditMaterialPath(material.classId, material.id),
+                      extra: material,
+                    );
+                    if (result == true) {
+                      debugPrint('MaterialListScreen - Edit successful, refreshing list');
+                      ref.invalidate(materialListProvider(material.classId));
+                      await ref.read(materialListProvider(material.classId).future);
+                      
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Material updated successfully'),
+                            backgroundColor: Colors.green,
+                          ),
+                        );
+                      }
+                    }
+                  },
                 ),
                 IconButton(
                   icon: const Icon(Icons.delete),
@@ -419,18 +552,6 @@ class _TeacherMaterialListView extends HookConsumerWidget {
     }
   }
 
-  Future<void> _showEditMaterialSheet(
-    BuildContext context,
-    WidgetRef ref,
-    MaterialModel material,
-  ) async {
-    await showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (context) => _EditMaterialSheet(material: material),
-    );
-  }
-
   IconData _getMaterialIcon(String materialType) {
     switch (materialType.toLowerCase()) {
       case 'document':
@@ -444,125 +565,5 @@ class _TeacherMaterialListView extends HookConsumerWidget {
       default:
         return Icons.file_present;
     }
-  }
-}
-
-class _EditMaterialSheet extends HookConsumerWidget {
-  final MaterialModel material;
-
-  const _EditMaterialSheet({required this.material});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final titleController = useTextEditingController(text: material.materialName);
-    final descriptionController = useTextEditingController(
-      text: material.description,
-    );
-    final selectedFile = useState<String?>(null);
-    final isLoading = useState(false);
-
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-        left: 16,
-        right: 16,
-        top: 16,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            'Edit Material',
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
-          const SizedBox(height: 16),
-          TextField(
-            controller: titleController,
-            decoration: const InputDecoration(
-              labelText: 'Title',
-              border: OutlineInputBorder(),
-            ),
-          ),
-          const SizedBox(height: 16),
-          TextField(
-            controller: descriptionController,
-            decoration: const InputDecoration(
-              labelText: 'Description',
-              border: OutlineInputBorder(),
-            ),
-            maxLines: 3,
-          ),
-          const SizedBox(height: 16),
-          ElevatedButton.icon(
-            onPressed: isLoading.value
-                ? null
-                : () async {
-                    final result = await FilePicker.platform.pickFiles();
-                    if (result != null) {
-                      selectedFile.value = result.files.single.path;
-                    }
-                  },
-            icon: const Icon(Icons.attach_file),
-            label: Text(
-              selectedFile.value != null
-                  ? 'Change File'
-                  : 'Select New File (Optional)',
-            ),
-          ),
-          const SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: isLoading.value
-                ? null
-                : () async {
-                    try {
-                      isLoading.value = true;
-                      await ref
-                          .read(materialListNotifierProvider(material.classId).notifier)
-                          .editMaterial(
-                            materialId: material.id,
-                            classId: material.classId,
-                            title: titleController.text,
-                            description: descriptionController.text,
-                            materialType: material.materialType,
-                            filePath: selectedFile.value,
-                          );
-                      
-                      ref.invalidate(materialListProvider(material.classId));
-                      
-                      if (context.mounted) {
-                        Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Material updated successfully'),
-                          ),
-                        );
-                      }
-                    } catch (e) {
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Failed to update material: $e'),
-                            backgroundColor:
-                                Theme.of(context).colorScheme.error,
-                          ),
-                        );
-                      }
-                    } finally {
-                      isLoading.value = false;
-                    }
-                  },
-            child: isLoading.value
-                ? const SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Text('Save Changes'),
-          ),
-          const SizedBox(height: 16),
-        ],
-      ),
-    );
   }
 } 

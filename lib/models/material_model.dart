@@ -11,7 +11,7 @@ class MaterialModel with _$MaterialModel {
     @JsonKey(name: 'material_name') required String materialName,
     String? description,
     @JsonKey(name: 'material_type') required String materialType,
-    @JsonKey(includeFromJson: false, includeToJson: false) String? materialLink,
+    @JsonKey(name: 'material_link') String? materialLink,
   }) = _MaterialModel;
 
   factory MaterialModel.fromJson(Map<String, dynamic> json) =>

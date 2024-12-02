@@ -3,8 +3,12 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:learning_management_system/providers/auth_provider.dart';
-import 'package:learning_management_system/providers/assignment_provider.dart';
 import 'package:learning_management_system/services/assignment_service.dart';
+import 'package:learning_management_system/services/class_service.dart';
+import 'package:learning_management_system/services/notification_service.dart';
+import 'package:learning_management_system/models/notification_model.dart';
+import 'package:learning_management_system/widgets/file_upload_widget.dart';
+import 'package:learning_management_system/constants/file_upload_configs.dart';
 
 class CreateAssignmentScreen extends ConsumerStatefulWidget {
   final String classId;
@@ -14,14 +18,13 @@ class CreateAssignmentScreen extends ConsumerStatefulWidget {
   CreateAssignmentScreenState createState() => CreateAssignmentScreenState();
 }
 
-class CreateAssignmentScreenState
-    extends ConsumerState<CreateAssignmentScreen> {
-  final TextEditingController _assignmentNameController =
-      TextEditingController();
+class CreateAssignmentScreenState extends ConsumerState<CreateAssignmentScreen> {
+  final TextEditingController _assignmentNameController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
   DateTime? _endDateTime;
   PlatformFile? _selectedFile;
   bool _isSubmitEnabled = false;
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -33,7 +36,7 @@ class CreateAssignmentScreenState
   void _validateForm() {
     setState(() {
       _isSubmitEnabled = _assignmentNameController.text.isNotEmpty &&
-          (_descriptionController.text.isNotEmpty || _selectedFile != null);
+          _endDateTime != null;
     });
   }
 
@@ -56,60 +59,90 @@ class CreateAssignmentScreenState
             onPressed: () => Navigator.pop(context),
           ),
         ),
-        body: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              children: [
-                TextField(
-                  controller: _assignmentNameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Assignment Name *',
-                    border: OutlineInputBorder(),
-                  ),
+        body: Stack(
+          children: [
+            SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    TextField(
+                      controller: _assignmentNameController,
+                      decoration: const InputDecoration(
+                        labelText: 'Assignment Name *',
+                        border: OutlineInputBorder(),
+                      ),
+                      onChanged: (_) => _validateForm(),
+                      enabled: !_isLoading,
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: _descriptionController,
+                      decoration: const InputDecoration(
+                        labelText: 'Description (Optional)',
+                        border: OutlineInputBorder(),
+                      ),
+                      maxLines: 3,
+                      enabled: !_isLoading,
+                    ),
+                    const SizedBox(height: 16),
+                    FileUploadWidget(
+                      config: FileUploadConfigs.assignment,
+                      selectedFiles: _selectedFile != null ? [_selectedFile!] : [],
+                      isLoading: _isLoading,
+                      onFilesSelected: (files) {
+                        setState(() {
+                          _selectedFile = files.first;
+                        });
+                        _validateForm();
+                      },
+                      onFileRemoved: (_) {
+                        setState(() {
+                          _selectedFile = null;
+                        });
+                        _validateForm();
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    _buildDateTimeSelector(),
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: (_isSubmitEnabled && !_isLoading) ? _createAssignment : null,
+                        child: _isLoading
+                            ? const Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                    ),
+                                  ),
+                                  SizedBox(width: 12),
+                                  Text('Creating...'),
+                                ],
+                              )
+                            : const Text('Create Assignment'),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: _descriptionController,
-                  decoration: const InputDecoration(
-                    labelText: 'Description',
-                    border: OutlineInputBorder(),
-                  ),
-                  maxLines: 3,
-                ),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: _pickFile,
-                  child: Text(_selectedFile?.name ?? 'Upload File'),
-                ),
-                const SizedBox(height: 16),
-                _buildDateTimeSelector(),
-                const SizedBox(height: 24),
-                ElevatedButton(
-                  onPressed: _isSubmitEnabled ? _createAssignment : null,
-                  child: const Text('Create Assignment'),
-                ),
-              ],
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );
   }
 
-  Future<void> _pickFile() async {
-    final result = await FilePicker.platform.pickFiles();
-    if (result != null) {
-      setState(() {
-        _selectedFile = result.files.first;
-      });
-      _validateForm();
-    }
-  }
-
   Widget _buildDateTimeSelector() {
     return InkWell(
-      onTap: () => _selectDateTime(context),
+      onTap: _isLoading ? null : () => _selectDateTime(context),
       child: InputDecorator(
         decoration: const InputDecoration(
           labelText: 'Deadline *',
@@ -146,6 +179,7 @@ class CreateAssignmentScreenState
             pickedTime.minute,
           );
         });
+        _validateForm();
       }
     }
   }
@@ -157,26 +191,25 @@ class CreateAssignmentScreenState
   }
 
   Future<void> _createAssignment() async {
-    if (_assignmentNameController.text.isEmpty) {
-      _showSnackBar('Please enter an assignment name');
-      return;
-    }
+    if (!_isSubmitEnabled) return;
 
-    if (_endDateTime == null) {
-      _showSnackBar('Please select a deadline');
-      return;
-    }
-
-    if (_descriptionController.text.isEmpty && _selectedFile == null) {
-      _showSnackBar('Please provide a description or upload a file');
-      return;
-    }
+    setState(() {
+      _isLoading = true;
+    });
 
     try {
-      final authState = await ref.read(authProvider.future);
-      if (authState == null) {
+      final authState = ref.read(authProvider);
+      if (authState.token == null) {
         throw Exception('Not authenticated');
       }
+
+      debugPrint('Creating assignment with:');
+      debugPrint('Title: ${_assignmentNameController.text}');
+      debugPrint('Description: ${_descriptionController.text}');
+      debugPrint('Deadline: $_endDateTime');
+      debugPrint('File: ${_selectedFile?.name}');
+      debugPrint('Token: ${authState.token}');
+      debugPrint('==========================');
 
       final assignmentService = ref.read(assignmentServiceProvider.notifier);
       await assignmentService.createAssignment(
@@ -184,9 +217,37 @@ class CreateAssignmentScreenState
         classId: widget.classId,
         title: _assignmentNameController.text.trim(),
         deadline: DateFormat('yyyy-MM-ddTHH:mm:ss').format(_endDateTime!),
-        description: _descriptionController.text,
-        file: _selectedFile!,
+        description: _descriptionController.text.trim(),
+        file: _selectedFile,
       );
+
+      // Send notifications to all students in the class
+      final classService = ref.read(classServiceProvider.notifier);
+      final classInfo = await classService.getClassDetail(
+        token: authState.token!,
+        classId: widget.classId,
+      );
+
+      if (classInfo != null) {
+        final notificationService = ref.read(notificationServiceProvider.notifier);
+        final title = 'New Assignment: ${_assignmentNameController.text.trim()}';
+        final message = 'A new assignment has been created for your class: ${classInfo.className}\n'
+            'Deadline: ${DateFormat('dd/MM/yyyy HH:mm').format(_endDateTime!)}';
+
+        for (final student in classInfo.studentAccounts) {
+          try {
+            await notificationService.sendNotification(
+              authState.token!,
+              message,
+              student.accountId,
+              NotificationType.assignmentGrade,
+              null,
+            );
+          } catch (e) {
+            debugPrint('Failed to send notification to student ${student.accountId}: $e');
+          }
+        }
+      }
 
       if (mounted) {
         _showSnackBar('Assignment created successfully');
@@ -194,6 +255,9 @@ class CreateAssignmentScreenState
       }
     } catch (e) {
       if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
         _showSnackBar('Error creating assignment: ${e.toString()}');
       }
     }
