@@ -110,137 +110,149 @@ class UploadMaterialScreen extends HookConsumerWidget {
           onPressed: () => context.pop(),
         ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            FileUploadWidget(
-              config: FileUploadConfigs.material,
-              selectedFiles: selectedMaterials.value.map((m) => 
-                PlatformFile(
-                  name: m.name,
-                  size: m.size,
-                  path: m.path,
-                )
-              ).toList(),
-              isLoading: isLoading.value,
-              onFilesSelected: (files) {
-                selectedMaterials.value = [
-                  ...selectedMaterials.value,
-                  ...files.map(
-                    (file) => MaterialData(
-                      name: file.name,
-                      size: file.size,
-                      path: file.path,
-                      title: file.name.split('.').first,
+      body: GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                FileUploadWidget(
+                  config: FileUploadConfigs.material,
+                  selectedFiles: selectedMaterials.value.map((m) => 
+                    PlatformFile(
+                      name: m.name,
+                      size: m.size,
+                      path: m.path,
+                    )
+                  ).toList(),
+                  isLoading: isLoading.value,
+                  onFilesSelected: (files) {
+                    selectedMaterials.value = [
+                      ...selectedMaterials.value,
+                      ...files.map(
+                        (file) => MaterialData(
+                          name: file.name,
+                          size: file.size,
+                          path: file.path,
+                          title: file.name.split('.').first,
+                        ),
+                      ),
+                    ];
+                  },
+                  onFileRemoved: (index) {
+                    final newMaterials = [...selectedMaterials.value];
+                    newMaterials.removeAt(index);
+                    selectedMaterials.value = newMaterials;
+                  },
+                  buttonLabel: 'Choose Materials',
+                ),
+                const SizedBox(height: 20),
+                if (selectedMaterials.value.isEmpty)
+                  const Center(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(vertical: 32.0),
+                      child: Text('No materials selected.'),
+                    ),
+                  )
+                else
+                  ListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: selectedMaterials.value.length,
+                    itemBuilder: (context, index) {
+                      var material = selectedMaterials.value[index];
+                      return Card(
+                        margin: const EdgeInsets.symmetric(vertical: 5),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              TextFormField(
+                                initialValue: material.title,
+                                decoration: const InputDecoration(
+                                  labelText: 'Title',
+                                  border: OutlineInputBorder(),
+                                ),
+                                onChanged: (value) {
+                                  final newMaterials = [...selectedMaterials.value];
+                                  newMaterials[index] = material.copyWith(title: value);
+                                  selectedMaterials.value = newMaterials;
+                                },
+                              ),
+                              const SizedBox(height: 8),
+                              TextFormField(
+                                initialValue: material.description,
+                                decoration: const InputDecoration(
+                                  labelText: 'Description',
+                                  border: OutlineInputBorder(),
+                                ),
+                                maxLines: 2,
+                                onChanged: (value) {
+                                  final newMaterials = [...selectedMaterials.value];
+                                  newMaterials[index] = material.copyWith(description: value);
+                                  selectedMaterials.value = newMaterials;
+                                },
+                              ),
+                              const SizedBox(height: 8),
+                              DropdownButtonFormField<String>(
+                                value: material.materialType,
+                                decoration: const InputDecoration(
+                                  labelText: 'Type',
+                                  border: OutlineInputBorder(),
+                                ),
+                                items: materialTypes.map((type) {
+                                  return DropdownMenuItem(
+                                    value: type,
+                                    child: Text(type),
+                                  );
+                                }).toList(),
+                                onChanged: (value) {
+                                  if (value != null) {
+                                    final newMaterials = [...selectedMaterials.value];
+                                    newMaterials[index] = material.copyWith(materialType: value);
+                                    selectedMaterials.value = newMaterials;
+                                  }
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                if (selectedMaterials.value.isNotEmpty)
+                  Padding(
+                    padding: EdgeInsets.only(
+                      top: 16.0,
+                      bottom: MediaQuery.of(context).viewInsets.bottom + 16.0,
+                    ),
+                    child: FilledButton(
+                      onPressed: isLoading.value ? null : uploadMaterials,
+                      child: isLoading.value
+                          ? const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                  ),
+                                ),
+                                SizedBox(width: 12),
+                                Text('Uploading...'),
+                              ],
+                            )
+                          : const Text('Upload Materials'),
                     ),
                   ),
-                ];
-              },
-              onFileRemoved: (index) {
-                final newMaterials = [...selectedMaterials.value];
-                newMaterials.removeAt(index);
-                selectedMaterials.value = newMaterials;
-              },
-              buttonLabel: 'Choose Materials',
+              ],
             ),
-            const SizedBox(height: 20),
-            Expanded(
-              child: selectedMaterials.value.isEmpty
-                  ? const Center(
-                      child: Text('No materials selected.'),
-                    )
-                  : ListView.builder(
-                      itemCount: selectedMaterials.value.length,
-                      itemBuilder: (context, index) {
-                        var material = selectedMaterials.value[index];
-                        return Card(
-                          margin: const EdgeInsets.symmetric(vertical: 5),
-                          child: Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                TextFormField(
-                                  initialValue: material.title,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Title',
-                                    border: OutlineInputBorder(),
-                                  ),
-                                  onChanged: (value) {
-                                    final newMaterials = [...selectedMaterials.value];
-                                    newMaterials[index] = material.copyWith(title: value);
-                                    selectedMaterials.value = newMaterials;
-                                  },
-                                ),
-                                const SizedBox(height: 8),
-                                TextFormField(
-                                  initialValue: material.description,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Description',
-                                    border: OutlineInputBorder(),
-                                  ),
-                                  maxLines: 2,
-                                  onChanged: (value) {
-                                    final newMaterials = [...selectedMaterials.value];
-                                    newMaterials[index] = material.copyWith(description: value);
-                                    selectedMaterials.value = newMaterials;
-                                  },
-                                ),
-                                const SizedBox(height: 8),
-                                DropdownButtonFormField<String>(
-                                  value: material.materialType,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Type',
-                                    border: OutlineInputBorder(),
-                                  ),
-                                  items: materialTypes.map((type) {
-                                    return DropdownMenuItem(
-                                      value: type,
-                                      child: Text(type),
-                                    );
-                                  }).toList(),
-                                  onChanged: (value) {
-                                    if (value != null) {
-                                      final newMaterials = [...selectedMaterials.value];
-                                      newMaterials[index] = material.copyWith(materialType: value);
-                                      selectedMaterials.value = newMaterials;
-                                    }
-                                  },
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-            ),
-            if (selectedMaterials.value.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 16.0),
-                child: FilledButton(
-                  onPressed: isLoading.value ? null : uploadMaterials,
-                  child: isLoading.value
-                      ? const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                              ),
-                            ),
-                            SizedBox(width: 12),
-                            Text('Uploading...'),
-                          ],
-                        )
-                      : const Text('Upload Materials'),
-                ),
-              ),
-          ],
+          ),
         ),
       ),
     );
