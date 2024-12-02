@@ -502,7 +502,7 @@ class ClassManagementScreenState extends ConsumerState<ClassManagementScreen> {
             );
           } else {
             context.pushNamed(
-              Routes.takeAttendanceName,
+              Routes.attendanceManagementName,
               pathParameters: {'classId': classItem.classId},
             );
           }
