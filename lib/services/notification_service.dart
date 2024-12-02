@@ -5,7 +5,6 @@ import 'package:learning_management_system/models/notification_model.dart';
 import 'package:learning_management_system/services/api_service.dart';
 import 'package:learning_management_system/exceptions/api_exceptions.dart';
 import 'package:learning_management_system/providers/auth_provider.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:learning_management_system/constants/api_constants.dart';
 
 part 'notification_service.g.dart';
@@ -102,7 +101,7 @@ class NotificationService extends _$NotificationService {
         data: formData,
         options: Options(
           contentType: 'multipart/form-data',
-          validateStatus: (status) => true, // Allow any status code for debugging
+          validateStatus: (status) => true,
         ),
       );
 
