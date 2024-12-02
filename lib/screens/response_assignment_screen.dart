@@ -21,7 +21,9 @@ class ResponseAssignmentScreen extends ConsumerStatefulWidget {
 
 class ResponseAssignmentScreenState extends ConsumerState<ResponseAssignmentScreen> {
   List<AssignmentSubmission> responses = [];
+  List<AssignmentSubmission> filteredResponses = [];
   List<TextEditingController>? scoreControllers;
+  final TextEditingController searchController = TextEditingController();
 
   void _showSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -131,14 +133,32 @@ class ResponseAssignmentScreenState extends ConsumerState<ResponseAssignmentScre
     super.initState();
     _fetchAssignmentResponses();
     scoreControllers = List.generate(responses.length, (_) => TextEditingController());
+    searchController.addListener(_filterResponses);
   }
 
   @override
   void dispose() {
+    searchController.dispose();
     for (var controller in scoreControllers ?? []) {
       controller.dispose();
     }
     super.dispose();
+  }
+
+  void _filterResponses() {
+    final searchTerm = searchController.text.trim().toLowerCase();
+    setState(() {
+      if (searchTerm.isEmpty) {
+        // Show all responses when search is empty
+        filteredResponses = List.from(responses);
+      } else {
+        // Filter responses based on email
+        filteredResponses = responses.where((response) {
+          final email = response.studentAccount.email.toLowerCase();
+          return email.contains(searchTerm);
+        }).toList();
+      }
+    });
   }
 
   Future<void> _fetchAssignmentResponses() async {
@@ -166,8 +186,10 @@ class ResponseAssignmentScreenState extends ConsumerState<ResponseAssignmentScre
 
       setState(() {
         responses = fetchedResponses;
+        // Initialize filtered responses with all responses
+        filteredResponses = List.from(fetchedResponses);
         scoreControllers = List.generate(
-          responses.length,
+          filteredResponses.length,
           (_) => TextEditingController(),
         );
       });
@@ -440,42 +462,92 @@ class ResponseAssignmentScreenState extends ConsumerState<ResponseAssignmentScre
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
+            // Search Bar
+            TextField(
+              controller: searchController,
+              decoration: InputDecoration(
+                hintText: 'Filter responses by student email...',
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: searchController.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          searchController.clear();
+                          // Show all responses when search is cleared
+                          setState(() {
+                            filteredResponses = List.from(responses);
+                          });
+                        },
+                      )
+                    : null,
+                border: const OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 16),
+            
+            // Response Count with Search Status
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: theme.colorScheme.surfaceVariant,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+              child: Column(
                 children: [
-                  Icon(
-                    Icons.people_outline,
-                    color: theme.colorScheme.primary,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.people_outline,
+                        color: theme.colorScheme.primary,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Total Responses: ${responses.length}',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          color: theme.colorScheme.primary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Total Responses: ${responses.length}',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      color: theme.colorScheme.primary,
-                      fontWeight: FontWeight.bold,
+                  if (searchController.text.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      'Showing ${filteredResponses.length} matching results',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
                     ),
-                  ),
+                  ],
                 ],
               ),
             ),
             const SizedBox(height: 16),
+
+            // Response List
             Expanded(
-              child: ListView.builder(
-                itemCount: responses.length,
-                padding: const EdgeInsets.all(0),
-                itemBuilder: (context, index) => _buildResponseCard(
-                  context,
-                  responses[index],
-                  index,
-                  theme,
-                ),
-              ),
+              child: filteredResponses.isEmpty
+                  ? Center(
+                      child: Text(
+                        searchController.text.isEmpty
+                            ? 'No responses yet'
+                            : 'No responses found matching "${searchController.text}"',
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    )
+                  : ListView.builder(
+                      itemCount: filteredResponses.length,
+                      padding: const EdgeInsets.all(0),
+                      itemBuilder: (context, index) => _buildResponseCard(
+                        context,
+                        filteredResponses[index],
+                        index,
+                        theme,
+                      ),
+                    ),
             ),
           ],
         ),
