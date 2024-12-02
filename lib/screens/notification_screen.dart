@@ -24,202 +24,312 @@ class NotificationScreenState extends ConsumerState<NotificationScreen> {
   final FocusNode _notifyCodeFocusNode = FocusNode();
   Timer? _refreshTimer;
   bool _isDisposed = false;
-  List<NotificationModel> _notificationList =[];
-  bool connections =true;
+  List<NotificationModel> _notificationList = [];
+  bool connections = true;
   bool _isLoading = true;
-  List<NotificationModels> notifications =[];
-   
-Future<void> _initializeNotificationData() async {
-  debugPrint('NotificationManagementScreen - _initializeNotificationData started');
-  if (!mounted) return;
+  bool _isLoadingMore = false;
+  bool _hasMoreNotifications = true;
+  int _currentPage = 0;
+  final int _notificationsPerPage = 10;
+  final ScrollController _scrollController = ScrollController();
 
-  try {
-    final authState = ref.read(authProvider);
-    debugPrint('NotificationManagementScreen - authState: $authState');
-
-    return authState.when(
-      data: (user) async {
-        debugPrint('NotificationManagementScreen - auth data received: ${user?.role}');
-        if (user == null) {
-          if (mounted) context.go(Routes.signin);
-          return;
-        }
-
-        // Set up the refresh timer only after confirming authentication
-        // _refreshTimer?.cancel(); // Cancel any existing timer
-        // _refreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
-        //   debugPrint('NotificationManagementScreen - refresh timer triggered');
-        //   if (mounted) {
-        //     _refreshNotificationList();
-        //   }
-        // });
-
-        // Load the initial notifications
-        await _loadNotificationList();
-      },
-      loading: () {
-        debugPrint('NotificationManagementScreen - auth loading');
-        return null;
-      },
-      error: (e, __) {
-        debugPrint('NotificationManagementScreen - auth error: $e');
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error initializing notifications: $e')),
-          );
-          context.go(Routes.signin);
-        }
-      },
-    );
-  } catch (e, stackTrace) {
-    debugPrint('NotificationManagementScreen - initialization error: $e');
-    debugPrint('NotificationManagementScreen - stack trace: $stackTrace');
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error initializing notifications: $e')),
-      );
-      context.go(Routes.signin);
-    }
+  @override
+  void initState() {
+    super.initState();
+    _initializeNotificationData();
+    // Add scroll listener for lazy loading
+    _scrollController.addListener(_scrollListener);
   }
-}
 
- @override
+  @override
   void dispose() {
     debugPrint('ClassManagementScreen - dispose called');
     _isDisposed = true;
     _notifyCodeController.dispose();
     _notifyCodeFocusNode.dispose();
     _refreshTimer?.cancel();
+    _scrollController.removeListener(_scrollListener);
+    _scrollController.dispose();
     super.dispose();
   }
- Future<void> _loadNotificationList() async {
 
-  try {
-    final authState = ref.read(authProvider);
-    final token = authState.token;
-
-    if (token == null) {
-      if (mounted) {
-        context.go(Routes.signin);
+  void _scrollListener() {
+    if (!_isLoadingMore && _hasMoreNotifications) {
+      final threshold = 0.9 * _scrollController.position.maxScrollExtent;
+      if (_scrollController.position.pixels > threshold) {
+        _loadMoreNotifications();
       }
-      return;
     }
-     setState(() {
-        _isLoading = true; 
-      });
-    final notificationProvider = ref.read(notificationServiceProvider.notifier);
-    final notifications = await notificationProvider.getNotifications(token);
+  }
 
-    if (mounted) {
+  Future<void> _loadMoreNotifications() async {
+    if (_isLoadingMore || !_hasMoreNotifications) return;
+
+    setState(() {
+      _isLoadingMore = true;
+    });
+
+    try {
+      final authState = ref.read(authProvider);
+      final token = authState.token;
+
+      if (token == null) {
+        if (mounted) {
+          context.go(Routes.signin);
+        }
+        return;
+      }
+
+      final notificationProvider = ref.read(notificationServiceProvider.notifier);
+      final newNotifications = await notificationProvider.getNotifications(
+        token,
+        index: _currentPage * _notificationsPerPage,
+        count: _notificationsPerPage,
+      );
+
+      if (mounted) {
         setState(() {
-          _notificationList = notifications; 
-          _isLoading = false; 
+          _notificationList.addAll(newNotifications);
+          _currentPage++;
+          _hasMoreNotifications = newNotifications.length == _notificationsPerPage;
+          _isLoadingMore = false;
         });
       }
-  } on UnauthorizedException {
-    if (mounted) {
-      ref.read(authProvider.notifier).signOut();
-      context.go(Routes.signin);
-    }
-  } catch (e) {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
-      );
-    }
-  }
-}
-
- void _refreshNotificationList() {
-  _loadNotificationList();
-}
-
-
-  @override
-  void initState(){
-    super.initState();
-   _initializeNotificationData();
-  }
-  @override
-  Widget build(BuildContext context) {
-      return Scaffold(
-        //appBar: _appBar(),
-        body: _isLoading
-          ? const Center(child: CircularProgressIndicator()) 
-          : RefreshIndicator(
-              onRefresh: _loadNotificationList,
-              child: _notifiBody(),
-            ),
-      );
-    
-  }
-
-  Widget _notifiBody() {   
-    if(!connections){
-        return ListView(
-          children: [
-            Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const SizedBox(height: 100),
-                  const Icon(
-                    Icons.cloud_off,
-                    size: 100,
-                    color: Colors.grey,
-                  ),
-                  const SizedBox(height: 20),
-                  const Text(
-                    'Không thể kết nối',
-                    style: TextStyle(
-                      fontSize: 18,
-                      color: Colors.black,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  TextButton(
-                    onPressed: _loadNotificationList,
-                    child: const Text(
-                      'Nhấn để thử lại',
-                      style: TextStyle(
-                        color: Colors.blue,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoadingMore = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error loading more notifications: ${e.toString()}')),
         );
+      }
     }
-    else if(_notificationList.isEmpty){
+  }
+
+  Future<void> _loadNotificationList({bool maintainPosition = false}) async {
+    if (!maintainPosition) {
+      setState(() {
+        _isLoading = true;
+        _currentPage = 0;
+        _hasMoreNotifications = true;
+        _notificationList.clear();
+      });
+    }
+
+    try {
+      final authState = ref.read(authProvider);
+      final token = authState.token;
+
+      if (token == null) {
+        if (mounted) {
+          context.go(Routes.signin);
+        }
+        return;
+      }
+
+      final notificationProvider = ref.read(notificationServiceProvider.notifier);
+      final notifications = await notificationProvider.getNotifications(
+        token,
+        index: 0,
+        count: _notificationsPerPage,
+      );
+
+      if (mounted) {
+        setState(() {
+          _notificationList = notifications;
+          _currentPage = 1;
+          _hasMoreNotifications = notifications.length == _notificationsPerPage;
+          if (!maintainPosition) {
+            _isLoading = false;
+          }
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString())),
+        );
+      }
+    } finally {
+      if (mounted && !maintainPosition) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Widget _notifiBody() {
+    if (!connections) {
       return ListView(
+        controller: _scrollController,
         children: [
-          const SizedBox(height: 100),
-          const Center(
-             child: Text(
-                  'Không có thông báo',
+          Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const SizedBox(height: 100),
+                const Icon(
+                  Icons.cloud_off,
+                  size: 100,
+                  color: Colors.grey,
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  'Không thể kết nối',
                   style: TextStyle(
                     fontSize: 18,
                     color: Colors.black,
                   ),
-              )
+                ),
+                const SizedBox(height: 10),
+                TextButton(
+                  onPressed: _loadNotificationList,
+                  child: const Text(
+                    'Nhấn để thử lại',
+                    style: TextStyle(
+                      color: Colors.blue,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    } else if (_notificationList.isEmpty) {
+      return ListView(
+        controller: _scrollController,
+        children: [
+          const SizedBox(height: 100),
+          const Center(
+            child: Text(
+              'Không có thông báo',
+              style: TextStyle(
+                fontSize: 18,
+                color: Colors.black,
+              ),
+            ),
+          ),
+        ],
+      );
+    } else {
+      return Column(
+        children: [
+          Expanded(
+            child: ListView.separated(
+              controller: _scrollController,
+              padding: const EdgeInsets.all(10),
+              itemCount: _notificationList.length + (_hasMoreNotifications ? 1 : 0),
+              separatorBuilder: (BuildContext context, int index) =>
+                  const SizedBox(height: 30),
+              itemBuilder: (BuildContext context, int index) {
+                if (index == _notificationList.length) {
+                  return const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(16.0),
+                      child: CircularProgressIndicator(),
+                    ),
+                  );
+                }
+                final notification = _notificationList[index];
+                return NotifyItem(
+                  notification: notification,
+                  onMarkAsRead: refreshWithPosition,
+                );
+              },
+            ),
           ),
         ],
       );
     }
-    else {
-      return ListView.separated(
-        padding: const EdgeInsets.all(10),
-        itemCount: _notificationList.length,
-        separatorBuilder: (BuildContext context, int index) => const SizedBox(height: 30),
-        itemBuilder: (BuildContext context, int index) { 
-           final notification = _notificationList[index]; 
-           return NotifyItem(notification: notification);
+  }
+
+  Future<void> _initializeNotificationData() async {
+    debugPrint('NotificationManagementScreen - _initializeNotificationData started');
+    if (!mounted) return;
+
+    try {
+      final authState = ref.read(authProvider);
+      debugPrint('NotificationManagementScreen - authState: $authState');
+
+      return authState.when(
+        data: (user) async {
+          debugPrint('NotificationManagementScreen - auth data received: ${user?.role}');
+          if (user == null) {
+            if (mounted) context.go(Routes.signin);
+            return;
+          }
+
+          // Set up the refresh timer only after confirming authentication
+          // _refreshTimer?.cancel(); // Cancel any existing timer
+          // _refreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+          //   debugPrint('NotificationManagementScreen - refresh timer triggered');
+          //   if (mounted) {
+          //     _refreshNotificationList();
+          //   }
+          // });
+
+          // Load the initial notifications
+          await _loadNotificationList();
+        },
+        loading: () {
+          debugPrint('NotificationManagementScreen - auth loading');
+          return null;
+        },
+        error: (e, __) {
+          debugPrint('NotificationManagementScreen - auth error: $e');
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Error initializing notifications: $e')),
+            );
+            context.go(Routes.signin);
+          }
         },
       );
+    } catch (e, stackTrace) {
+      debugPrint('NotificationManagementScreen - initialization error: $e');
+      debugPrint('NotificationManagementScreen - stack trace: $stackTrace');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error initializing notifications: $e')),
+        );
+        context.go(Routes.signin);
+      }
     }
+  }
+
+  // Add method to refresh while maintaining position
+  Future<void> refreshWithPosition() async {
+    final currentPosition = _scrollController.position.pixels;
+    await _loadNotificationList(maintainPosition: true);
+    if (mounted) {
+      // Use Future.delayed to ensure the list is rebuilt before scrolling
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (_scrollController.hasClients) {
+          _scrollController.jumpTo(currentPosition);
+        }
+      });
+    }
+  }
+
+  void _refreshNotificationList() {
+    _loadNotificationList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      //appBar: _appBar(),
+      body: _isLoading
+        ? const Center(child: CircularProgressIndicator()) 
+        : RefreshIndicator(
+            onRefresh: _loadNotificationList,
+            child: _notifiBody(),
+          ),
+    );
   }
 
   AppBar _appBar() {
@@ -246,9 +356,12 @@ class NotifyItem extends ConsumerWidget {
   const NotifyItem({
     Key? key,
     required this.notification,
+    required this.onMarkAsRead,
   }) : super(key: key);
 
   final NotificationModel notification;
+  final Future<void> Function() onMarkAsRead;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return GestureDetector(
@@ -288,10 +401,7 @@ class NotifyItem extends ConsumerWidget {
                 duration: Duration(seconds: 1),
               ),
             );
-          }
 
-          // Mark as read
-          if (notification.status == 'UNREAD') {
             await ref
                 .read(notificationServiceProvider.notifier)
                 .markNotificationAsRead(token, notification.id.toString());
@@ -316,12 +426,9 @@ class NotifyItem extends ConsumerWidget {
             await _showNotificationDetailed(context);
           }
 
-          // Refresh the notification list
+          // Refresh the list while maintaining scroll position
           if (context.mounted) {
-            final notificationScreenState = context.findAncestorStateOfType<NotificationScreenState>();
-            if (notificationScreenState != null) {
-              await notificationScreenState._loadNotificationList();
-            }
+            await onMarkAsRead();
           }
         } catch (e) {
           if (context.mounted) {
