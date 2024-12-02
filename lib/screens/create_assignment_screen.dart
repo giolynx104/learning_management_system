@@ -3,11 +3,8 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:learning_management_system/providers/auth_provider.dart';
-import 'package:learning_management_system/providers/assignment_provider.dart';
 import 'package:learning_management_system/services/assignment_service.dart';
-import 'package:learning_management_system/providers/class_provider.dart';
 import 'package:learning_management_system/services/class_service.dart';
-import 'package:learning_management_system/providers/notification_provider.dart';
 import 'package:learning_management_system/services/notification_service.dart';
 import 'package:learning_management_system/models/notification_model.dart';
 
@@ -38,8 +35,9 @@ class CreateAssignmentScreenState
   void _validateForm() {
     setState(() {
       _isSubmitEnabled = _assignmentNameController.text.isNotEmpty &&
-          (_descriptionController.text.isNotEmpty || _selectedFile != null);
+          _endDateTime != null;
     });
+    debugPrint('Form validation: isEnabled=$_isSubmitEnabled, title=${_assignmentNameController.text}, deadline=$_endDateTime');
   }
 
   @override
@@ -65,6 +63,7 @@ class CreateAssignmentScreenState
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 TextField(
                   controller: _assignmentNameController,
@@ -72,12 +71,13 @@ class CreateAssignmentScreenState
                     labelText: 'Assignment Name *',
                     border: OutlineInputBorder(),
                   ),
+                  onChanged: (_) => _validateForm(),
                 ),
                 const SizedBox(height: 16),
                 TextField(
                   controller: _descriptionController,
                   decoration: const InputDecoration(
-                    labelText: 'Description',
+                    labelText: 'Description (Optional)',
                     border: OutlineInputBorder(),
                   ),
                   maxLines: 3,
@@ -85,7 +85,7 @@ class CreateAssignmentScreenState
                 const SizedBox(height: 16),
                 ElevatedButton(
                   onPressed: _pickFile,
-                  child: Text(_selectedFile?.name ?? 'Upload File'),
+                  child: Text(_selectedFile?.name ?? 'Upload File (Optional)'),
                 ),
                 const SizedBox(height: 16),
                 _buildDateTimeSelector(),
@@ -151,6 +151,7 @@ class CreateAssignmentScreenState
             pickedTime.minute,
           );
         });
+        _validateForm();
       }
     }
   }
@@ -172,16 +173,15 @@ class CreateAssignmentScreenState
       return;
     }
 
-    if (_descriptionController.text.isEmpty && _selectedFile == null) {
-      _showSnackBar('Please provide a description or upload a file');
-      return;
-    }
-
     try {
       final authState = await ref.read(authProvider.future);
       if (authState == null) {
         throw Exception('Not authenticated');
       }
+
+      debugPrint('=== Auth Token Debug Info ===');
+      debugPrint('Token: ${authState.token}');
+      debugPrint('==========================');
 
       final assignmentService = ref.read(assignmentServiceProvider.notifier);
       await assignmentService.createAssignment(
@@ -189,8 +189,8 @@ class CreateAssignmentScreenState
         classId: widget.classId,
         title: _assignmentNameController.text.trim(),
         deadline: DateFormat('yyyy-MM-ddTHH:mm:ss').format(_endDateTime!),
-        description: _descriptionController.text,
-        file: _selectedFile!,
+        description: _descriptionController.text.trim(),
+        file: _selectedFile,
       );
 
       // Send notifications to all students in the class
