@@ -28,6 +28,7 @@ class _SubmitAssignmentScreenState extends ConsumerState<SubmitAssignmentScreen>
   PlatformFile? _selectedFile;
   bool _hasChanged = false;
   bool _isSubmitEnabled = false;
+  bool _isSubmitting = false;
   Map<String, dynamic>? _submissionData;
 
   @override
@@ -98,7 +99,7 @@ class _SubmitAssignmentScreenState extends ConsumerState<SubmitAssignmentScreen>
         title: const Text('Submit Assignment'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
+          onPressed: _isSubmitting ? null : () => Navigator.pop(context),
         ),
       ),
       body: SingleChildScrollView(
@@ -168,23 +169,26 @@ class _SubmitAssignmentScreenState extends ConsumerState<SubmitAssignmentScreen>
                   ),
                   maxLines: 5,
                   onChanged: (_) => setState(() => _hasChanged = true),
+                  enabled: !_isSubmitting,
                 ),
                 const SizedBox(height: 16),
                 OutlinedButton.icon(
-                  onPressed: () async {
-                    FilePickerResult? result = await FilePicker.platform.pickFiles(
-                      type: FileType.custom,
-                      allowedExtensions: ['pdf', 'doc', 'docx'],
-                    );
+                  onPressed: _isSubmitting
+                      ? null
+                      : () async {
+                          FilePickerResult? result = await FilePicker.platform.pickFiles(
+                            type: FileType.custom,
+                            allowedExtensions: ['pdf', 'doc', 'docx'],
+                          );
 
-                    if (result != null) {
-                      setState(() {
-                        _selectedFile = result.files.single;
-                        _hasChanged = true;
-                      });
-                      _validateForm();
-                    }
-                  },
+                          if (result != null) {
+                            setState(() {
+                              _selectedFile = result.files.single;
+                              _hasChanged = true;
+                            });
+                            _validateForm();
+                          }
+                        },
                   icon: const Icon(Icons.attach_file),
                   label: Text(_selectedFile?.name ?? 'Attach File'),
                 ),
@@ -198,7 +202,7 @@ class _SubmitAssignmentScreenState extends ConsumerState<SubmitAssignmentScreen>
                   ),
                 const SizedBox(height: 24),
                 FilledButton.icon(
-                  onPressed: _isSubmitEnabled
+                  onPressed: (_isSubmitEnabled && !_isSubmitting)
                       ? () async {
                           if (_selectedFile == null) {
                             ScaffoldMessenger.of(context).showSnackBar(
@@ -206,6 +210,10 @@ class _SubmitAssignmentScreenState extends ConsumerState<SubmitAssignmentScreen>
                             );
                             return;
                           }
+
+                          setState(() {
+                            _isSubmitting = true;
+                          });
 
                           try {
                             final authState = await ref.read(authProvider.future);
@@ -231,6 +239,9 @@ class _SubmitAssignmentScreenState extends ConsumerState<SubmitAssignmentScreen>
                             }
                           } catch (e) {
                             if (mounted) {
+                              setState(() {
+                                _isSubmitting = false;
+                              });
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(content: Text("Error: ${e.toString()}")),
                               );
@@ -238,8 +249,17 @@ class _SubmitAssignmentScreenState extends ConsumerState<SubmitAssignmentScreen>
                           }
                         }
                       : null,
-                  icon: const Icon(Icons.send),
-                  label: const Text('Submit Assignment'),
+                  icon: _isSubmitting 
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : const Icon(Icons.send),
+                  label: Text(_isSubmitting ? 'Submitting...' : 'Submit Assignment'),
                 ),
               ] else ...[
                 // View Submission
