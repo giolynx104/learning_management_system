@@ -101,20 +101,25 @@ class AssignmentService extends _$AssignmentService {
     required String title,
     required String deadline,
     required String description,
-    required PlatformFile file,
+    PlatformFile? file,
   }) async {
     try {
-      final formData = FormData.fromMap({
+      final Map<String, dynamic> formDataMap = {
         'token': token,
         'assignmentId': assignmentId,
         'title': title,
         'deadline': deadline,
         'description': description,
-        'file': await MultipartFile.fromFile(
+      };
+
+      if (file != null) {
+        formDataMap['file'] = await MultipartFile.fromFile(
           file.path!,
           filename: file.name,
-        ),
-      });
+        );
+      }
+
+      final formData = FormData.fromMap(formDataMap);
 
       final response = await _apiService.dio.post(
         ApiConstants.editSurvey,

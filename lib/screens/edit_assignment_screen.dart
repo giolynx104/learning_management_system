@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:learning_management_system/models/assignment.dart';
-import 'package:learning_management_system/services/assignment_service.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:learning_management_system/providers/auth_provider.dart';
-import 'dart:io';
+import 'package:learning_management_system/services/assignment_service.dart';
+import 'package:learning_management_system/services/class_service.dart';
+import 'package:learning_management_system/services/notification_service.dart';
+import 'package:learning_management_system/models/notification_model.dart';
 
 class EditAssignmentScreen extends ConsumerStatefulWidget {
   final String assignmentId;
@@ -23,23 +24,20 @@ class EditAssignmentScreen extends ConsumerStatefulWidget {
 }
 
 class EditAssignmentScreenState extends ConsumerState<EditAssignmentScreen> {
-  late Assignment assignment;
   final TextEditingController _assignmentNameController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
   DateTime? _endDateTime;
-  String? _fileName;
-  String? _fileUrl;
+  PlatformFile? _selectedFile;
   bool _isSubmitEnabled = false;
+  String? _currentFileUrl;
 
   @override
   void initState() {
     super.initState();
-    assignment = widget.assignment;
-    _assignmentNameController.text = assignment.title;
-    _descriptionController.text = assignment.description ?? '';
-    _fileName = assignment.fileUrl;
-    _fileUrl = assignment.fileUrl;
-    _endDateTime = assignment.deadline;
+    _assignmentNameController.text = widget.assignment.title;
+    _descriptionController.text = widget.assignment.description ?? '';
+    _endDateTime = widget.assignment.deadline;
+    _currentFileUrl = widget.assignment.fileUrl;
 
     _assignmentNameController.addListener(_validateForm);
     _descriptionController.addListener(_validateForm);
@@ -48,15 +46,13 @@ class EditAssignmentScreenState extends ConsumerState<EditAssignmentScreen> {
   void _validateForm() {
     setState(() {
       final isNameNotEmpty = _assignmentNameController.text.isNotEmpty;
-      final isDescriptionOrFileNotEmpty = 
-          (_descriptionController.text.isNotEmpty || _fileName != null);
-      final isFileChanged = assignment.fileUrl != _fileName;
-      final isChanged = assignment.title != _assignmentNameController.text ||
-          assignment.description != _descriptionController.text ||
-          isFileChanged ||
-          assignment.deadline != _endDateTime;
+      final isDeadlineSet = _endDateTime != null;
+      final hasChanges = _assignmentNameController.text != widget.assignment.title ||
+          _descriptionController.text != (widget.assignment.description ?? '') ||
+          _selectedFile != null ||
+          (_endDateTime?.isAtSameMomentAs(widget.assignment.deadline) == false);
 
-      _isSubmitEnabled = isChanged && isNameNotEmpty && isDescriptionOrFileNotEmpty;
+      _isSubmitEnabled = isNameNotEmpty && isDeadlineSet && hasChanges;
     });
   }
 
@@ -69,6 +65,8 @@ class EditAssignmentScreenState extends ConsumerState<EditAssignmentScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
@@ -82,6 +80,7 @@ class EditAssignmentScreenState extends ConsumerState<EditAssignmentScreen> {
         body: SingleChildScrollView(
           padding: const EdgeInsets.all(16.0),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               TextField(
                 controller: _assignmentNameController,
@@ -89,6 +88,7 @@ class EditAssignmentScreenState extends ConsumerState<EditAssignmentScreen> {
                   labelText: 'Assignment Name *',
                   border: OutlineInputBorder(),
                 ),
+                textCapitalization: TextCapitalization.sentences,
               ),
               const SizedBox(height: 16),
               TextField(
@@ -96,71 +96,70 @@ class EditAssignmentScreenState extends ConsumerState<EditAssignmentScreen> {
                 decoration: const InputDecoration(
                   labelText: 'Description',
                   border: OutlineInputBorder(),
+                  hintText: 'Enter assignment description',
                 ),
                 maxLines: 3,
+                textCapitalization: TextCapitalization.sentences,
               ),
               const SizedBox(height: 16),
-              _buildFileSection(),
+              InkWell(
+                onTap: () => _selectDateTime(context),
+                child: InputDecorator(
+                  decoration: const InputDecoration(
+                    labelText: 'Deadline *',
+                    border: OutlineInputBorder(),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        _endDateTime == null
+                            ? 'Select Deadline'
+                            : DateFormat('dd/MM/yyyy HH:mm').format(_endDateTime!),
+                      ),
+                      const Icon(Icons.calendar_today),
+                    ],
+                  ),
+                ),
+              ),
               const SizedBox(height: 16),
-              _buildDateTimeSelector(),
+              if (_currentFileUrl != null && _selectedFile == null)
+                Card(
+                  child: ListTile(
+                    leading: const Icon(Icons.attach_file),
+                    title: const Text('Current File'),
+                    subtitle: Text(_currentFileUrl!.split('/').last),
+                  ),
+                ),
+              const SizedBox(height: 8),
+              if (_selectedFile != null)
+                Card(
+                  child: ListTile(
+                    leading: const Icon(Icons.upload_file),
+                    title: const Text('New File Selected'),
+                    subtitle: Text(_selectedFile!.name),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.clear),
+                      onPressed: () => setState(() {
+                        _selectedFile = null;
+                        _validateForm();
+                      }),
+                    ),
+                  ),
+                ),
+              const SizedBox(height: 8),
+              ElevatedButton.icon(
+                onPressed: _pickFile,
+                icon: const Icon(Icons.attach_file),
+                label: Text(_selectedFile == null ? 'Select File' : 'Change File'),
+              ),
               const SizedBox(height: 24),
-              ElevatedButton(
+              FilledButton(
                 onPressed: _isSubmitEnabled ? _handleSubmit : null,
                 child: const Text('Update Assignment'),
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFileSection() {
-    return Column(
-      children: [
-        if (_fileUrl != null)
-          ElevatedButton(
-            onPressed: _openFileLink,
-            child: const Text('View Current File'),
-          ),
-        const SizedBox(height: 8),
-        ElevatedButton(
-          onPressed: _pickNewFile,
-          child: Text(_fileName != null ? 'Change File' : 'Upload File'),
-        ),
-      ],
-    );
-  }
-
-  Future<void> _openFileLink() async {
-    if (_fileUrl != null && await canLaunchUrl(Uri.parse(_fileUrl!))) {
-      await launchUrl(Uri.parse(_fileUrl!));
-    } else {
-      _showSnackBar("Cannot open file link");
-    }
-  }
-
-  Future<void> _pickNewFile() async {
-    final result = await FilePicker.platform.pickFiles();
-    if (result != null) {
-      setState(() {
-        _fileName = result.files.first.name;
-        _fileUrl = result.files.first.path;
-      });
-      _validateForm();
-    }
-  }
-
-  Widget _buildDateTimeSelector() {
-    return InkWell(
-      onTap: () => _selectDateTime(context),
-      child: InputDecorator(
-        decoration: const InputDecoration(
-          labelText: 'Deadline *',
-          border: OutlineInputBorder(),
-        ),
-        child: Text(
-          _formatDateTime(_endDateTime),
         ),
       ),
     );
@@ -180,7 +179,7 @@ class EditAssignmentScreenState extends ConsumerState<EditAssignmentScreen> {
         initialTime: TimeOfDay.fromDateTime(_endDateTime ?? DateTime.now()),
       );
 
-      if (pickedTime != null && context.mounted) {
+      if (pickedTime != null) {
         setState(() {
           _endDateTime = DateTime(
             pickedDate.year,
@@ -195,10 +194,14 @@ class EditAssignmentScreenState extends ConsumerState<EditAssignmentScreen> {
     }
   }
 
-  String _formatDateTime(DateTime? dateTime) {
-    return dateTime == null
-        ? 'Select Deadline'
-        : DateFormat('dd/MM/yyyy HH:mm').format(dateTime);
+  Future<void> _pickFile() async {
+    final result = await FilePicker.platform.pickFiles();
+    if (result != null) {
+      setState(() {
+        _selectedFile = result.files.first;
+      });
+      _validateForm();
+    }
   }
 
   Future<void> _handleSubmit() async {
@@ -207,37 +210,57 @@ class EditAssignmentScreenState extends ConsumerState<EditAssignmentScreen> {
       if (authState == null) throw Exception('Not authenticated');
 
       final assignmentService = ref.read(assignmentServiceProvider.notifier);
-      
-      if (_fileUrl != null) {
-        final file = PlatformFile(
-          path: _fileUrl!,
-          name: _fileName!,
-          size: await File(_fileUrl!).length(),
-        );
+      await assignmentService.editAssignment(
+        token: authState.token!,
+        assignmentId: widget.assignmentId,
+        title: _assignmentNameController.text.trim(),
+        deadline: DateFormat('yyyy-MM-ddTHH:mm:ss').format(_endDateTime!),
+        description: _descriptionController.text.trim(),
+        file: _selectedFile,
+      );
 
-        await assignmentService.editAssignment(
-          token: authState.token!,
-          assignmentId: widget.assignmentId,
-          title: _assignmentNameController.text,
-          deadline: DateFormat('yyyy-MM-ddTHH:mm:ss').format(_endDateTime!),
-          description: _descriptionController.text,
-          file: file,
-        );
+      // Send notifications to all students in the class
+      final classService = ref.read(classServiceProvider.notifier);
+      final classInfo = await classService.getClassDetail(
+        token: authState.token!,
+        classId: widget.assignment.classId,
+      );
 
-        if (mounted) {
-          _showSnackBar('Assignment updated successfully');
-          Navigator.pop(context, true);
+      if (classInfo != null) {
+        final notificationService = ref.read(notificationServiceProvider.notifier);
+        final message = 'Assignment "${_assignmentNameController.text.trim()}" has been updated.\n'
+            'Deadline: ${DateFormat('dd/MM/yyyy HH:mm').format(_endDateTime!)}';
+
+        for (final student in classInfo.studentAccounts) {
+          try {
+            await notificationService.sendNotification(
+              authState.token!,
+              message,
+              student.accountId,
+              NotificationType.assignmentGrade,
+              null,
+            );
+          } catch (e) {
+            debugPrint('Failed to send notification to student ${student.accountId}: $e');
+          }
         }
       }
-    } catch (e) {
-      _showSnackBar('Error updating assignment: ${e.toString()}');
-    }
-  }
 
-  void _showSnackBar(String message) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Assignment updated successfully')),
+        );
+        Navigator.pop(context, true);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error updating assignment: ${e.toString()}'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    }
   }
 } 
