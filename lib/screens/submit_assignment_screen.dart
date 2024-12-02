@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:learning_management_system/models/assignment.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:learning_management_system/services/assignment_service.dart';
 import 'package:learning_management_system/providers/auth_provider.dart';
 import 'package:learning_management_system/providers/assignment_provider.dart';
+import 'package:learning_management_system/utils/url_utils.dart';
 import 'package:intl/intl.dart';
 
 class SubmitAssignmentScreen extends ConsumerStatefulWidget {
@@ -145,20 +145,7 @@ class _SubmitAssignmentScreenState
                       ),
                       const SizedBox(height: 8),
                       OutlinedButton.icon(
-                        onPressed: () async {
-                          if (await canLaunchUrl(Uri.parse(assignment.fileUrl!))) {
-                            await launchUrl(
-                              Uri.parse(assignment.fileUrl!),
-                              mode: LaunchMode.externalApplication,
-                            );
-                          } else {
-                            if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text("Cannot open file")),
-                              );
-                            }
-                          }
-                        },
+                        onPressed: () => openFileUrl(context, assignment.fileUrl),
                         icon: const Icon(Icons.file_present),
                         label: const Text('Open Assignment File'),
                       ),
@@ -350,21 +337,9 @@ class _SubmitAssignmentScreenState
                       if (_submissionData!['file_url'] != null) ...[
                         const SizedBox(height: 16),
                         OutlinedButton.icon(
-                          onPressed: () async {
-                            final url = _submissionData!['file_url'];
-                            if (await canLaunchUrl(Uri.parse(url))) {
-                              await launchUrl(Uri.parse(url));
-                            } else {
-                              if (mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                      content: Text("Cannot open file")),
-                                );
-                              }
-                            }
-                          },
+                          onPressed: () => openFileUrl(context, _submissionData!['file_url']),
                           icon: const Icon(Icons.attachment),
-                          label: const Text('View Submitted File'),
+                          label: Text(getFileNameFromUrl(_submissionData!['file_url'])),
                         ),
                       ],
                       const SizedBox(height: 16),

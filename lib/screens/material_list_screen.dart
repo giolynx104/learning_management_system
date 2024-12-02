@@ -2,126 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:learning_management_system/providers/material_provider.dart';
 import 'package:learning_management_system/routes/routes.dart';
 import 'package:learning_management_system/models/material_model.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:learning_management_system/providers/auth_provider.dart';
-
-Future<void> openMaterialLink(BuildContext context, String? link) async {
-  debugPrint('Attempting to open material link: $link');
-  if (link == null) {
-    debugPrint('Material link is null');
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('No file link available'),
-        backgroundColor: Colors.orange,
-      ),
-    );
-    return;
-  }
-
-  // Parse the URL and ensure it's encoded properly
-  var uri = Uri.parse(link);
-  
-  // Special handling for Google Drive/Docs URLs
-  if (uri.host.contains('google.com')) {
-    // If it's a Google Drive/Docs URL, try to force it to open in the browser
-    debugPrint('Detected Google Docs/Drive URL');
-    try {
-      final launched = await launchUrl(
-        uri,
-        mode: LaunchMode.externalApplication,
-        webViewConfiguration: const WebViewConfiguration(
-          enableJavaScript: true,
-          enableDomStorage: true,
-        ),
-      );
-      debugPrint('URL launch result: $launched');
-      
-      if (!launched) {
-        // If external app launch fails, try browser
-        final browserLaunched = await launchUrl(
-          uri,
-          mode: LaunchMode.platformDefault,
-        );
-        debugPrint('Browser launch result: $browserLaunched');
-        
-        if (!browserLaunched && context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Could not open file. Please check if you have a compatible app installed.'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      debugPrint('Error launching Google URL: $e');
-      // Try fallback to browser if app launch fails
-      try {
-        final browserLaunched = await launchUrl(
-          uri,
-          mode: LaunchMode.platformDefault,
-        );
-        debugPrint('Fallback browser launch result: $browserLaunched');
-        
-        if (!browserLaunched && context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Could not open file. Please check if you have a compatible app installed.'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      } catch (e) {
-        debugPrint('Error launching in browser: $e');
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error opening file: $e'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      }
-    }
-  } else {
-    // For non-Google URLs, use the standard approach
-    try {
-      final canLaunch = await canLaunchUrl(uri);
-      debugPrint('Can launch URL: $canLaunch');
-      if (canLaunch) {
-        final launched = await launchUrl(
-          uri,
-          mode: LaunchMode.externalApplication,
-        );
-        debugPrint('URL launch result: $launched');
-      } else {
-        debugPrint('Cannot launch URL');
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Could not open file'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      debugPrint('Error launching URL: $e');
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error opening file: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
-}
+import 'package:learning_management_system/utils/url_utils.dart';
 
 class MaterialListScreen extends HookConsumerWidget {
   final String classId;
@@ -280,7 +166,7 @@ class _StudentMaterialListView extends StatelessWidget {
             onTap: () {
               debugPrint('Card tapped for material: ${material.materialName}');
               debugPrint('Opening link: ${material.materialLink}');
-              openMaterialLink(context, material.materialLink);
+              openFileUrl(context, material.materialLink);
             },
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -456,7 +342,7 @@ class _TeacherMaterialListView extends HookConsumerWidget {
                   IconButton(
                     icon: const Icon(Icons.open_in_new),
                     tooltip: 'Open material',
-                    onPressed: () => openMaterialLink(context, material.materialLink),
+                    onPressed: () => openFileUrl(context, material.materialLink),
                   ),
                 IconButton(
                   icon: const Icon(Icons.edit),

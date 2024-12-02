@@ -5,6 +5,7 @@ import 'package:learning_management_system/services/assignment_service.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:learning_management_system/providers/auth_provider.dart';
 import 'package:learning_management_system/models/assignment_submission.dart';
+import 'package:learning_management_system/utils/url_utils.dart';
 import 'dart:developer' as developer;
 
 class ResponseAssignmentScreen extends ConsumerStatefulWidget {
@@ -342,9 +343,9 @@ class ResponseAssignmentScreenState extends ConsumerState<ResponseAssignmentScre
                 // File Attachment
                 if (hasFile)
                   OutlinedButton.icon(
-                    onPressed: () => _openAttachment(submission.fileUrl),
+                    onPressed: () => openFileUrl(context, submission.fileUrl),
                     icon: const Icon(Icons.open_in_new),
-                    label: Text(_getFileNameFromUrl(submission.fileUrl!)),
+                    label: Text(getFileNameFromUrl(submission.fileUrl!)),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 16,
