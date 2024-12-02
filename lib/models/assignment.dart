@@ -6,7 +6,10 @@ part 'assignment.freezed.dart';
 part 'assignment.g.dart';
 
 @freezed
+@JsonSerializable()
 class Assignment with _$Assignment {
+  const Assignment._();
+
   const factory Assignment({
     required String id,
     required String title,
@@ -15,7 +18,7 @@ class Assignment with _$Assignment {
     @JsonKey(name: 'lecturer_id') required String lecturerId,
     required DateTime deadline,
     @JsonKey(name: 'class_id') required String classId,
-    @Default(false) @JsonKey(name: 'is_submitted') bool isSubmitted,
+    @JsonKey(name: 'submission') Map<String, dynamic>? submission,
   }) = _Assignment;
 
   factory Assignment.fromJson(Map<String, dynamic> json) {
@@ -29,17 +32,16 @@ class Assignment with _$Assignment {
     final lecturerId = json['lecturer_id'] is int ? json['lecturer_id'].toString() : json['lecturer_id'];
     final classId = json['class_id'] is int ? json['class_id'].toString() : json['class_id'];
     
-    return Assignment(
-      id: id as String,
-      title: json['title'] as String,
-      description: json['description'] as String?,
-      fileUrl: json['file_url'] as String?,
-      lecturerId: lecturerId as String,
-      deadline: DateTime.parse(json['deadline'] as String),
-      classId: classId as String,
-      isSubmitted: json['is_submitted'] as bool? ?? false,
-    );
+    return _$AssignmentFromJson({
+      ...json,
+      'id': id,
+      'lecturer_id': lecturerId,
+      'class_id': classId,
+    });
   }
+
+  // Add a getter for submission status
+  bool get isSubmitted => submission != null;
 }
 
 @riverpod

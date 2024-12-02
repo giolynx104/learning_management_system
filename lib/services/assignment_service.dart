@@ -39,12 +39,47 @@ class AssignmentService extends _$AssignmentService {
         name: 'AssignmentService',
       );
 
-      return await _handleResponse<List<Assignment>>(
+      // Get all assignments
+      final assignments = await _handleResponse<List<Assignment>>(
         response,
         (data) => (data as List)
             .map((json) => Assignment.fromJson(json as Map<String, dynamic>))
             .toList(),
       );
+
+      // For each assignment, try to get its submission
+      final assignmentsWithSubmissions = await Future.wait(
+        assignments.map((assignment) async {
+          try {
+            final submission = await getStudentSubmission(
+              token: token,
+              assignmentId: assignment.id,
+            );
+
+            if (submission != null) {
+              // Create a new assignment with the submission data
+              return Assignment.fromJson({
+                'id': assignment.id,
+                'title': assignment.title,
+                'description': assignment.description,
+                'file_url': assignment.fileUrl,
+                'lecturer_id': assignment.lecturerId,
+                'deadline': assignment.deadline.toIso8601String(),
+                'class_id': assignment.classId,
+                'submission': submission,
+              });
+            }
+          } catch (e) {
+            developer.log(
+              'Error fetching submission for assignment ${assignment.id}: $e',
+              name: 'AssignmentService',
+            );
+          }
+          return assignment;
+        }),
+      );
+
+      return assignmentsWithSubmissions;
     } on DioException catch (e) {
       developer.log(
         'Error fetching assignments: ${e.message}',
@@ -270,21 +305,28 @@ class AssignmentService extends _$AssignmentService {
         return null;
       }
 
-      return await _handleResponse<Map<String, dynamic>?>(
-        response,
-        (data) => (data as List).isNotEmpty ? 
-          Map<String, dynamic>.from(data.first) : null,
-      );
+      final responseData = response.data['data'];
+      if (responseData == null) return null;
+
+      return {
+        'id': responseData['id'],
+        'assignment_id': responseData['assignment_id'],
+        'submission_time': responseData['submission_time'],
+        'grade': responseData['grade'],
+        'file_url': responseData['file_url'],
+        'text_response': responseData['text_response'],
+        'student_account': responseData['student_account'],
+      };
     } on DioException catch (e) {
       developer.log(
         'Error getting student submission: ${e.message}',
         name: 'AssignmentService',
         error: e,
       );
-      if (e.response?.statusCode != 400) {
-        throw ApiException.fromDioError(e);
+      if (e.response?.statusCode == 400) {
+        return null;
       }
-      return null;
+      throw ApiException.fromDioError(e);
     }
   }
 } 
