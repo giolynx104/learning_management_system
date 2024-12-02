@@ -18,6 +18,7 @@ class Routes {
   static const String absenceRequest = 'absence-request/:classId';
   static const String materialList = 'materials/:classId';
   static const String uploadMaterial = 'materials/:classId/upload';
+  static const String editMaterial = 'materials/:classId/edit/:materialId';
   static const String assignments = 'assignments/:classId';
   static const String submitSurvey = 'submit-survey/:surveyId';
   static const String createSurvey = 'create-survey/:classId';
@@ -46,6 +47,7 @@ class Routes {
   static const String absenceRequestName = 'absenceRequest';
   static const String materialListName = 'materialList';
   static const String uploadMaterialName = 'uploadMaterial';
+  static const String editMaterialName = 'editMaterial';
   static const String chatName = 'chat';
   static const String profileName = 'profile';
   static const String editSurveyName = 'editSurvey';
@@ -74,6 +76,8 @@ class Routes {
       '/classes/materials/$classId';
   static String getUploadMaterialPath(String classId) =>
       '/classes/materials/$classId/upload';
+  static String getEditMaterialPath(String classId, String materialId) =>
+      '/classes/materials/$classId/edit/$materialId';
   static String getStudentSurveyListPath(String classId) =>
       '/classes/student-assignments/$classId';
   static String getTeacherSurveyListPath(String classId) =>

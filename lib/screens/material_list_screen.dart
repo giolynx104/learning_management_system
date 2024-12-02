@@ -343,11 +343,26 @@ class _TeacherMaterialListView extends HookConsumerWidget {
                 IconButton(
                   icon: const Icon(Icons.edit),
                   tooltip: 'Edit material',
-                  onPressed: () => _showEditMaterialSheet(
-                    context,
-                    ref,
-                    material,
-                  ),
+                  onPressed: () async {
+                    final result = await context.push<bool>(
+                      Routes.getEditMaterialPath(material.classId, material.id),
+                      extra: material,
+                    );
+                    if (result == true) {
+                      debugPrint('MaterialListScreen - Edit successful, refreshing list');
+                      ref.invalidate(materialListProvider(material.classId));
+                      await ref.read(materialListProvider(material.classId).future);
+                      
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Material updated successfully'),
+                            backgroundColor: Colors.green,
+                          ),
+                        );
+                      }
+                    }
+                  },
                 ),
                 IconButton(
                   icon: const Icon(Icons.delete),
@@ -419,18 +434,6 @@ class _TeacherMaterialListView extends HookConsumerWidget {
     }
   }
 
-  Future<void> _showEditMaterialSheet(
-    BuildContext context,
-    WidgetRef ref,
-    MaterialModel material,
-  ) async {
-    await showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (context) => _EditMaterialSheet(material: material),
-    );
-  }
-
   IconData _getMaterialIcon(String materialType) {
     switch (materialType.toLowerCase()) {
       case 'document':
@@ -444,125 +447,5 @@ class _TeacherMaterialListView extends HookConsumerWidget {
       default:
         return Icons.file_present;
     }
-  }
-}
-
-class _EditMaterialSheet extends HookConsumerWidget {
-  final MaterialModel material;
-
-  const _EditMaterialSheet({required this.material});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final titleController = useTextEditingController(text: material.materialName);
-    final descriptionController = useTextEditingController(
-      text: material.description,
-    );
-    final selectedFile = useState<String?>(null);
-    final isLoading = useState(false);
-
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-        left: 16,
-        right: 16,
-        top: 16,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            'Edit Material',
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
-          const SizedBox(height: 16),
-          TextField(
-            controller: titleController,
-            decoration: const InputDecoration(
-              labelText: 'Title',
-              border: OutlineInputBorder(),
-            ),
-          ),
-          const SizedBox(height: 16),
-          TextField(
-            controller: descriptionController,
-            decoration: const InputDecoration(
-              labelText: 'Description',
-              border: OutlineInputBorder(),
-            ),
-            maxLines: 3,
-          ),
-          const SizedBox(height: 16),
-          ElevatedButton.icon(
-            onPressed: isLoading.value
-                ? null
-                : () async {
-                    final result = await FilePicker.platform.pickFiles();
-                    if (result != null) {
-                      selectedFile.value = result.files.single.path;
-                    }
-                  },
-            icon: const Icon(Icons.attach_file),
-            label: Text(
-              selectedFile.value != null
-                  ? 'Change File'
-                  : 'Select New File (Optional)',
-            ),
-          ),
-          const SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: isLoading.value
-                ? null
-                : () async {
-                    try {
-                      isLoading.value = true;
-                      await ref
-                          .read(materialListNotifierProvider(material.classId).notifier)
-                          .editMaterial(
-                            materialId: material.id,
-                            classId: material.classId,
-                            title: titleController.text,
-                            description: descriptionController.text,
-                            materialType: material.materialType,
-                            filePath: selectedFile.value,
-                          );
-                      
-                      ref.invalidate(materialListProvider(material.classId));
-                      
-                      if (context.mounted) {
-                        Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Material updated successfully'),
-                          ),
-                        );
-                      }
-                    } catch (e) {
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Failed to update material: $e'),
-                            backgroundColor:
-                                Theme.of(context).colorScheme.error,
-                          ),
-                        );
-                      }
-                    } finally {
-                      isLoading.value = false;
-                    }
-                  },
-            child: isLoading.value
-                ? const SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Text('Save Changes'),
-          ),
-          const SizedBox(height: 16),
-        ],
-      ),
-    );
   }
 } 

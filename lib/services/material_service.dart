@@ -232,11 +232,45 @@ class MaterialService extends _$MaterialService {
 
       // Only add file if a new one is provided
       if (filePath != null) {
-        final file = await MultipartFile.fromFile(
+        // Validate file type
+        final extension = filePath.split('.').last.toLowerCase();
+        final mimeType = switch (extension) {
+          'pdf' => 'application/pdf',
+          'doc' => 'application/msword',
+          'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          'ppt' => 'application/vnd.ms-powerpoint',
+          'pptx' => 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+          'xls' => 'application/vnd.ms-excel',
+          'xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          'jpg' || 'jpeg' => 'image/jpeg',
+          'png' => 'image/png',
+          _ => throw Exception('Unsupported file type: $extension'),
+        };
+
+        // Ensure materialType matches the actual file type
+        final validatedMaterialType = switch (extension) {
+          'pdf' => 'PDF',
+          'doc' || 'docx' => 'DOC',
+          'ppt' || 'pptx' => 'PPT',
+          'xls' || 'xlsx' => 'XLS',
+          'jpg' || 'jpeg' || 'png' => 'IMAGE',
+          _ => materialType,
+        };
+
+        // Update material type if it doesn't match the file type
+        if (validatedMaterialType != materialType) {
+          formMap['material_type'] = validatedMaterialType;
+        }
+
+        final file = File(filePath);
+        if (!await file.exists()) {
+          throw Exception('File not found: $filePath');
+        }
+
+        formMap['file'] = await MultipartFile.fromFile(
           filePath,
-          filename: filePath.split('/').last,
+          contentType: MediaType.parse(mimeType),
         );
-        formMap['file'] = file;
       }
 
       final formData = FormData.fromMap(formMap);
@@ -249,7 +283,12 @@ class MaterialService extends _$MaterialService {
           headers: {
             'Accept': '*/*',
           },
+          validateStatus: (status) => status! < 500,
         ),
+        onSendProgress: (sent, total) {
+          final progress = (sent / total * 100).toStringAsFixed(2);
+          debugPrint('Upload progress: $progress%');
+        },
       );
 
       debugPrint('MaterialService - Edit response: ${response.data}');
