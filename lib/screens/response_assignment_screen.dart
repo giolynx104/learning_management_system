@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:learning_management_system/services/assignment_service.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:learning_management_system/providers/auth_provider.dart';
+import 'package:learning_management_system/models/assignment_submission.dart';
 import 'dart:developer' as developer;
 
 class ResponseAssignmentScreen extends ConsumerStatefulWidget {
@@ -14,21 +15,121 @@ class ResponseAssignmentScreen extends ConsumerStatefulWidget {
   });
 
   @override
-  ResponseAssignmentScreenState createState() =>
-      ResponseAssignmentScreenState();
+  ResponseAssignmentScreenState createState() => ResponseAssignmentScreenState();
 }
 
-class ResponseAssignmentScreenState
-    extends ConsumerState<ResponseAssignmentScreen> {
-  List<Map<String, dynamic>> responses = [];
+class ResponseAssignmentScreenState extends ConsumerState<ResponseAssignmentScreen> {
+  List<AssignmentSubmission> responses = [];
   List<TextEditingController>? scoreControllers;
+
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
+  bool isValidScore(String score) {
+    final parsedScore = double.tryParse(score);
+    return parsedScore != null && parsedScore >= 0 && parsedScore <= 10;
+  }
+
+  Future<void> _openAttachment(String? fileUrl) async {
+    debugPrint('Attempting to open material link: $fileUrl');
+    if (fileUrl == null || fileUrl.isEmpty) {
+      debugPrint('Material link is null or empty');
+      _showSnackBar('No file link available');
+      return;
+    }
+
+    // Parse the URL and ensure it's encoded properly
+    var uri = Uri.parse(fileUrl);
+    
+    // Special handling for Google Drive/Docs URLs
+    if (uri.host.contains('google.com')) {
+      debugPrint('Detected Google Docs/Drive URL');
+      try {
+        final launched = await launchUrl(
+          uri,
+          mode: LaunchMode.externalApplication,
+          webViewConfiguration: const WebViewConfiguration(
+            enableJavaScript: true,
+            enableDomStorage: true,
+          ),
+        );
+        debugPrint('URL launch result: $launched');
+        
+        if (!launched) {
+          // If external app launch fails, try browser
+          final browserLaunched = await launchUrl(
+            uri,
+            mode: LaunchMode.platformDefault,
+          );
+          debugPrint('Browser launch result: $browserLaunched');
+          
+          if (!browserLaunched && mounted) {
+            _showSnackBar('Could not open file. Please check if you have a compatible app installed.');
+          }
+        }
+      } catch (e) {
+        debugPrint('Error launching Google URL: $e');
+        // Try fallback to browser if app launch fails
+        try {
+          final browserLaunched = await launchUrl(
+            uri,
+            mode: LaunchMode.platformDefault,
+          );
+          debugPrint('Fallback browser launch result: $browserLaunched');
+          
+          if (!browserLaunched && mounted) {
+            _showSnackBar('Could not open file. Please check if you have a compatible app installed.');
+          }
+        } catch (e) {
+          debugPrint('Error launching in browser: $e');
+          if (mounted) {
+            _showSnackBar('Error opening file: $e');
+          }
+        }
+      }
+    } else {
+      // For non-Google URLs, use the standard approach
+      try {
+        final canLaunch = await canLaunchUrl(uri);
+        debugPrint('Can launch URL: $canLaunch');
+        if (canLaunch) {
+          final launched = await launchUrl(
+            uri,
+            mode: LaunchMode.externalApplication,
+          );
+          debugPrint('URL launch result: $launched');
+        } else {
+          debugPrint('Cannot launch URL');
+          if (mounted) {
+            _showSnackBar('Could not open file');
+          }
+        }
+      } catch (e) {
+        debugPrint('Error launching URL: $e');
+        if (mounted) {
+          _showSnackBar('Error opening file: $e');
+        }
+      }
+    }
+  }
+
+  String _getFileNameFromUrl(String url) {
+    // For Google Drive URLs, extract the document name
+    if (url.contains('docs.google.com')) {
+      final docId = url.split('/')[5];
+      return 'Google Doc: ${docId.substring(0, 8)}...';
+    }
+    return 'View Attachment';
+  }
 
   @override
   void initState() {
     super.initState();
     _fetchAssignmentResponses();
-    scoreControllers =
-        List.generate(responses.length, (_) => TextEditingController());
+    scoreControllers = List.generate(responses.length, (_) => TextEditingController());
   }
 
   @override
@@ -62,17 +163,12 @@ class ResponseAssignmentScreenState
         name: 'ResponseAssignmentScreen',
       );
 
-      if (fetchedResponses.isNotEmpty) {
-        developer.log(
-          'Sample response structure: ${fetchedResponses.first}',
-          name: 'ResponseAssignmentScreen',
-        );
-      }
-
       setState(() {
         responses = fetchedResponses;
-        scoreControllers =
-            List.generate(responses.length, (_) => TextEditingController());
+        scoreControllers = List.generate(
+          responses.length,
+          (_) => TextEditingController(),
+        );
       });
     } catch (e) {
       developer.log(
@@ -84,17 +180,7 @@ class ResponseAssignmentScreenState
     }
   }
 
-  void _showSnackBar(String message) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
-  }
-
-  bool isValidScore(String score) {
-    final parsedScore = double.tryParse(score);
-    return parsedScore != null && parsedScore >= 0 && parsedScore <= 10;
-  }
-
-  Future<void> _submitGrade(dynamic submissionId, String score) async {
+  Future<void> _submitGrade(int submissionId, String score) async {
     try {
       developer.log(
         'Submitting grade for submission: $submissionId, score: $score',
@@ -114,7 +200,7 @@ class ResponseAssignmentScreenState
         score: score,
       );
 
-      await _fetchAssignmentResponses(); // Refresh the list after grading
+      await _fetchAssignmentResponses();
       _showSnackBar('Grade submitted successfully');
     } catch (e) {
       developer.log(
@@ -126,48 +212,14 @@ class ResponseAssignmentScreenState
     }
   }
 
-  Future<void> _openAttachment(String? fileUrl, String? fileName) async {
-    if (fileUrl == null || fileUrl.isEmpty) {
-      _showSnackBar('No file attached');
-      return;
-    }
-
-    developer.log(
-      'Attempting to open file: $fileUrl',
-      name: 'ResponseAssignmentScreen',
-    );
-
-    try {
-      final uri = Uri.parse(fileUrl);
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      } else {
-        _showSnackBar('Cannot open file: URL is invalid');
-      }
-    } catch (e) {
-      developer.log(
-        'Error opening file',
-        name: 'ResponseAssignmentScreen',
-        error: e,
-      );
-      _showSnackBar('Error opening file: ${e.toString()}');
-    }
-  }
-
   Widget _buildResponseCard(
     BuildContext context,
-    Map<String, dynamic> response,
+    AssignmentSubmission submission,
     int index,
     ThemeData theme,
   ) {
-    final student = response['student_account'];
-    final score = response['grade'];
-    final submissionId = response['id'];
-
-    developer.log(
-      'Response data for card $index: ${response.toString()}',
-      name: 'ResponseAssignmentScreen',
-    );
+    final hasFile = submission.fileUrl != null && submission.fileUrl!.isNotEmpty;
+    final hasTextResponse = submission.textResponse != null && submission.textResponse!.isNotEmpty;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
@@ -189,7 +241,7 @@ class ResponseAssignmentScreenState
                 CircleAvatar(
                   backgroundColor: theme.colorScheme.primary,
                   child: Text(
-                    '${student['first_name'][0]}${student['last_name'][0]}',
+                    '${submission.studentAccount.firstName[0]}${submission.studentAccount.lastName[0]}',
                     style: theme.textTheme.titleMedium?.copyWith(
                       color: theme.colorScheme.onPrimary,
                     ),
@@ -201,14 +253,14 @@ class ResponseAssignmentScreenState
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '${student['first_name']} ${student['last_name']}',
+                        '${submission.studentAccount.firstName} ${submission.studentAccount.lastName}',
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        student['email'] ?? '',
+                        submission.studentAccount.email,
                         style: theme.textTheme.bodyMedium?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
@@ -237,7 +289,7 @@ class ResponseAssignmentScreenState
                     const SizedBox(width: 8),
                     Text(
                       DateFormat('MMM dd, yyyy - hh:mm a')
-                          .format(DateTime.parse(response['submission_time'])),
+                          .format(submission.submissionTime),
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
@@ -246,8 +298,28 @@ class ResponseAssignmentScreenState
                 ),
                 const SizedBox(height: 16),
 
-                // Response Text
-                if (response['text_response']?.isNotEmpty ?? false) ...[
+                // Response Type Indicator
+                Row(
+                  children: [
+                    Icon(
+                      hasFile ? Icons.attachment : Icons.text_fields,
+                      size: 16,
+                      color: theme.colorScheme.primary,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      hasFile ? 'File Submission' : 'Text Submission',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.primary,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                // Text Response
+                if (hasTextResponse) ...[
                   Text(
                     'Response',
                     style: theme.textTheme.titleSmall,
@@ -260,14 +332,29 @@ class ResponseAssignmentScreenState
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      response['text_response'] ?? '',
+                      submission.textResponse!,
                       style: theme.textTheme.bodyMedium,
                     ),
                   ),
                   const SizedBox(height: 16),
                 ],
 
-                const Divider(height: 32),
+                // File Attachment
+                if (hasFile)
+                  OutlinedButton.icon(
+                    onPressed: () => _openAttachment(submission.fileUrl),
+                    icon: const Icon(Icons.open_in_new),
+                    label: Text(_getFileNameFromUrl(submission.fileUrl!)),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                    ),
+                  ),
+
+                if (hasFile || hasTextResponse)
+                  const Divider(height: 32),
 
                 // Grading Section
                 Row(
@@ -277,7 +364,7 @@ class ResponseAssignmentScreenState
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          if (score != null) ...[
+                          if (submission.grade != null) ...[
                             Text(
                               'Current Grade',
                               style: theme.textTheme.titleSmall,
@@ -293,7 +380,7 @@ class ResponseAssignmentScreenState
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
-                                '$score/10',
+                                '${submission.grade}/10',
                                 style: theme.textTheme.titleMedium?.copyWith(
                                   color: theme.colorScheme.primary,
                                   fontWeight: FontWeight.bold,
@@ -305,7 +392,7 @@ class ResponseAssignmentScreenState
                           TextField(
                             controller: scoreControllers?[index],
                             decoration: InputDecoration(
-                              labelText: score != null ? 'Update Grade (0-10)' : 'Grade (0-10)',
+                              labelText: submission.grade != null ? 'Update Grade (0-10)' : 'Grade (0-10)',
                               border: const OutlineInputBorder(),
                               hintText: '0-10',
                             ),
@@ -324,11 +411,11 @@ class ResponseAssignmentScreenState
                           _showSnackBar('Please enter a valid score (0-10).');
                           return;
                         }
-                        await _submitGrade(submissionId, scoreText);
+                        await _submitGrade(submission.id, scoreText);
                         scoreControllers?[index].clear();
                       },
                       icon: const Icon(Icons.check),
-                      label: Text(score != null ? 'Update' : 'Grade'),
+                      label: Text(submission.grade != null ? 'Update' : 'Grade'),
                     ),
                   ],
                 ),

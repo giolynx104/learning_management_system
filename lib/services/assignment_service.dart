@@ -1,6 +1,7 @@
 import 'dart:developer' as developer;
 import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:learning_management_system/models/assignment_submission.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:learning_management_system/services/api_service.dart';
 import 'package:learning_management_system/exceptions/api_exceptions.dart';
@@ -212,11 +213,16 @@ class AssignmentService extends _$AssignmentService {
     }
   }
 
-  Future<List<Map<String, dynamic>>> getAssignmentResponses({
+  Future<List<AssignmentSubmission>> getAssignmentResponses({
     required String token,
     required String assignmentId,
   }) async {
     try {
+      developer.log(
+        'Getting assignment responses for assignment: $assignmentId',
+        name: 'AssignmentService',
+      );
+
       final response = await _apiService.dio.post(
         ApiConstants.getSurveyResponse,
         data: {
@@ -225,11 +231,18 @@ class AssignmentService extends _$AssignmentService {
         },
       );
 
-      return await _handleResponse<List<Map<String, dynamic>>>(
+      return await _handleResponse<List<AssignmentSubmission>>(
         response,
-        (data) => List<Map<String, dynamic>>.from(data as List),
+        (data) => (data as List)
+            .map((json) => AssignmentSubmission.fromJson(json as Map<String, dynamic>))
+            .toList(),
       );
     } on DioException catch (e) {
+      developer.log(
+        'Error getting assignment responses: ${e.message}',
+        name: 'AssignmentService',
+        error: e,
+      );
       throw ApiException.fromDioError(e);
     }
   }
