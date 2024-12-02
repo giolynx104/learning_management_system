@@ -39,7 +39,7 @@ class AssignmentListScreen extends HookConsumerWidget {
             unselectedLabelColor: Colors.white70,
             tabs: [
               if (!isLecturer) const Tab(text: 'Upcoming'),
-              const Tab(text: 'Active'),
+              Tab(text: isLecturer ? 'Active' : 'Overdue'),
               const Tab(text: 'Completed'),
             ],
           ),
