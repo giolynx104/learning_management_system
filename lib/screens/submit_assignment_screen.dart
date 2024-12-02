@@ -17,10 +17,12 @@ class SubmitAssignmentScreen extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<SubmitAssignmentScreen> createState() => _SubmitAssignmentScreenState();
+  ConsumerState<SubmitAssignmentScreen> createState() =>
+      _SubmitAssignmentScreenState();
 }
 
-class _SubmitAssignmentScreenState extends ConsumerState<SubmitAssignmentScreen> {
+class _SubmitAssignmentScreenState
+    extends ConsumerState<SubmitAssignmentScreen> {
   late Assignment assignment;
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _nameController = TextEditingController();
@@ -62,18 +64,20 @@ class _SubmitAssignmentScreenState extends ConsumerState<SubmitAssignmentScreen>
       if (authState == null) {
         throw Exception('Not authenticated');
       }
-      
-      final submission = await ref.read(assignmentServiceProvider.notifier)
+
+      final submission = await ref
+          .read(assignmentServiceProvider.notifier)
           .getStudentSubmission(
-        token: authState.token!,
-        assignmentId: assignment.id,
-      );
+            token: authState.token!,
+            assignmentId: assignment.id,
+          );
 
       if (mounted) {
         setState(() {
           _submissionData = submission;
           if (_submissionData != null) {
-            _descriptionController.text = _submissionData!['text_response'] ?? '';
+            _descriptionController.text =
+                _submissionData!['text_response'] ?? '';
           }
           _isSubmitEnabled = _submissionData == null;
         });
@@ -91,9 +95,9 @@ class _SubmitAssignmentScreenState extends ConsumerState<SubmitAssignmentScreen>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final now = DateTime.now();
-    final isDeadlinePassed = assignment.deadline != null && 
-        now.isAfter(assignment.deadline!);
-    
+    final isDeadlinePassed =
+        assignment.deadline != null && now.isAfter(assignment.deadline!);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Submit Assignment'),
@@ -122,15 +126,63 @@ class _SubmitAssignmentScreenState extends ConsumerState<SubmitAssignmentScreen>
                   style: theme.textTheme.bodyLarge,
                 ),
               ],
+              if (assignment.fileUrl != null) ...[
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surfaceVariant,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Assignment File',
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      OutlinedButton.icon(
+                        onPressed: () async {
+                          if (await canLaunchUrl(Uri.parse(assignment.fileUrl!))) {
+                            await launchUrl(
+                              Uri.parse(assignment.fileUrl!),
+                              mode: LaunchMode.externalApplication,
+                            );
+                          } else {
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text("Cannot open file")),
+                              );
+                            }
+                          }
+                        },
+                        icon: const Icon(Icons.file_present),
+                        label: const Text('Open Assignment File'),
+                      ),
+                      const SizedBox(height: 4),
+                      SelectableText(
+                        assignment.fileUrl!,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.primary,
+                          decoration: TextDecoration.underline,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
               const SizedBox(height: 16),
-              
+
               // Deadline Info
               if (assignment.deadline != null)
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: isDeadlinePassed 
-                        ? theme.colorScheme.errorContainer 
+                    color: isDeadlinePassed
+                        ? theme.colorScheme.errorContainer
                         : theme.colorScheme.surfaceVariant,
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -139,16 +191,16 @@ class _SubmitAssignmentScreenState extends ConsumerState<SubmitAssignmentScreen>
                       Icon(
                         Icons.access_time,
                         size: 20,
-                        color: isDeadlinePassed 
-                            ? theme.colorScheme.error 
+                        color: isDeadlinePassed
+                            ? theme.colorScheme.error
                             : theme.colorScheme.primary,
                       ),
                       const SizedBox(width: 8),
                       Text(
                         'Deadline: ${DateFormat('MMM dd, yyyy - HH:mm').format(assignment.deadline!)}',
                         style: theme.textTheme.bodyMedium?.copyWith(
-                          color: isDeadlinePassed 
-                              ? theme.colorScheme.error 
+                          color: isDeadlinePassed
+                              ? theme.colorScheme.error
                               : theme.colorScheme.primary,
                           fontWeight: FontWeight.w500,
                         ),
@@ -176,7 +228,8 @@ class _SubmitAssignmentScreenState extends ConsumerState<SubmitAssignmentScreen>
                   onPressed: _isSubmitting
                       ? null
                       : () async {
-                          FilePickerResult? result = await FilePicker.platform.pickFiles(
+                          FilePickerResult? result =
+                              await FilePicker.platform.pickFiles(
                             type: FileType.custom,
                             allowedExtensions: ['pdf', 'doc', 'docx'],
                           );
@@ -206,7 +259,8 @@ class _SubmitAssignmentScreenState extends ConsumerState<SubmitAssignmentScreen>
                       ? () async {
                           if (_selectedFile == null) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text("Please select a file")),
+                              const SnackBar(
+                                  content: Text("Please select a file")),
                             );
                             return;
                           }
@@ -216,23 +270,27 @@ class _SubmitAssignmentScreenState extends ConsumerState<SubmitAssignmentScreen>
                           });
 
                           try {
-                            final authState = await ref.read(authProvider.future);
+                            final authState =
+                                await ref.read(authProvider.future);
                             if (authState == null) {
                               throw Exception('Not authenticated');
                             }
 
-                            await ref.read(assignmentServiceProvider.notifier).submitAssignment(
-                              token: authState.token!,
-                              assignmentId: assignment.id,
-                              file: _selectedFile!,
-                            );
+                            await ref
+                                .read(assignmentServiceProvider.notifier)
+                                .submitAssignment(
+                                  token: authState.token!,
+                                  assignmentId: assignment.id,
+                                  file: _selectedFile!,
+                                );
 
                             if (mounted) {
                               ref.invalidate(assignmentListProvider);
-                              
+
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
-                                  content: Text("Assignment submitted successfully"),
+                                  content:
+                                      Text("Assignment submitted successfully"),
                                 ),
                               );
                               Navigator.pop(context, true);
@@ -243,23 +301,26 @@ class _SubmitAssignmentScreenState extends ConsumerState<SubmitAssignmentScreen>
                                 _isSubmitting = false;
                               });
                               ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text("Error: ${e.toString()}")),
+                                SnackBar(
+                                    content: Text("Error: ${e.toString()}")),
                               );
                             }
                           }
                         }
                       : null,
-                  icon: _isSubmitting 
+                  icon: _isSubmitting
                       ? const SizedBox(
                           width: 20,
                           height: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.white),
                           ),
                         )
                       : const Icon(Icons.send),
-                  label: Text(_isSubmitting ? 'Submitting...' : 'Submit Assignment'),
+                  label: Text(
+                      _isSubmitting ? 'Submitting...' : 'Submit Assignment'),
                 ),
               ] else ...[
                 // View Submission
@@ -278,7 +339,8 @@ class _SubmitAssignmentScreenState extends ConsumerState<SubmitAssignmentScreen>
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      if (_submissionData!['text_response']?.isNotEmpty ?? false) ...[
+                      if (_submissionData!['text_response']?.isNotEmpty ??
+                          false) ...[
                         const SizedBox(height: 12),
                         Text(
                           _submissionData!['text_response'],
@@ -295,7 +357,8 @@ class _SubmitAssignmentScreenState extends ConsumerState<SubmitAssignmentScreen>
                             } else {
                               if (mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text("Cannot open file")),
+                                  const SnackBar(
+                                      content: Text("Cannot open file")),
                                 );
                               }
                             }
@@ -332,4 +395,4 @@ class _SubmitAssignmentScreenState extends ConsumerState<SubmitAssignmentScreen>
       ),
     );
   }
-} 
+}
