@@ -3,10 +3,48 @@ import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:learning_management_system/models/material_model.dart';
 import 'package:learning_management_system/providers/material_provider.dart';
 import 'package:learning_management_system/widgets/file_upload_widget.dart';
 import 'package:learning_management_system/constants/file_upload_configs.dart';
+
+Future<void> openMaterialLink(BuildContext context, String? link) async {
+  if (link == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('No file link available'),
+        backgroundColor: Colors.orange,
+      ),
+    );
+    return;
+  }
+
+  final uri = Uri.parse(link);
+  try {
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not open file'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  } catch (e) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error opening file: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+}
 
 class EditMaterialScreen extends HookConsumerWidget {
   final MaterialModel material;
@@ -80,11 +118,25 @@ class EditMaterialScreen extends HookConsumerWidget {
                                   ),
                                   if (material.materialLink != null) ...[
                                     const SizedBox(height: 4),
-                                    Text(
-                                      'File already uploaded',
-                                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                        color: Theme.of(context).colorScheme.primary,
-                                      ),
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            'File already uploaded',
+                                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                              color: Theme.of(context).colorScheme.primary,
+                                            ),
+                                          ),
+                                        ),
+                                        TextButton.icon(
+                                          onPressed: () => openMaterialLink(context, material.materialLink),
+                                          icon: const Icon(Icons.open_in_new, size: 16),
+                                          label: const Text('Open'),
+                                          style: TextButton.styleFrom(
+                                            visualDensity: VisualDensity.compact,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ],
                                 ],

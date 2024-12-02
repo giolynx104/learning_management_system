@@ -2,11 +2,49 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:learning_management_system/providers/material_provider.dart';
 import 'package:learning_management_system/routes/routes.dart';
 import 'package:learning_management_system/models/material_model.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:learning_management_system/providers/auth_provider.dart';
+
+Future<void> openMaterialLink(BuildContext context, String? link) async {
+  if (link == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('No file link available'),
+        backgroundColor: Colors.orange,
+      ),
+    );
+    return;
+  }
+
+  final uri = Uri.parse(link);
+  try {
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not open file'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  } catch (e) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error opening file: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+}
 
 class MaterialListScreen extends HookConsumerWidget {
   final String classId;
@@ -225,12 +263,9 @@ class _StudentMaterialListView extends StatelessWidget {
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   child: FilledButton.icon(
-                    onPressed: () {
-                      // TODO: Implement download functionality
-                      debugPrint('Download material: ${material.materialLink}');
-                    },
-                    icon: const Icon(Icons.download),
-                    label: const Text('Download Material'),
+                    onPressed: () => openMaterialLink(context, material.materialLink),
+                    icon: const Icon(Icons.open_in_new),
+                    label: const Text('Open Material'),
                   ),
                 ),
               const SizedBox(height: 8),
@@ -333,12 +368,9 @@ class _TeacherMaterialListView extends HookConsumerWidget {
               children: [
                 if (material.materialLink != null)
                   IconButton(
-                    icon: const Icon(Icons.download),
-                    tooltip: 'Download material',
-                    onPressed: () {
-                      // TODO: Implement download functionality
-                      debugPrint('Download material: ${material.materialLink}');
-                    },
+                    icon: const Icon(Icons.open_in_new),
+                    tooltip: 'Open material',
+                    onPressed: () => openMaterialLink(context, material.materialLink),
                   ),
                 IconButton(
                   icon: const Icon(Icons.edit),
