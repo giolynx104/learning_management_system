@@ -145,64 +145,75 @@ Future<void> _initializeNotificationData() async {
       return Scaffold(
         //appBar: _appBar(),
         body: _isLoading
-          ? Center(child: CircularProgressIndicator()) 
-          : _notifiBody(),
+          ? const Center(child: CircularProgressIndicator()) 
+          : RefreshIndicator(
+              onRefresh: _loadNotificationList,
+              child: _notifiBody(),
+            ),
       );
     
   }
 
   Widget _notifiBody() {   
     if(!connections){
-        return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+        return ListView(
           children: [
-            const Icon(
-              Icons.cloud_off,
-              size: 100,
-              color: Colors.grey,
-            ),
-            const SizedBox(height: 20),
-            const Text(
-              'Không thể kết nối',
-              style: TextStyle(
-                fontSize: 18,
-                color: Colors.black,
-              ),
-            ),
-            const SizedBox(height: 10),
-            TextButton(
-              onPressed: () {
-                // Todo : Nhấn để thử lại
-              },
-              child: const Text(
-                'Nhấn để thử lại',
-                style: TextStyle(
-                  color: Colors.blue,
-                  fontSize: 16,
-                ),
+            Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const SizedBox(height: 100),
+                  const Icon(
+                    Icons.cloud_off,
+                    size: 100,
+                    color: Colors.grey,
+                  ),
+                  const SizedBox(height: 20),
+                  const Text(
+                    'Không thể kết nối',
+                    style: TextStyle(
+                      fontSize: 18,
+                      color: Colors.black,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  TextButton(
+                    onPressed: _loadNotificationList,
+                    child: const Text(
+                      'Nhấn để thử lại',
+                      style: TextStyle(
+                        color: Colors.blue,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
-        ),
-      );
+        );
     }
     else if(_notificationList.isEmpty){
-      return const Center(
-         child: Text(
-              'Không có thông báo',
-              style: TextStyle(
-                fontSize: 18,
-                color: Colors.black,
-              ),
-          )
+      return ListView(
+        children: [
+          const SizedBox(height: 100),
+          const Center(
+             child: Text(
+                  'Không có thông báo',
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: Colors.black,
+                  ),
+              )
+          ),
+        ],
       );
     }
     else {
       return ListView.separated(
         padding: const EdgeInsets.all(10),
-        itemCount:_notificationList.length ,
-        separatorBuilder: (BuildContext context, int index) => const SizedBox(height: 30,),
+        itemCount: _notificationList.length,
+        separatorBuilder: (BuildContext context, int index) => const SizedBox(height: 30),
         itemBuilder: (BuildContext context, int index) { 
            final notification = _notificationList[index]; 
            return NotifyItem(notification: notification);
@@ -245,30 +256,83 @@ class NotifyItem extends ConsumerWidget {
         final authState = ref.read(authProvider);
         final token = authState.token;
 
-        if (token != null) {
-          try {
+        if (token == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('User not authenticated.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+          return;
+        }
+
+        try {
+          // Show loading indicator
+          if (notification.status == 'UNREAD') {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Row(
+                  children: [
+                    SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    ),
+                    SizedBox(width: 16),
+                    Text('Marking as read...'),
+                  ],
+                ),
+                duration: Duration(seconds: 1),
+              ),
+            );
+          }
+
+          // Mark as read
+          if (notification.status == 'UNREAD') {
             await ref
                 .read(notificationServiceProvider.notifier)
                 .markNotificationAsRead(token, notification.id.toString());
-            await ref.read(unreadNotificationCountProvider);
-            // Optionally, update the local state or refetch notifications
-            // For example, you might invalidate a provider to refetch data
-            // ref.invalidate(notificationsListProvider);
-          } catch (e) {
+            
+            // Refresh unread count
+            await ref.refresh(unreadNotificationCountProvider.future);
+            
+            // Show success message
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Marked as read'),
+                  backgroundColor: Colors.green,
+                  duration: Duration(seconds: 1),
+                ),
+              );
+            }
+          }
 
+          // Show notification details
+          if (context.mounted) {
+            await _showNotificationDetailed(context);
+          }
+
+          // Refresh the notification list
+          if (context.mounted) {
+            final notificationScreenState = context.findAncestorStateOfType<NotificationScreenState>();
+            if (notificationScreenState != null) {
+              await notificationScreenState._loadNotificationList();
+            }
+          }
+        } catch (e) {
+          if (context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Error: ${e.toString()}')),
+              SnackBar(
+                content: Text('Error: ${e.toString()}'),
+                backgroundColor: Colors.red,
+              ),
             );
           }
-        } else {
-      
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('User not authenticated.')),
-          );
-          return; 
         }
-        await NotificationScreenState()._loadNotificationList();
-        _showNotificationDetailed(context);
       },
       child: Stack(
         clipBehavior: Clip.none, 
