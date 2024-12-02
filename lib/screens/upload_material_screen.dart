@@ -85,7 +85,7 @@ class UploadMaterialScreen extends HookConsumerWidget {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Materials uploaded successfully')),
           );
-          context.pop();
+          context.pop(true);
         }
       } catch (e) {
         debugPrint('UploadMaterialScreen - Error uploading materials: $e');
