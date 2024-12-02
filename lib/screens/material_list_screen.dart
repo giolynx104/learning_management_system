@@ -10,7 +10,9 @@ import 'package:file_picker/file_picker.dart';
 import 'package:learning_management_system/providers/auth_provider.dart';
 
 Future<void> openMaterialLink(BuildContext context, String? link) async {
+  debugPrint('Attempting to open material link: $link');
   if (link == null) {
+    debugPrint('Material link is null');
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('No file link available'),
@@ -20,28 +22,103 @@ Future<void> openMaterialLink(BuildContext context, String? link) async {
     return;
   }
 
-  final uri = Uri.parse(link);
-  try {
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } else {
+  // Parse the URL and ensure it's encoded properly
+  var uri = Uri.parse(link);
+  
+  // Special handling for Google Drive/Docs URLs
+  if (uri.host.contains('google.com')) {
+    // If it's a Google Drive/Docs URL, try to force it to open in the browser
+    debugPrint('Detected Google Docs/Drive URL');
+    try {
+      final launched = await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
+        webViewConfiguration: const WebViewConfiguration(
+          enableJavaScript: true,
+          enableDomStorage: true,
+        ),
+      );
+      debugPrint('URL launch result: $launched');
+      
+      if (!launched) {
+        // If external app launch fails, try browser
+        final browserLaunched = await launchUrl(
+          uri,
+          mode: LaunchMode.platformDefault,
+        );
+        debugPrint('Browser launch result: $browserLaunched');
+        
+        if (!browserLaunched && context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Could not open file. Please check if you have a compatible app installed.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('Error launching Google URL: $e');
+      // Try fallback to browser if app launch fails
+      try {
+        final browserLaunched = await launchUrl(
+          uri,
+          mode: LaunchMode.platformDefault,
+        );
+        debugPrint('Fallback browser launch result: $browserLaunched');
+        
+        if (!browserLaunched && context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Could not open file. Please check if you have a compatible app installed.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      } catch (e) {
+        debugPrint('Error launching in browser: $e');
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error opening file: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
+  } else {
+    // For non-Google URLs, use the standard approach
+    try {
+      final canLaunch = await canLaunchUrl(uri);
+      debugPrint('Can launch URL: $canLaunch');
+      if (canLaunch) {
+        final launched = await launchUrl(
+          uri,
+          mode: LaunchMode.externalApplication,
+        );
+        debugPrint('URL launch result: $launched');
+      } else {
+        debugPrint('Cannot launch URL');
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Could not open file'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('Error launching URL: $e');
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Could not open file'),
+          SnackBar(
+            content: Text('Error opening file: $e'),
             backgroundColor: Colors.red,
           ),
         );
       }
-    }
-  } catch (e) {
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error opening file: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
     }
   }
 }
@@ -193,83 +270,92 @@ class _StudentMaterialListView extends StatelessWidget {
       itemCount: materials.length,
       itemBuilder: (context, index) {
         final material = materials[index];
+        debugPrint('Building material card for: ${material.materialName}');
+        debugPrint('Material link: ${material.materialLink}');
         
         return Card(
           margin: const EdgeInsets.only(bottom: 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header with icon and type
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primaryContainer,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      _getMaterialIcon(material.materialType),
-                      color: theme.colorScheme.primary,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      material.materialType.toUpperCase(),
-                      style: theme.textTheme.labelLarge?.copyWith(
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: () {
+              debugPrint('Card tapped for material: ${material.materialName}');
+              debugPrint('Opening link: ${material.materialLink}');
+              openMaterialLink(context, material.materialLink);
+            },
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header with icon and type
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primaryContainer,
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        _getMaterialIcon(material.materialType),
                         color: theme.colorScheme.primary,
                       ),
-                    ),
-                  ],
-                ),
-              ),
-              
-              // Content
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      material.materialName,
-                      style: theme.textTheme.titleLarge,
-                    ),
-                    if (material.description != null) ...[
-                      const SizedBox(height: 8),
+                      const SizedBox(width: 8),
                       Text(
-                        material.description!,
-                        style: theme.textTheme.bodyMedium,
-                      ),
-                    ],
-                    const SizedBox(height: 16),
-                    
-                    // Material details
-                    Wrap(
-                      spacing: 16,
-                      runSpacing: 8,
-                      children: [
-                        _DetailChip(
-                          icon: Icons.description,
-                          label: material.materialType,
+                        material.materialType.toUpperCase(),
+                        style: theme.textTheme.labelLarge?.copyWith(
+                          color: theme.colorScheme.primary,
                         ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              
-              // Actions
-              if (material.materialLink != null)
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: FilledButton.icon(
-                    onPressed: () => openMaterialLink(context, material.materialLink),
-                    icon: const Icon(Icons.open_in_new),
-                    label: const Text('Open Material'),
+                      ),
+                      const Spacer(),
+                      if (material.materialLink != null)
+                        Icon(
+                          Icons.open_in_new,
+                          size: 16,
+                          color: theme.colorScheme.primary,
+                        ),
+                    ],
                   ),
                 ),
-              const SizedBox(height: 8),
-            ],
+                
+                // Content
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        material.materialName,
+                        style: theme.textTheme.titleLarge,
+                      ),
+                      if (material.description != null) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          material.description!,
+                          style: theme.textTheme.bodyMedium,
+                        ),
+                      ],
+                      const SizedBox(height: 16),
+                      
+                      // Material details
+                      Row(
+                        children: [
+                          _DetailChip(
+                            icon: Icons.description,
+                            label: material.materialType,
+                          ),
+                          if (material.materialLink != null) ...[
+                            const SizedBox(width: 8),
+                            _DetailChip(
+                              icon: Icons.link,
+                              label: 'Click to open',
+                            ),
+                          ],
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         );
       },
