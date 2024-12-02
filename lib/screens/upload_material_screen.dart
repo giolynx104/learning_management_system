@@ -23,7 +23,7 @@ class MaterialData {
     this.path,
     this.title = '',
     this.description = '',
-    this.materialType = 'PDF',
+    required this.materialType,
   });
 
   MaterialData copyWith({
@@ -39,6 +39,18 @@ class MaterialData {
       description: description ?? this.description,
       materialType: materialType ?? this.materialType,
     );
+  }
+
+  static String detectMaterialType(String filePath) {
+    final extension = filePath.split('.').last.toLowerCase();
+    return switch (extension) {
+      'pdf' => 'PDF',
+      'doc' || 'docx' => 'DOC',
+      'ppt' || 'pptx' => 'PPT',
+      'xls' || 'xlsx' => 'XLS',
+      'jpg' || 'jpeg' || 'png' => 'IMAGE',
+      _ => 'OTHER',
+    };
   }
 }
 
@@ -137,6 +149,7 @@ class UploadMaterialScreen extends HookConsumerWidget {
                           size: file.size,
                           path: file.path,
                           title: file.name.split('.').first,
+                          materialType: MaterialData.detectMaterialType(file.name),
                         ),
                       ),
                     ];
@@ -197,25 +210,16 @@ class UploadMaterialScreen extends HookConsumerWidget {
                                 },
                               ),
                               const SizedBox(height: 8),
-                              DropdownButtonFormField<String>(
-                                value: material.materialType,
+                              // Material type display
+                              InputDecorator(
                                 decoration: const InputDecoration(
                                   labelText: 'Type',
                                   border: OutlineInputBorder(),
                                 ),
-                                items: materialTypes.map((type) {
-                                  return DropdownMenuItem(
-                                    value: type,
-                                    child: Text(type),
-                                  );
-                                }).toList(),
-                                onChanged: (value) {
-                                  if (value != null) {
-                                    final newMaterials = [...selectedMaterials.value];
-                                    newMaterials[index] = material.copyWith(materialType: value);
-                                    selectedMaterials.value = newMaterials;
-                                  }
-                                },
+                                child: Text(
+                                  material.materialType,
+                                  style: Theme.of(context).textTheme.bodyLarge,
+                                ),
                               ),
                             ],
                           ),
