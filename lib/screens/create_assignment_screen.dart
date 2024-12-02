@@ -5,6 +5,11 @@ import 'package:file_picker/file_picker.dart';
 import 'package:learning_management_system/providers/auth_provider.dart';
 import 'package:learning_management_system/providers/assignment_provider.dart';
 import 'package:learning_management_system/services/assignment_service.dart';
+import 'package:learning_management_system/providers/class_provider.dart';
+import 'package:learning_management_system/services/class_service.dart';
+import 'package:learning_management_system/providers/notification_provider.dart';
+import 'package:learning_management_system/services/notification_service.dart';
+import 'package:learning_management_system/models/notification_model.dart';
 
 class CreateAssignmentScreen extends ConsumerStatefulWidget {
   final String classId;
@@ -187,6 +192,34 @@ class CreateAssignmentScreenState
         description: _descriptionController.text,
         file: _selectedFile!,
       );
+
+      // Send notifications to all students in the class
+      final classService = ref.read(classServiceProvider.notifier);
+      final classInfo = await classService.getClassDetail(
+        token: authState.token!,
+        classId: widget.classId,
+      );
+
+      if (classInfo != null) {
+        final notificationService = ref.read(notificationServiceProvider.notifier);
+        final title = 'New Assignment: ${_assignmentNameController.text.trim()}';
+        final message = 'A new assignment has been created for your class: ${classInfo.className}\n'
+            'Deadline: ${DateFormat('dd/MM/yyyy HH:mm').format(_endDateTime!)}';
+
+        for (final student in classInfo.studentAccounts) {
+          try {
+            await notificationService.sendNotification(
+              authState.token!,
+              message,
+              student.accountId,
+              NotificationType.assignmentGrade,
+              null,
+            );
+          } catch (e) {
+            debugPrint('Failed to send notification to student ${student.accountId}: $e');
+          }
+        }
+      }
 
       if (mounted) {
         _showSnackBar('Assignment created successfully');

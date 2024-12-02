@@ -511,29 +511,47 @@ class NotifyItem extends ConsumerWidget {
             ),
           ),
           actions: [
-        
-            if (notification.type == 'ABSENCE') ...[
+            if (notification.type == NotificationType.absence) ...[
               TextButton(
                 onPressed: () {
-
                   Navigator.of(context).pop();
-             
                 },
-                child: const Text('Accept'),
+                child: const Text('OK'),
+              ),
+            ] else if (notification.type == NotificationType.assignmentGrade) ...[
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  // Navigate to the assignments screen
+                  context.goNamed(
+                    Routes.assignmentsName,
+                    pathParameters: {'classId': notification.data.id},
+                  );
+                },
+                child: const Text('View Assignment'),
               ),
               TextButton(
                 onPressed: () {
-               
                   Navigator.of(context).pop();
-              
                 },
-                child: const Text('Decline'),
-              ),
-            ] else
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
                 child: const Text('Close'),
               ),
+            ] else if (notification.type == NotificationType.acceptAbsenceRequest ||
+                      notification.type == NotificationType.rejectAbsenceRequest) ...[
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: const Text('OK'),
+              ),
+            ] else ...[
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: const Text('Close'),
+              ),
+            ],
           ],
         ),
       );

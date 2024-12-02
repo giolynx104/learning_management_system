@@ -10,7 +10,6 @@ export 'signin_screen.dart';
 export 'signup_screen.dart';
 export 'student_home_screen.dart';
 export 'teacher_home_screen.dart';
-export 'submit_survey_screen.dart';
 export 'attendance_management_screen.dart';
 export 'edit_assignment_screen.dart';
 export 'response_assignment_screen.dart';

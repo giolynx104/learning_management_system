@@ -47,4 +47,15 @@ class NotificationData with _$NotificationData {
       _$NotificationDataFromJson(json);
 }
 
+/// Constants for notification types
+class NotificationType {
+  static const String absence = 'ABSENCE';
+  static const String acceptAbsenceRequest = 'ACCEPT_ABSENCE_REQUEST';
+  static const String rejectAbsenceRequest = 'REJECT_ABSENCE_REQUEST';
+  static const String assignmentGrade = 'ASSIGNMENT_GRADE';  // Used for both grading and new assignments
+  
+  // Private constructor to prevent instantiation
+  NotificationType._();
+}
+
 
