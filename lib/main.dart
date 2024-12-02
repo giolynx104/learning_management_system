@@ -5,12 +5,26 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:learning_management_system/services/firebase_api.dart';
 import 'package:learning_management_system/routes/router.dart';
 
+Future<void> _initializeFirebase() async {
+  try {
+    print('Initializing Firebase...');
+    await Firebase.initializeApp();
+    print('Firebase initialized successfully');
+  } catch (e) {
+    print('Error initializing Firebase: $e');
+  }
+
+  try {
+    await FireBaseApi().initNotification();
+  } catch (e) {
+    print('Error initializing notifications: $e');
+  }
+
+  FirebaseMessaging.onBackgroundMessage(FireBaseApi.firebaseMessagingBackgroundHandler);
+}
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
-  await FireBaseApi().initNotification();
-  FirebaseMessaging.onBackgroundMessage(FireBaseApi.firebaseMessagingBackgroundHandler);
-  
+  await _initializeFirebase();
   runApp(
     const ProviderScope(
       child: MyApp(),

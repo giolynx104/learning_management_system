@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:learning_management_system/exceptions/api_exceptions.dart';
 import 'package:learning_management_system/services/api_service.dart';
 import 'package:learning_management_system/constants/api_constants.dart';
+import 'package:learning_management_system/services/storage_service.dart';
 
 /// Service responsible for making authentication-related API calls.
 ///
@@ -14,9 +15,10 @@ import 'package:learning_management_system/constants/api_constants.dart';
 class AuthService {
   /// ApiService instance for making HTTP requests
   final ApiService _apiService;
-
+  final StorageService _storageService = StorageService();
   /// Creates an AuthService instance using the provided ApiService
   AuthService(this._apiService);
+
 
   /// Attempts to sign in a user with email and password.
   ///
@@ -34,8 +36,11 @@ class AuthService {
   Future<Map<String, dynamic>> signIn({
     required String email,
     required String password,
+    String? fcmToken,
   }) async {
     try {
+      fcmToken = await _storageService.getFCMToken();
+      debugPrint('Fcm Token: $fcmToken');
       debugPrint('Attempting sign in for email: $email');
       final response = await _apiService.dio.post(
         ApiConstants.login,
@@ -43,7 +48,9 @@ class AuthService {
           'email': email,
           'password': password,
           'device_id': "1",
+          "fcm_token" :fcmToken,
         },
+
       );
       debugPrint('Login response: ${response.data}');
 
