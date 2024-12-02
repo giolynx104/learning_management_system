@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:learning_management_system/services/assignment_service.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:learning_management_system/providers/auth_provider.dart';
+import 'dart:developer' as developer;
 
 class ResponseAssignmentScreen extends ConsumerStatefulWidget {
   final String assignmentId;
@@ -13,10 +14,12 @@ class ResponseAssignmentScreen extends ConsumerStatefulWidget {
   });
 
   @override
-  ResponseAssignmentScreenState createState() => ResponseAssignmentScreenState();
+  ResponseAssignmentScreenState createState() =>
+      ResponseAssignmentScreenState();
 }
 
-class ResponseAssignmentScreenState extends ConsumerState<ResponseAssignmentScreen> {
+class ResponseAssignmentScreenState
+    extends ConsumerState<ResponseAssignmentScreen> {
   List<Map<String, dynamic>> responses = [];
   List<TextEditingController>? scoreControllers;
 
@@ -24,7 +27,8 @@ class ResponseAssignmentScreenState extends ConsumerState<ResponseAssignmentScre
   void initState() {
     super.initState();
     _fetchAssignmentResponses();
-    scoreControllers = List.generate(responses.length, (_) => TextEditingController());
+    scoreControllers =
+        List.generate(responses.length, (_) => TextEditingController());
   }
 
   @override
@@ -36,6 +40,11 @@ class ResponseAssignmentScreenState extends ConsumerState<ResponseAssignmentScre
   }
 
   Future<void> _fetchAssignmentResponses() async {
+    developer.log(
+      'Fetching responses for assignment: ${widget.assignmentId}',
+      name: 'ResponseAssignmentScreen',
+    );
+
     final authState = await ref.read(authProvider.future);
     if (authState == null) {
       throw Exception('Not authenticated');
@@ -48,25 +57,101 @@ class ResponseAssignmentScreenState extends ConsumerState<ResponseAssignmentScre
         assignmentId: widget.assignmentId,
       );
 
+      developer.log(
+        'Fetched ${fetchedResponses.length} responses',
+        name: 'ResponseAssignmentScreen',
+      );
+
+      if (fetchedResponses.isNotEmpty) {
+        developer.log(
+          'Sample response structure: ${fetchedResponses.first}',
+          name: 'ResponseAssignmentScreen',
+        );
+      }
+
       setState(() {
         responses = fetchedResponses;
-        scoreControllers = List.generate(
-          responses.length, 
-          (_) => TextEditingController()
-        );
+        scoreControllers =
+            List.generate(responses.length, (_) => TextEditingController());
       });
     } catch (e) {
-      print('Error fetching assignment responses: $e');
+      developer.log(
+        'Error fetching assignment responses',
+        name: 'ResponseAssignmentScreen',
+        error: e,
+      );
+      _showSnackBar('Failed to load responses: ${e.toString()}');
     }
   }
 
   void _showSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 
   bool isValidScore(String score) {
     final parsedScore = double.tryParse(score);
     return parsedScore != null && parsedScore >= 0 && parsedScore <= 10;
+  }
+
+  Future<void> _submitGrade(dynamic submissionId, String score) async {
+    try {
+      developer.log(
+        'Submitting grade for submission: $submissionId, score: $score',
+        name: 'ResponseAssignmentScreen',
+      );
+
+      final authState = await ref.read(authProvider.future);
+      if (authState == null) {
+        throw Exception('Not authenticated');
+      }
+
+      final assignmentService = ref.read(assignmentServiceProvider.notifier);
+      await assignmentService.gradeAssignment(
+        token: authState.token!,
+        assignmentId: widget.assignmentId,
+        submissionId: submissionId.toString(),
+        score: score,
+      );
+
+      await _fetchAssignmentResponses(); // Refresh the list after grading
+      _showSnackBar('Grade submitted successfully');
+    } catch (e) {
+      developer.log(
+        'Error submitting grade',
+        name: 'ResponseAssignmentScreen',
+        error: e,
+      );
+      _showSnackBar('Failed to submit grade: ${e.toString()}');
+    }
+  }
+
+  Future<void> _openAttachment(String? fileUrl, String? fileName) async {
+    if (fileUrl == null || fileUrl.isEmpty) {
+      _showSnackBar('No file attached');
+      return;
+    }
+
+    developer.log(
+      'Attempting to open file: $fileUrl',
+      name: 'ResponseAssignmentScreen',
+    );
+
+    try {
+      final uri = Uri.parse(fileUrl);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        _showSnackBar('Cannot open file: URL is invalid');
+      }
+    } catch (e) {
+      developer.log(
+        'Error opening file',
+        name: 'ResponseAssignmentScreen',
+        error: e,
+      );
+      _showSnackBar('Error opening file: ${e.toString()}');
+    }
   }
 
   Widget _buildResponseCard(
@@ -77,7 +162,12 @@ class ResponseAssignmentScreenState extends ConsumerState<ResponseAssignmentScre
   ) {
     final student = response['student_account'];
     final score = response['grade'];
-    final hasFile = response['file_url'] != null;
+    final submissionId = response['id'];
+
+    developer.log(
+      'Response data for card $index: ${response.toString()}',
+      name: 'ResponseAssignmentScreen',
+    );
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
@@ -129,7 +219,7 @@ class ResponseAssignmentScreenState extends ConsumerState<ResponseAssignmentScre
               ],
             ),
           ),
-          
+
           // Response Content
           Padding(
             padding: const EdgeInsets.all(16),
@@ -177,37 +267,53 @@ class ResponseAssignmentScreenState extends ConsumerState<ResponseAssignmentScre
                   const SizedBox(height: 16),
                 ],
 
-                // File Attachment
-                if (hasFile)
-                  OutlinedButton.icon(
-                    onPressed: () async {
-                      final url = response['file_url'];
-                      if (await canLaunch(url)) {
-                        await launch(url);
-                      } else {
-                        _showSnackBar('Cannot open file.');
-                      }
-                    },
-                    icon: const Icon(Icons.attachment),
-                    label: const Text('View Attachment'),
-                  ),
-
                 const Divider(height: 32),
 
                 // Grading Section
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Expanded(
-                      child: TextField(
-                        controller: scoreControllers?[index],
-                        decoration: InputDecoration(
-                          labelText: 'Score (0-10)',
-                          border: const OutlineInputBorder(),
-                          suffixText: score != null ? 'Current: $score' : null,
-                        ),
-                        keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true,
-                        ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (score != null) ...[
+                            Text(
+                              'Current Grade',
+                              style: theme.textTheme.titleSmall,
+                            ),
+                            const SizedBox(height: 4),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                color: theme.colorScheme.primary.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                '$score/10',
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  color: theme.colorScheme.primary,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                          ],
+                          TextField(
+                            controller: scoreControllers?[index],
+                            decoration: InputDecoration(
+                              labelText: score != null ? 'Update Grade (0-10)' : 'Grade (0-10)',
+                              border: const OutlineInputBorder(),
+                              hintText: '0-10',
+                            ),
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -218,10 +324,11 @@ class ResponseAssignmentScreenState extends ConsumerState<ResponseAssignmentScre
                           _showSnackBar('Please enter a valid score (0-10).');
                           return;
                         }
-                        // ... existing score submission logic ...
+                        await _submitGrade(submissionId, scoreText);
+                        scoreControllers?[index].clear();
                       },
                       icon: const Icon(Icons.check),
-                      label: const Text('Grade'),
+                      label: Text(score != null ? 'Update' : 'Grade'),
                     ),
                   ],
                 ),
@@ -287,4 +394,4 @@ class ResponseAssignmentScreenState extends ConsumerState<ResponseAssignmentScre
       ),
     );
   }
-} 
+}
