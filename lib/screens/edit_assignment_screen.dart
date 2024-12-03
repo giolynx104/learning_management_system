@@ -228,6 +228,7 @@ class EditAssignmentScreenState extends ConsumerState<EditAssignmentScreen> {
 
       if (classInfo != null) {
         final notificationService = ref.read(notificationServiceProvider.notifier);
+        final title = 'From class:${classInfo.className} ';
         final message = 'Assignment "${_assignmentNameController.text.trim()}" has been updated.\n'
             'Deadline: ${DateFormat('dd/MM/yyyy HH:mm').format(_endDateTime!)}';
 
@@ -238,6 +239,7 @@ class EditAssignmentScreenState extends ConsumerState<EditAssignmentScreen> {
               message,
               student.accountId,
               NotificationType.assignmentGrade,
+              title,
               null,
             );
           } catch (e) {

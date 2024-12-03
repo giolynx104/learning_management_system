@@ -488,7 +488,7 @@ class NotifyItem extends ConsumerWidget {
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  'From: ${notification.fromUser}',
+                  '${notification.titlePushNotification}',
                   style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -503,7 +503,7 @@ class NotifyItem extends ConsumerWidget {
                 const SizedBox(height: 10),
                 // Notification Title
                 Text(
-                  notification.titlePushNotification,
+                  getSubtitle(notification.type),
                   style: const TextStyle(
                     color: Colors.blueGrey,
                   ),
@@ -541,6 +541,21 @@ class NotifyItem extends ConsumerWidget {
       ),
     );
   }
+
+  String getSubtitle(String type){
+    switch (type) {
+      case 'ABSENCE':
+      return 'Absence request';
+      case 'ASSIGNMENT_GRADE':
+      return 'Assignment have been graded';
+      case 'REJECT_ABSENCE_REQUEST':
+      return 'Absent Request rejected';
+      case 'ACCEPT_ABSENCE_REQUEST':
+      return 'Absent Request accepted';
+      default:
+      return type;
+    }
+  } 
   String formatFriendlyTime(String sentTime) {
     try {
       final sentDateTime =

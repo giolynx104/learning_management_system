@@ -102,7 +102,7 @@ class TakeAttendanceScreen extends HookConsumerWidget {
         // Send notifications to absent students
         if (classInfo.value != null) {
           final notificationService = ref.read(notificationServiceProvider.notifier);
-          
+          final title = 'From class:${classInfo.value?.className} ';
           for (final studentId in absentStudents) {
             // Find the corresponding account_id for the student_id
             final studentAccount = classInfo.value!.studentAccounts
@@ -114,6 +114,7 @@ class TakeAttendanceScreen extends HookConsumerWidget {
                 'You were marked absent for ${classInfo.value!.className} on ${DateFormat('yyyy-MM-dd').format(selectedDate.value)}',
                 studentAccount.accountId,
                 'ABSENCE',
+                title,
                 null,
               );
             } catch (e) {
