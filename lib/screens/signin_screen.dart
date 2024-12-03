@@ -7,6 +7,7 @@ import 'package:learning_management_system/components/auth_text_field.dart';
 import 'package:learning_management_system/widgets/custom_button.dart';
 import 'package:learning_management_system/routes/routes.dart';
 import 'package:learning_management_system/utils/verification_helper.dart';
+import 'package:learning_management_system/exceptions/api_exceptions.dart';
 
 /// Screen for handling user sign-in functionality.
 /// 
@@ -69,10 +70,44 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
       }
     } catch (e) {
       if (!mounted) return;
+      debugPrint('Error in _handleSignIn: ${e.toString()}');
+      
+      String errorMessage = 'An unexpected error occurred';
+      Color backgroundColor = const Color.fromARGB(255, 255, 21, 0);
+      
+      if (e is ApiException) {
+        if (e.message.contains('email not existed')) {
+          errorMessage = 'This email is not registered. Please sign up first.';
+        } else if (e.message.contains('password is incorrect')) {
+          errorMessage = 'The password you entered is incorrect. Please try again.';
+        } else {
+          errorMessage = e.message;
+        }
+        debugPrint('ApiException details: ${e.data}');
+      } else if (e is NetworkException) {
+        errorMessage = e.message;
+        debugPrint('NetworkException: ${e.message}');
+      } else {
+        errorMessage = e.toString();
+      }
+      
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Sign in failed: ${e.toString()}'),
-          backgroundColor: Colors.red,
+          content: SelectableText.rich(
+            TextSpan(
+              text: errorMessage,
+              style: const TextStyle(color: Colors.white),
+            ),
+          ),
+          backgroundColor: backgroundColor,
+          duration: const Duration(seconds: 4),
+          action: SnackBarAction(
+            label: 'Dismiss',
+            textColor: Colors.white,
+            onPressed: () {
+              ScaffoldMessenger.of(context).hideCurrentSnackBar();
+            },
+          ),
         ),
       );
     } finally {

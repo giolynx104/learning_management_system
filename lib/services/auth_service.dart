@@ -42,15 +42,18 @@ class AuthService {
       fcmToken = await _storageService.getFCMToken();
       debugPrint('Fcm Token: $fcmToken');
       debugPrint('Attempting sign in for email: $email');
+      
+      final requestData = {
+        'email': email,
+        'password': password,
+        'device_id': "1",
+        "fcm_token": fcmToken,
+      };
+      debugPrint('Request data: $requestData');
+      
       final response = await _apiService.dio.post(
         ApiConstants.login,
-        data: {
-          'email': email,
-          'password': password,
-          'device_id': "1",
-          "fcm_token" :fcmToken,
-        },
-
+        data: requestData,
       );
       debugPrint('Login response: ${response.data}');
 
@@ -117,16 +120,60 @@ class AuthService {
         message: response.data['message'] ?? 'Unknown error',
       );
     } on DioException catch (e) {
-      if (e.response?.statusCode == 401 || e.response?.data['code'] == 9998) {
-        throw UnauthorizedException('Invalid credentials or session expired');
+      debugPrint('DioException caught in signIn: ${e.response?.data}');
+      debugPrint('Status code: ${e.response?.statusCode}');
+      debugPrint('Error type: ${e.type}');
+      debugPrint('Error message: ${e.message}');
+      
+      // Handle cases where response is null (network/connection issues)
+      if (e.response == null) {
+        switch (e.type) {
+          case DioExceptionType.connectionTimeout:
+          case DioExceptionType.sendTimeout:
+          case DioExceptionType.receiveTimeout:
+            throw NetworkException(
+              message: 'Connection timeout. Please check your internet connection.',
+            );
+          case DioExceptionType.connectionError:
+            throw NetworkException(
+              message: 'No internet connection. Please check your network.',
+            );
+          default:
+            throw NetworkException(
+              message: 'Network error occurred. Please try again.',
+            );
+        }
+      }
+
+      if (e.response?.statusCode == 401) {
+        final errorCode = e.response?.data['code']?.toString();
+        final errorMessage = e.response?.data['message'] as String?;
+        debugPrint('Auth error code: $errorCode, message: $errorMessage');
+        
+        switch (errorCode) {
+          case '1016':
+            throw ApiException(
+              statusCode: 401,
+              message: 'Email not found',
+              data: e.response?.data,
+            );
+          case '1017':
+            throw ApiException(
+              statusCode: 401,
+              message: 'Incorrect password',
+              data: e.response?.data,
+            );
+          default:
+            throw ApiException(
+              statusCode: 401,
+              message: errorMessage ?? 'Invalid credentials',
+              data: e.response?.data,
+            );
+        }
       } else if (e.response?.statusCode == 422) {
         throw ValidationException(
           message: 'Invalid input data',
           validationErrors: _parseValidationErrors(e.response?.data),
-        );
-      } else if (e.type == DioExceptionType.connectionTimeout) {
-        throw NetworkException(
-          message: 'Connection timeout. Please check your internet connection.',
         );
       }
       throw ApiException(
