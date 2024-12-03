@@ -69,6 +69,7 @@ class NotificationService extends _$NotificationService {
     String message,
     String toUser,
     String type,
+    String title,
     String? image,
   ) async {
     try {
@@ -77,6 +78,7 @@ class NotificationService extends _$NotificationService {
       debugPrint('  message: $message');
       debugPrint('  toUser: $toUser');
       debugPrint('  type: $type');
+      debugPrint(' title : $title');
       debugPrint('  image: $image');
 
       // Create form data
@@ -85,6 +87,7 @@ class NotificationService extends _$NotificationService {
         'message': message,
         'toUser': toUser,
         'type': type,
+        'title': title
       });
 
       if (image != null) {

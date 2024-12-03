@@ -45,6 +45,5 @@ flutter {
     source = "../.."
 }
 dependencies {
-    // Add this line
-    implementation 'com.google.firebase:firebase-messaging:15.1.5' // Check for the latest version
+    implementation 'com.google.firebase:firebase-messaging:15.1.5' 
 }

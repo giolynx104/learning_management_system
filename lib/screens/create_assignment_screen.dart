@@ -230,8 +230,8 @@ class CreateAssignmentScreenState extends ConsumerState<CreateAssignmentScreen> 
 
       if (classInfo != null) {
         final notificationService = ref.read(notificationServiceProvider.notifier);
-        final title = 'New Assignment: ${_assignmentNameController.text.trim()}';
-        final message = 'A new assignment has been created for your class: ${classInfo.className}\n'
+        final title = 'From class:${classInfo.className} ';
+        final message = 'A new assignment has been created for your class: ${_assignmentNameController.text.trim()}\n'
             'Deadline: ${DateFormat('dd/MM/yyyy HH:mm').format(_endDateTime!)}';
 
         for (final student in classInfo.studentAccounts) {
@@ -241,6 +241,7 @@ class CreateAssignmentScreenState extends ConsumerState<CreateAssignmentScreen> 
               message,
               student.accountId,
               NotificationType.assignmentGrade,
+              title,
               null,
             );
           } catch (e) {
